@@ -189,6 +189,7 @@
     <ClCompile Include="Components\ScriptLoader.cpp" />
     <ClCompile Include="Components\Skybox.cpp" />
     <ClCompile Include="Components\Spline.cpp" />
+    <ClCompile Include="Components\Terrain.cpp" />
     <ClCompile Include="Components\TilemapRenderer.cpp" />
     <ClCompile Include="ConsoleLogger.cpp" />
     <ClCompile Include="CryonicCore.cpp" />
@@ -271,6 +272,7 @@
     <ClInclude Include="Components\ScriptLoader.h" />
     <ClInclude Include="Components\Skybox.h" />
     <ClInclude Include="Components\Spline.h" />
+    <ClInclude Include="Components\Terrain.h" />
     <ClInclude Include="Components\TilemapRenderer.h" />
     <ClInclude Include="ConsoleLogger.h" />
     <ClInclude Include="CryonicAPI.h" />
