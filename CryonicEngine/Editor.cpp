@@ -49,6 +49,7 @@
 #include "RenderableTexture.h"
 #include "EditorWindow.h"
 #include "EventSheetEditor.h"
+#include "PrefabEditor.h"
 #include "MainThreadQueue.h"
 #include "ScriptingTools/ScriptHeaderGenerator.h"
 
@@ -1626,6 +1627,43 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                             it->second.doubleClickAction();
                     }
                 }
+				else if (extension == ".prefab")
+				{
+					RaylibWrapper::rlImGuiImageButtonSize(("##" + id).c_str(), IconManager::imageTextures["PrefabIcon"], ImVec2(40, 40));
+					if (ImGui::IsItemHovered())
+					{
+						handleDrag(Other);
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						{
+							std::ifstream dataFile(entry.path());
+							if (dataFile.is_open())
+							{
+								bool foundWindow = false;
+								for (EditorWindow* window : windows)
+								{
+									if (window->windowName == "Prefab Editor" && window->windowID == entry.path().string())
+									{
+										ImGuiWindow* imGuiWindow = ImGui::FindWindowByName(window->fullWindowName.c_str());
+										if (imGuiWindow && imGuiWindow->DockNode && imGuiWindow->DockNode->TabBar)
+											imGuiWindow->DockNode->TabBar->NextSelectedTabId = imGuiWindow->TabId;
+										foundWindow = true;
+										break;
+									}
+								}
+								if (!foundWindow)
+								{
+									windows.push_back(new PrefabEditor());
+									windows.back()->Init("EventSheet Editor", entry.path().string(), true, ICON_FA_TABLE_COLUMNS, ImVec4(0.10f, 0.11f, 0.12f, 1.00f));
+									// Todo: Check if the dataFile has data in it. If it doesn't then add default data to it so it won't crash.
+									nlohmann::json data;
+									dataFile >> data;
+									static_cast<PrefabEditor*>(windows.back())->LoadData(data, entry.path().string());
+
+								}
+							}
+						}
+					}
+				}
                 else if (extension != ".data")
                 {
                     RaylibWrapper::rlImGuiImageButtonSize(("##" + id).c_str(), IconManager::imageTextures["UnknownFile"], ImVec2(40, 40));
@@ -1934,6 +1972,40 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                             // Todo: Handle if it wasn't created
                         }
                     }},
+					{"Create Prefab", [&]() {
+						std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "Prefab", "prefab");
+						if (filePath != "")
+						{
+							std::ofstream file(filePath);
+							if (file.is_open())
+							{
+								nlohmann::json jsonData = {{"version", 1}, {"path", filePath},
+                                    {"gameObjects", {
+                                        {"name", ""},
+                                        {"position", {0,0,0}},
+                                        {"size", {0,0,0}},
+                                        {"rotation", {0,0,0}},
+                                        {"id", -1},
+                                        {"active", false},
+                                        {"globalActive", false},
+                                        {"components", nlohmann::json::array()}
+                                    }}
+                                };
+								file << std::setw(4) << jsonData << std::endl;
+							}
+							else
+							{
+								// Todo: Properly handle if the file couldn't be opened. Maybe retry a few times, then popup with a message and delete the file.
+								std::filesystem::remove(filePath);
+							}
+							renamingFile = filePath;
+							strcpy_s(newFileName, sizeof(newFileName), filePath.stem().string().c_str());
+						}
+						else
+						{
+							// Todo: Handle if it wasn't created
+						}
+					}},
                     {"Create Scene", [&]() {
                         std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "New Scene", "scene");
                         SceneManager::CreateScene(filePath);

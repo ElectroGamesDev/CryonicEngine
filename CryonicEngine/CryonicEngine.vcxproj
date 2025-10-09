@@ -209,6 +209,8 @@
     <ClCompile Include="MenuManager.cpp" />
     <ClCompile Include="Physics2DDebugDraw.cpp" />
     <ClCompile Include="Physics3DDebugDraw.cpp" />
+    <ClCompile Include="Prefab.cpp" />
+    <ClCompile Include="PrefabEditor.cpp" />
     <ClCompile Include="ProjectManager.cpp" />
     <ClCompile Include="RaylibCameraWrapper.cpp" />
     <ClCompile Include="RaylibDrawWrapper.cpp" />
@@ -296,6 +298,8 @@
     <ClInclude Include="MenuManager.h" />
     <ClInclude Include="Physics2DDebugDraw.h" />
     <ClInclude Include="Physics3DDebugDraw.h" />
+    <ClInclude Include="Prefab.h" />
+    <ClInclude Include="PrefabEditor.h" />
     <ClInclude Include="ProjectManager.h" />
     <ClInclude Include="RaylibCameraWrapper.h" />
     <ClInclude Include="RaylibDrawWrapper.h" />
