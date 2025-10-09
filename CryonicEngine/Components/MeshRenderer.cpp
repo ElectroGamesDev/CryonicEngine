@@ -22,6 +22,8 @@ RaylibModel& MeshRenderer::GetModel()
 
 void MeshRenderer::SetModel(ModelType model, std::filesystem::path path, ShaderManager::Shaders shader)
 {
+    // Todo: Remove ModelType and just use the path to determine if its a primitive shape. Path would most likely be an absolute path to the /Assets folder
+
     // If a custom model was previously used then cleanup the embeded materials
     // Todo: Re-add this, although use embeddedMaterials from RaylibModelWrapper, and make sure no other MeshRenderer is using the model
     //if (this->modelSet && !raylibModel.IsPrimitive())
