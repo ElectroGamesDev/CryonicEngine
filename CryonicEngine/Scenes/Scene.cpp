@@ -8,6 +8,7 @@
 #include "../RaylibWrapper.h" 
 #include "../Game.h"
 #endif
+#include "../Components/MeshRenderer.h"
 
 Scene::Scene(const std::filesystem::path& path, std::deque<GameObject*> gameObjects)
     : m_Path(path), m_GameObjects(gameObjects)
@@ -102,10 +103,11 @@ GameObject* Scene::GetGameObject(const std::string& name)
     return nullptr;
 }
 
-// Todo: Add Asset Template support for SpawnGameObject
-
 GameObject* Scene::SpawnGameObject(std::string path, Vector3 position, Quaternion rotation)
 {
+    // Todo: Add Asset Template/Prefab support for SpawnGameObject
+    // Todo: Add support for parents
+
     std::filesystem::path newPath = path;
 #if !defined(EDITOR)
     if (exeParent.empty())
@@ -116,16 +118,36 @@ GameObject* Scene::SpawnGameObject(std::string path, Vector3 position, Quaternio
     newPath = ProjectManager::projectData.path / "Assets" / newPath;
 #endif
 
-    if (!newPath.has_extension() || (newPath.extension() != ".png" && newPath.extension() != ".jpg" && newPath.extension() != ".jpeg"))
+    int type = 0; // 0 = image, 1 = model, 2 = primitive model
+
+    if (path == "Cube" || path == "Plane" || path == "Sphere" || path == "Cylinder" || path == "Cone")
     {
-        ConsoleLogger::WarningLog("Failed to spawn a game object. The specified file must be a PNG, JPG, or JPEG. specified path: " + newPath.string());
+        type = 2;
+        newPath = path;
+    }
+
+    if (type != 2 && !newPath.has_extension())
+    {
+        ConsoleLogger::WarningLog("Failed to spawn a game object. The specified file must be a PNG, JPG, JPEG, GLB, GLTF, OBJ, or M3D from a relative path. specified path: " + newPath.string());
         return nullptr;
     }
 
-    if (!std::filesystem::exists(newPath))
+    if (type != 2)
     {
-        ConsoleLogger::WarningLog("Failed to spawn a game object. Invalid sprite/template path. specified path: " + newPath.string());
-        return nullptr;
+        if (newPath.extension() == ".png" || newPath.extension() == ".jpg" || newPath.extension() == ".jpeg")
+            type = 0;
+        else if (newPath.extension() == ".glb" || newPath.extension() == ".gltf" || newPath.extension() == ".obj" || newPath.extension() == ".m3d")
+            type = 1;
+
+        if (!std::filesystem::exists(newPath))
+        {
+            if (type == 0)
+                ConsoleLogger::WarningLog("Failed to spawn a game object. Invalid sprite path. specified path: " + newPath.string());
+            else if (type == 1)
+                ConsoleLogger::WarningLog("Failed to spawn a game object. Invalid model path. specified path: " + newPath.string());
+
+            return nullptr;
+        }
     }
 
     GameObject* gameObject = AddGameObject();
@@ -134,9 +156,30 @@ GameObject* Scene::SpawnGameObject(std::string path, Vector3 position, Quaternio
     gameObject->transform.SetRotation(rotation);
     gameObject->SetName(newPath.stem().string());
 
-    SpriteRenderer* spriteRenderer = gameObject->AddComponent<SpriteRenderer>();
-    spriteRenderer->SetSprite(new Sprite(path)); // Using path here since the Sprite constructor takes in a relative path
-    spriteRenderer->gameObject = gameObject;
+    if (type == 0)
+    {
+        SpriteRenderer* spriteRenderer = gameObject->AddComponent<SpriteRenderer>();
+        spriteRenderer->SetSprite(new Sprite(path)); // Using path here since the Sprite constructor takes in a relative path
+        spriteRenderer->gameObject = gameObject;
+    }
+    else if (type == 1)
+    {
+        MeshRenderer* component = gameObject->AddComponent<MeshRenderer>();
+        component->SetModelPath(newPath);
+
+        if (component->GetModelPath().string() == "Cube")
+            component->SetModel(Cube, component->GetModelPath().string(), ShaderManager::LitStandard);
+        else if (component->GetModelPath().string() == "Plane")
+            component->SetModel(Plane, component->GetModelPath().string(), ShaderManager::LitStandard);
+        else if (component->GetModelPath().string() == "Sphere")
+            component->SetModel(Sphere, component->GetModelPath().string(), ShaderManager::LitStandard);
+        else if (component->GetModelPath().string() == "Cylinder")
+            component->SetModel(Cylinder, component->GetModelPath().string(), ShaderManager::LitStandard);
+        else if (component->GetModelPath().string() == "Cone")
+            component->SetModel(Cone, component->GetModelPath().string(), ShaderManager::LitStandard);
+        else
+            component->SetModel(Custom, component->GetModelPath().string(), ShaderManager::LitStandard);
+    }
 
     return gameObject;
 }
