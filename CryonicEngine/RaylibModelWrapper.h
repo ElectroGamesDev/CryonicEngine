@@ -19,6 +19,7 @@ class RaylibModel
 {
 public:
 	bool Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath);
+	void CreateTerrain(int vertexCount, int triangleCount, unsigned int vaoId, std::vector<unsigned int> vboIds);
 	void Unload();
 	void DeleteInstance();
 	void DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA);
@@ -37,10 +38,13 @@ public:
 	static void SetShadowShader(unsigned int id, int* locs);
 	static void SetMaterialPreviewShader(unsigned int id, int* locs);
 	bool IsPrimitive();
+	int GetMeshCount();
+	int GetTriangleCount(int meshIndex);
 
 private:
-	std::pair<Model, int>* model;
+	std::pair<Model, int>* model = nullptr;
 	bool primitiveModel = false;
+	bool terrainModel = false;
 	std::filesystem::path path;
 	// This was removed because it added overhead for something that has an easier solution. It will only need to be re-added if GetMaterial() is needed
 	//static std::unordered_map<Model, std::vector<RaylibWrapper::Material>> rWrapperMaterials; // Model can not be used as a key. A pointer could be used though.

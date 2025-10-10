@@ -155,6 +155,97 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
     return true;
 }
 
+void RaylibModel::CreateTerrain(int vertexCount, int triangleCount, unsigned int vaoId, std::vector<unsigned int> vboIds)
+{
+	if (model)
+	{
+		// Manually cleanup to avoid double-free
+		if (terrainModel) {
+			// For terrain, manually unload the GPU resources
+			for (int i = 0; i < model->first.meshCount; i++) {
+				Mesh& mesh = model->first.meshes[i];
+				if (mesh.vaoId > 0) {
+					rlUnloadVertexArray(mesh.vaoId);
+				}
+				// Don't unload vboId - they're managed elsewhere
+				RL_FREE(mesh.vboId);
+			}
+			RL_FREE(model->first.meshes);
+
+			// Free materials
+			for (int i = 0; i < model->first.materialCount; i++) {
+				RL_FREE(model->first.materials[i].maps);
+			}
+			RL_FREE(model->first.materials);
+			RL_FREE(model->first.meshMaterial);
+		}
+		else {
+			UnloadModel(model->first);
+		}
+		delete model;
+		model = nullptr;
+	}
+
+	// Create minimal mesh structure that references GPU data
+	Mesh mesh = { 0 };
+	mesh.vertexCount = vertexCount;
+	mesh.triangleCount = triangleCount;
+	mesh.vaoId = vaoId;
+
+	// DON'T allocate vboId array - leave it NULL
+	// LoadModelFromMesh will handle this
+	mesh.vboId = nullptr;
+
+	// Important: NULL out ALL pointers
+	mesh.vertices = nullptr;
+	mesh.texcoords = nullptr;
+	mesh.normals = nullptr;
+	mesh.colors = nullptr;
+	mesh.tangents = nullptr;
+	mesh.texcoords2 = nullptr;
+	mesh.indices = nullptr;
+	mesh.animVertices = nullptr;
+	mesh.animNormals = nullptr;
+	mesh.boneIds = nullptr;
+	mesh.boneWeights = nullptr;
+	mesh.boneMatrices = nullptr;
+
+	// LoadModelFromMesh will allocate its own vboId array
+	Model terrainModelRaw = LoadModelFromMesh(mesh);
+
+	// Now manually set the vboId values we want
+	if (terrainModelRaw.meshCount > 0) {
+		Mesh& modelMesh = terrainModelRaw.meshes[0];
+		if (modelMesh.vboId && vboIds.size() >= 4) {
+			modelMesh.vboId[0] = vboIds[0]; // vertices
+			modelMesh.vboId[1] = vboIds[1]; // texcoords
+			modelMesh.vboId[2] = vboIds[2]; // normals
+			modelMesh.vboId[6] = vboIds[3]; // indices
+		}
+	}
+
+	model = new std::pair<Model, int>(terrainModelRaw, 1);
+	terrainModel = true;
+
+	// Set shader
+	modelShader = ShaderManager::LitStandard;
+	for (size_t i = 0; i < model->first.materialCount; ++i)
+		model->first.materials[i].shader = { shadowShader.first, shadowShader.second };
+
+	// Set embedded materials
+	for (int i = 0; i < model->first.materialCount; i++)
+	{
+		model->first.materials[i].params[0] = static_cast<int>(1);
+	}
+
+	this->path = "";
+	SetEmbeddedMaterials();
+
+	ConsoleLogger::InfoLog("Terrain model created: " + std::to_string(vertexCount) +
+		" vertices, " + std::to_string(triangleCount) + " triangles, VAO: " +
+		std::to_string(vaoId));
+}
+
 void RaylibModel::Unload()
 {
     if (model == nullptr)
@@ -174,6 +265,10 @@ void RaylibModel::Unload()
             else
                 ++it;
         }
+    }
+    else if (terrainModel)
+    {
+        UnloadModel(model->first);
     }
     else
     {
@@ -287,6 +382,19 @@ void RaylibModel::SetShader(int materialIndex, ShaderManager::Shaders shader)
 bool RaylibModel::IsPrimitive()
 {
     return primitiveModel;
+}
+
+int RaylibModel::GetMeshCount()
+{
+    return model ? model->first.meshCount : 0;
+}
+
+int RaylibModel::GetTriangleCount(int meshIndex)
+{
+    if (!model || meshIndex < 0 || meshIndex >= model->first.meshCount)
+        return 0;
+
+    return model->first.meshes[meshIndex].triangleCount;
 }
 
 std::vector<int> RaylibModel::GetMaterialIDs()
