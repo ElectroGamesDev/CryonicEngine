@@ -249,11 +249,11 @@ RaylibWrapper::RenderTexture2D* Editor::CreateMaterialPreview(std::filesystem::p
     // Todo: This will have issues if some of the maps arent set or valid. We're also loading the texture even if its already loaded as a Sprite
 
     // Todo: These textures may already be loaded if a model in-scene is using them. Once I do this, make sure not to unload the textures at the end of the function
-    RaylibWrapper::Texture2D* albedoTexture = loadTexture(publicData["albedoTexture"].get<std::string>());
-    RaylibWrapper::Texture2D* normalTexture = loadTexture(publicData["normalTexture"].get<std::string>());
-    RaylibWrapper::Texture2D* metallicTexture = loadTexture(publicData["metallicTexture"].get<std::string>());
-    RaylibWrapper::Texture2D* roughnessTexture = loadTexture(publicData["roughnessTexture"].get<std::string>());
-    RaylibWrapper::Texture2D* emissionTexture = loadTexture(publicData["emissionTexture"].get<std::string>());
+    RaylibWrapper::Texture2D* albedoTexture = loadTexture(publicData["albedoTexture"][2].get<std::string>());
+    RaylibWrapper::Texture2D* normalTexture = loadTexture(publicData["normalTexture"][2].get<std::string>());
+    RaylibWrapper::Texture2D* metallicTexture = loadTexture(publicData["metallicTexture"][2].get<std::string>());
+    RaylibWrapper::Texture2D* roughnessTexture = loadTexture(publicData["roughnessTexture"][2].get<std::string>());
+    RaylibWrapper::Texture2D* emissionTexture = loadTexture(publicData["emissionTexture"][2].get<std::string>());
 
     RaylibWrapper::Color normalColor = normalTexture == &Material::whiteTexture
         ? RaylibWrapper::Color{ 128, 128, 255 }
@@ -3915,11 +3915,11 @@ void Editor::RenderProperties()
                         ImGui::Text(newKey.c_str());
                         ImGui::SameLine();
 
-                        static bool openSelector = false;
+                        static std::string fileSelectorOpenVariable = "";
                         ImGui::SetCursorPos({ ImGui::CalcTextSize(newKey.c_str()).x + 30, ImGui::GetCursorPosY() - 3 });
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
                         std::string selectedFile = "None Selected";
-                        if (!value[2].is_null() && value[2].get<std::string>() != "nullptr")
+                        if (!value[2].is_null() && value[2].get<std::string>() != "nullptr" && !value[2].get<std::string>().empty())
                         {
                             if (value[1].size() > 1) // Checking if there is more than one extension that can be selected
                                 selectedFile = std::filesystem::path(value[2].get<std::string>()).filename().string();
@@ -3927,24 +3927,24 @@ void Editor::RenderProperties()
                                 selectedFile = std::filesystem::path(value[2].get<std::string>()).stem().string();
                         }
                         ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-                        if (ImGui::Button(selectedFile.c_str(), { ImGui::GetWindowWidth() - 130, 20 }))
-                            openSelector = true;
+                        if (ImGui::Button((selectedFile + "##" + fileName + key).c_str(), {ImGui::GetWindowWidth() - 130, 20}))
+                            fileSelectorOpenVariable = key;
 
                         ImGui::PopStyleColor();
 
-                        if (openSelector)
+                        if (!fileSelectorOpenVariable.empty() && fileSelectorOpenVariable == key)
                         {
                             std::string currentlySelected = (value[2] == "nullptr") ? "" : value[2];
                             selectedFile = RenderFileSelector(85623, key, currentlySelected, value[1], false, {ImGui::GetCursorScreenPos().x - 100, ImGui::GetCursorScreenPos().y - 40});
                             if (selectedFile == "NULL")
-                                openSelector = false;
+                                fileSelectorOpenVariable = "";
                             else if (!selectedFile.empty())
                             {
                                 if (selectedFile == "None")
                                     value[2] = "nullptr";
                                 else
                                     value[2] = selectedFile;
-                                openSelector = false;
+                                fileSelectorOpenVariable = "";
                                 updateJson = true;
                             }
                         }

@@ -142,11 +142,11 @@ public:
             metallic = jsonData["public"]["metallic"].get<float>();
             roughness = jsonData["public"]["roughness"].get<float>();
             emission = jsonData["public"]["emission"].get<float>();
-            albedoTexturePath = jsonData["public"]["albedoTexture"].get<std::string>();
-            normalTexturePath = jsonData["public"]["normalTexture"].get<std::string>();
-            metallicTexturePath = jsonData["public"]["metallicTexture"].get<std::string>();
-            roughnessTexturePath = jsonData["public"]["roughnessTexture"].get<std::string>();
-            emissionTexturePath = jsonData["public"]["emissionTexture"].get<std::string>();
+            albedoTexturePath = jsonData["public"]["albedoTexture"][2].get<std::string>();
+            normalTexturePath = jsonData["public"]["normalTexture"][2].get<std::string>();
+            metallicTexturePath = jsonData["public"]["metallicTexture"][2].get<std::string>();
+            roughnessTexturePath = jsonData["public"]["roughnessTexture"][2].get<std::string>();
+            emissionTexturePath = jsonData["public"]["emissionTexture"][2].get<std::string>();
         }
         catch (const std::exception& e) {
             ConsoleLogger::ErrorLog("Failed to parse material data: " + std::string(e.what()));
