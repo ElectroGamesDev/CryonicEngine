@@ -1653,7 +1653,7 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
 								if (!foundWindow)
 								{
 									windows.push_back(new PrefabEditor());
-									windows.back()->Init("EventSheet Editor", entry.path().string(), true, ICON_FA_TABLE_COLUMNS, ImVec4(0.10f, 0.11f, 0.12f, 1.00f));
+									windows.back()->Init("Prefab Editor", entry.path().string(), true, ICON_FA_CUBES, ImVec4(0.10f, 0.11f, 0.12f, 1.00f));
 									// Todo: Check if the dataFile has data in it. If it doesn't then add default data to it so it won't crash.
 									nlohmann::json data;
 									dataFile >> data;
