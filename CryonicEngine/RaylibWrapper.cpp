@@ -453,6 +453,11 @@ namespace RaylibWrapper {
         return { image.data, image.width, image.height, image.mipmaps, image.format };
     }
 
+    Image LoadImage(const char* fileName) {
+        ::Image image = ::LoadImage(fileName);
+		return { image.data, image.width, image.height, image.mipmaps, image.format };
+    }
+
     Image LoadImageFromMemory(const char* fileType, const unsigned char* fileData, int dataSize)
     {
         ::Image image = ::LoadImageFromMemory(fileType, fileData, dataSize);
@@ -499,6 +504,16 @@ namespace RaylibWrapper {
         ::UnloadImageColors(cols);
         delete[] cols;
 	}
+
+    void ImageFormat(Image* image, int newFormat) {
+        ::Image img = { image->data, image->width, image->height, image->mipmaps, image->format };
+        ::ImageFormat(&img, newFormat);
+        image->data = img.data;
+        image->width = img.width;
+        image->height = img.height;
+        image->mipmaps = img.mipmaps;
+		image->format = img.format;
+    }
 
 
     // Texture loading functions

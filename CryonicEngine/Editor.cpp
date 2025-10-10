@@ -101,6 +101,20 @@ bool componentsWindowOpen = false;
 bool scriptCreateWinOpen = false;
 bool animationGraphWinOpen = false;
 bool projectSettingsWinOpen = false;
+bool terrainToolsWinOpen = false;
+
+enum class TerrainTool
+{
+	None = 0,
+	Raise,
+	Smooth,
+	Flatten,
+	Paint
+};
+TerrainTool currentTerrainTool = TerrainTool::None;
+Terrain* selectedTerrain = nullptr;
+float brushStrength = 1.0f;
+float brushSize = 5.0f;
 
 bool resetComponentsWin = true;
 bool resetPropertiesWin = true;
@@ -694,11 +708,19 @@ void Editor::RenderViewport()
 
             if (closestObject)
             {
+                if (selectedObject != nullptr)
+                    EventSystem::Invoke("ObjectDeselected");
+
                 selectedObject = closestObject;
                 objectInProperties = selectedObject;
+
+                EventSystem::Invoke("ObjectSelected");
             }
             else if (selectedObject)
             {
+				if (selectedObject != nullptr)
+					EventSystem::Invoke("ObjectDeselected");
+
                 selectedObject = nullptr;
                 objectInProperties = std::monostate{};
             }
@@ -1833,11 +1855,11 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                     for (Component* component : SceneManager::GetActiveScene()->GetGameObjects().back()->GetComponents())
                         component->gameObject = SceneManager::GetActiveScene()->GetGameObjects().back();
 
-                    //if (selectedObject != nullptr)
-                        //EventSystem::Invoke("ObjectDeselected", selectedObject);
+                    if (selectedObject != nullptr)
+                        EventSystem::Invoke("ObjectDeselected");
                     selectedObject = SceneManager::GetActiveScene()->GetGameObjects().back();
                     objectInProperties = SceneManager::GetActiveScene()->GetGameObjects().back();
-                    //EventSystem::Invoke("ObjectSelected", selectedObject);
+                    EventSystem::Invoke("ObjectSelected");
                 }
                 else
                 {
@@ -3139,6 +3161,161 @@ void Editor::RenderComponentsWin()
     ImGui::End();
 }
 
+void Editor::RenderTerrainToolsWin()
+{
+	if (!terrainToolsWinOpen)
+		return;
+
+    ImGui::SetNextWindowClass(&EditorWindow::defaultWindowClass);
+
+	if (ImGui::Begin((ICON_FA_PAINTBRUSH + std::string(" Terrain Tools")).c_str()))
+	{
+		if (selectedTerrain)
+		{
+			// Tool Selection Section
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.26f, 0.35f, 0.6f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.45f, 0.7f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.26f, 0.5f, 0.7f, 1.0f));
+
+			if (ImGui::CollapsingHeader((ICON_FA_TOOLBOX + std::string(" Sculpting Tools")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Spacing();
+				const float buttonWidth = ImGui::GetContentRegionAvail().x * 0.45f;
+				const float buttonHeight = 32.0f;
+
+				// Raise/Lower Tool
+				bool isRaiseTool = (currentTerrainTool == TerrainTool::Raise);
+				if (isRaiseTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
+				if (ImGui::Button((ICON_FA_ARROW_UP + std::string(" Raise/Lower")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+					currentTerrainTool = TerrainTool::Raise;
+				if (isRaiseTool) ImGui::PopStyleColor();
+
+				ImGui::Spacing();
+
+				// Smooth Tool
+				bool isSmoothTool = (currentTerrainTool == TerrainTool::Smooth);
+				if (isSmoothTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.98f, 0.6f, 0.6f));
+				if (ImGui::Button((ICON_FA_WATER + std::string(" Smooth")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+					currentTerrainTool = TerrainTool::Smooth;
+				if (isSmoothTool) ImGui::PopStyleColor();
+
+				ImGui::Spacing();
+
+				// Flatten Tool
+				bool isFlattenTool = (currentTerrainTool == TerrainTool::Flatten);
+				if (isFlattenTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.6f, 0.7f, 0.6f));
+				if (ImGui::Button((ICON_FA_VECTOR_SQUARE + std::string(" Flatten")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+					currentTerrainTool = TerrainTool::Flatten;
+				if (isFlattenTool) ImGui::PopStyleColor();
+
+				ImGui::Spacing();
+
+				// Paint Tool
+				bool isPaintTool = (currentTerrainTool == TerrainTool::Paint);
+				if (isPaintTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
+				if (ImGui::Button((ICON_FA_PAINT_ROLLER + std::string(" Paint")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+					currentTerrainTool = TerrainTool::Paint;
+				if (isPaintTool) ImGui::PopStyleColor();
+			}
+
+			ImGui::PopStyleColor(3);
+			ImGui::PopStyleVar();
+
+			// Brush Settings Section
+			if (ImGui::CollapsingHeader((ICON_FA_BRUSH + std::string(" Brush Settings")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Spacing();
+				ImGui::Indent(10.0f);
+				ImGui::Text("Brush Size");
+				ImGui::SliderFloat("##BrushSize", &brushSize, 1.0f, 100.0f);
+
+				ImGui::Text("Brush Strength");
+				ImGui::SliderFloat("##BrushStrength", &brushStrength, 0.0f, 1.0f, "%.2f");
+
+				//ImGui::Text("Brush Falloff");
+				//ImGui::SliderFloat("##BrushFalloff", &brushFalloff, 0.0f, 1.0f, "%.2f");
+				ImGui::Unindent(10.0f);
+			}
+
+			// Terrain Layers Section
+			if (ImGui::CollapsingHeader(ICON_FA_LAYER_GROUP " Terrain Layers", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Spacing();
+				ImGui::Indent(10.0f);
+
+				if (ImGui::Button((ICON_FA_PLUS + std::string(" Add Layer")).c_str(), ImVec2(-1, 28)))
+					ImGui::OpenPopup("AddLayerPopup");
+
+				if (ImGui::BeginPopup("AddLayerPopup"))
+				{
+                    if (ImGui::Selectable("Example"))
+                    {
+                        //selectedTerrain->AddLayer("Example");
+                    }
+					if (ImGui::Selectable("Example2"))
+					{
+						//selectedTerrain->AddLayer("Example2");
+					}
+					ImGui::EndPopup();
+				}
+
+				//auto& layers = selectedTerrain->GetLayers();
+				//ImGui::BeginChild("LayersList", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
+				//for (int i = 0; i < layers.size(); i++)
+				//{
+				//	ImGui::PushID(i);
+				//	bool isSelected = (selectedLayerIndex == i);
+				//	if (isSelected) ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.26f, 0.59f, 0.0f, 1.0f));
+
+				//	ImGui::BeginGroup();
+				//	ImGui::Image((void*)(intptr_t)layers[i].textureID, ImVec2(50, 50));
+				//	ImGui::SameLine();
+				//	ImGui::Text("%s", layers[i].name.c_str());
+				//	ImGui::Text("Opacity: %.0f%%", layers[i].opacity * 100.0f);
+				//	ImGui::EndGroup();
+
+				//	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
+				//	if (ImGui::Button((ICON_FA_TRASH + std::to_string(i)).c_str()))
+				//	{
+				//		selectedTerrain->RemoveLayer(i);
+				//		if (selectedLayerIndex >= layers.size())
+				//			selectedLayerIndex = layers.size() - 1;
+				//	}
+
+				//	if (ImGui::IsItemClicked())
+				//		selectedLayerIndex = i;
+
+				//	if (isSelected) ImGui::PopStyleColor();
+				//	ImGui::PopID();
+				//}
+
+				//if (layers.empty())
+				//	ImGui::TextDisabled("No layers added. Click 'Add Layer' to start.");
+
+				//ImGui::EndChild();
+				ImGui::Unindent(10.0f);
+			}
+		}
+		else
+		{
+			// No terrain selected
+			ImVec2 textSize = ImGui::CalcTextSize(ICON_FA_MOUNTAIN);
+			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::Text(ICON_FA_MOUNTAIN);
+			ImGui::PopStyleColor();
+
+			const char* instruction = "Select a terrain object to edit";
+			textSize = ImGui::CalcTextSize(instruction);
+			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
+			ImGui::TextDisabled("%s", instruction);
+		}
+	}
+	ImGui::End();
+}
+
+
 void Editor::RenderCameraView()
 {
     if (!cameraSelected)
@@ -4052,10 +4229,10 @@ bool Editor::RenderHierarchyNode(GameObject* gameObject, bool normalColor, bool&
     if (ImGui::IsItemClicked())
     {
         hierarchyObjectClicked = true;
-        //if (selectedObject != nullptr)
-        //EventSystem::Invoke("ObjectDeselected", selectedObject);
+        if (selectedObject != nullptr)
+            EventSystem::Invoke("ObjectDeselected");
         objectInProperties = selectedObject = gameObject;
-        //EventSystem::Invoke("ObjectSelected", selectedObject);
+        EventSystem::Invoke("ObjectSelected");
         cameraSelected = selectedObject->GetComponent<CameraComponent>() != nullptr;
         if (!cameraSelected && cameraSelected)
         {
@@ -4195,7 +4372,7 @@ void Editor::RenderHierarchy()
 
                 if (selectedObject != nullptr && objectInHierarchyContextMenu->GetId() == selectedObject->GetId())
                 {
-                    //EventSystem::Invoke("ObjectDeselected", nullptr);
+                    EventSystem::Invoke("ObjectDeselected");
                     selectedObject = nullptr;
                 }
 
@@ -4283,11 +4460,11 @@ void Editor::RenderHierarchy()
                     gameObject->transform.SetLocalScale({ 1,1,1 });
                 }
 
-                //if (selectedObject != nullptr)
-                    //EventSystem::Invoke("ObjectDeselected", selectedObject);
+                if (selectedObject != nullptr)
+                    EventSystem::Invoke("ObjectDeselected");
                 selectedObject = gameObject;
                 objectInProperties = gameObject;
-                //EventSystem::Invoke("ObjectSelected", selectedObject);
+                EventSystem::Invoke("ObjectSelected");
 
                 if (selectedObject->GetComponent<CameraComponent>() != nullptr)
                     cameraSelected = true;
@@ -4310,7 +4487,7 @@ void Editor::RenderHierarchy()
     {
         if (selectedObject)
         {
-            //EventSystem::Invoke("ObjectDeselected", selectedObject);
+            EventSystem::Invoke("ObjectDeselected");
             selectedObject = nullptr;
             cameraSelected = false;
             resetCameraView = true;
@@ -4497,6 +4674,7 @@ void Editor::Render()
         ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.20f, NULL, &dock_main_id);
 
         ImGui::DockBuilderDockWindow((ICON_FA_SITEMAP + std::string(" Hierarchy")).c_str(), dock_id_left);
+		ImGui::DockBuilderDockWindow((ICON_FA_PAINTBRUSH + std::string(" Terrain Tools")).c_str(), dock_id_left);
         ImGui::DockBuilderDockWindow((ICON_FA_CUBES + std::string(" Viewport")).c_str(), dock_main_id);
         ImGui::DockBuilderDockWindow((ICON_FA_GAMEPAD + std::string(" Game")).c_str(), dock_main_id);
         ImGui::DockBuilderDockWindow((ICON_FA_PERSON_RUNNING + std::string(" Animation Graph")).c_str(), dock_main_id);
@@ -4505,6 +4683,7 @@ void Editor::Render()
         ImGui::DockBuilderDockWindow((ICON_FA_GEARS + std::string(" Properties")).c_str(), dock_id_right);
         ImGui::DockBuilderDockWindow((ICON_FA_FOLDER_OPEN + std::string(" Content Browser")).c_str(), dock_id_bottom);
         ImGui::DockBuilderDockWindow((ICON_FA_CODE + std::string(" Console")).c_str(), dock_id_bottom);
+
         ImGui::DockBuilderFinish(dockspaceID);
     }
     ImGui::DockSpace(dockspaceID, {0,0}, ImGuiDockNodeFlags_NoWindowMenuButton);
@@ -4533,6 +4712,7 @@ void Editor::Render()
     RenderComponentsWin();
     RenderScriptCreateWin();
     RenderAnimationGraph();
+    RenderTerrainToolsWin();
     for (auto it = windows.begin(); it != windows.end(); ) // Not using a range-based loop so we can remove a window from the vector
     {
         EditorWindow* window = *it;
@@ -4671,6 +4851,14 @@ void Editor::Render()
                 ImGuiWindow* window = ImGui::FindWindowByName((ICON_FA_BOX_ARCHIVE + std::string(" Asset Manager")).c_str());
                 if (window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL)
                     window->DockNode->TabBar->NextSelectedTabId = window->TabId;
+            }
+            if (ImGui::MenuItem("Event Sheet Editor", "")) {}
+            if (ImGui::MenuItem("Terrain Tools", ""))
+            {
+				terrainToolsWinOpen = true;
+				ImGuiWindow* window = ImGui::FindWindowByName((ICON_FA_PAINTBRUSH + std::string(" Terrain Tools")).c_str());
+				if (window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL)
+					window->DockNode->TabBar->NextSelectedTabId = window->TabId;
             }
             //if (ImGui::MenuItem("Canvas Editor", "")) { CanvasEditor::windowOpen = true; }
             ImGui::EndMenu();
@@ -5059,6 +5247,34 @@ void Editor::Init()
     InitMaterialPreview();
     InitMisc();
     InitScenes(); // Must go after InitMisc() and ShaderManager::Init()
+
+	// Todo: Move this code to a dedicated function for EventSystem subscriptions
+    // Todo: These subscriptions should be for objects selected in properties instead
+    EventSystem::Subscribe("ObjectSelected", []() {
+        if (std::holds_alternative<GameObject*>(objectInProperties))
+        {
+            GameObject* gameObject = std::get<GameObject*>(objectInProperties);
+            if (gameObject != nullptr && gameObject->GetComponent<Terrain>() != nullptr)
+            {
+                selectedTerrain = gameObject->GetComponent<Terrain>();
+                terrainToolsWinOpen = true;
+            }
+        }
+    });
+
+	EventSystem::Subscribe("ObjectDeselected", []() {
+        selectedTerrain = nullptr;
+
+        if (std::holds_alternative<GameObject*>(objectInProperties))
+        {
+			GameObject* gameObject = std::get<GameObject*>(objectInProperties);
+            if (gameObject != nullptr && gameObject->GetComponent<Terrain>() != nullptr)
+            {
+                selectedTerrain = gameObject->GetComponent<Terrain>();
+                terrainToolsWinOpen = true;
+            }
+        }
+	});
 
     SetupViewport();
     AssetManager::Init(&EditorWindow::defaultWindowClass);

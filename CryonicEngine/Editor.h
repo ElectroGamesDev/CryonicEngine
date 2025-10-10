@@ -52,6 +52,7 @@ public:
 	void RenderConsole();
 	void RenderAnimationGraph();
 	void RenderProjectSettings();
+	void RenderTerrainToolsWin();
 	void Render();
 
 	void OnBuildFinish(int success, bool debug);

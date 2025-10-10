@@ -794,6 +794,7 @@ namespace RaylibWrapper
     void SetShaderValueMatrix(Shader shader, int locIndex, Matrix matrix);
 
     // Image loading functions
+    Image LoadImage(const char* fileName);
     Image LoadImageFromMemory(const char* fileType, const unsigned char* fileData, int dataSize);
     Image LoadImageFromTexture(Texture2D texture);
     void UnloadImage(Image image);
@@ -802,6 +803,7 @@ namespace RaylibWrapper
     void ImageResize(Image* image, int newWidth, int newHeight);
     Color* LoadImageColors(Image image);
     void UnloadImageColors(Color* colors);
+    void ImageFormat(Image* image, int newFormat);
 
     // Texture loading functions
     Texture2D LoadTexture(const char* fileName);

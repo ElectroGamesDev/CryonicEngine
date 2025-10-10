@@ -155,95 +155,137 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
     return true;
 }
 
-void RaylibModel::CreateTerrain(int vertexCount, int triangleCount, unsigned int vaoId, std::vector<unsigned int> vboIds)
+bool RaylibModel::CreateFromHeightData(const std::vector<std::vector<float>>& heightData,
+	int width,
+	int depth,
+	float maxHeight,
+	RaylibWrapper::Material* material)
 {
-	if (model)
-	{
-		// Manually cleanup to avoid double-free
-		if (terrainModel) {
-			// For terrain, manually unload the GPU resources
-			for (int i = 0; i < model->first.meshCount; i++) {
-				Mesh& mesh = model->first.meshes[i];
-				if (mesh.vaoId > 0) {
-					rlUnloadVertexArray(mesh.vaoId);
-				}
-				// Don't unload vboId - they're managed elsewhere
-				RL_FREE(mesh.vboId);
-			}
-			RL_FREE(model->first.meshes);
+	if (width <= 1 || depth <= 1) return false;
 
-			// Free materials
-			for (int i = 0; i < model->first.materialCount; i++) {
-				RL_FREE(model->first.materials[i].maps);
-			}
-			RL_FREE(model->first.materials);
-			RL_FREE(model->first.meshMaterial);
+	// Cleanup old model if any
+	DeleteInstance();
+
+	const int vertexCount = width * depth;
+	const int quadCount = (width - 1) * (depth - 1) * 2;
+
+	std::vector<Vector3> vertices(vertexCount);
+	std::vector<Vector3> normals(vertexCount);
+	std::vector<Vector2> texcoords(vertexCount);
+	std::vector<unsigned short> indices(quadCount * 3);
+
+	// --- Generate vertex data ---
+	for (int z = 0; z < depth; z++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int i = z * width + x;
+			float height = heightData[z][x];
+			vertices[i] = { (float)x, height, (float)z };
+			texcoords[i] = { (float)x / (float)width, (float)z / (float)depth };
+			normals[i] = { 0, 1, 0 }; // will be recalculated later
 		}
-		else {
-			UnloadModel(model->first);
-		}
-		delete model;
-		model = nullptr;
 	}
 
-	// Create minimal mesh structure that references GPU data
+	// --- Generate triangle indices ---
+	int idx = 0;
+	for (int z = 0; z < depth - 1; z++)
+	{
+		for (int x = 0; x < width - 1; x++)
+		{
+			int topLeft = z * width + x;
+			int topRight = topLeft + 1;
+			int bottomLeft = (z + 1) * width + x;
+			int bottomRight = bottomLeft + 1;
+
+			// First triangle
+			indices[idx++] = topLeft;
+			indices[idx++] = bottomLeft;
+			indices[idx++] = topRight;
+
+			// Second triangle
+			indices[idx++] = topRight;
+			indices[idx++] = bottomLeft;
+			indices[idx++] = bottomRight;
+		}
+	}
+
+	// --- Compute normals ---
+	for (size_t i = 0; i < indices.size(); i += 3)
+	{
+		int i0 = indices[i];
+		int i1 = indices[i + 1];
+		int i2 = indices[i + 2];
+
+		Vector3 v0 = vertices[i0];
+		Vector3 v1 = vertices[i1];
+		Vector3 v2 = vertices[i2];
+
+		Vector3 edge1 = Vector3Subtract(v1, v0);
+		Vector3 edge2 = Vector3Subtract(v2, v0);
+		Vector3 faceNormal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
+
+		normals[i0] = Vector3Add(normals[i0], faceNormal);
+		normals[i1] = Vector3Add(normals[i1], faceNormal);
+		normals[i2] = Vector3Add(normals[i2], faceNormal);
+	}
+
+	for (Vector3& n : normals)
+		n = Vector3Normalize(n);
+
+	// --- Build Mesh ---
 	Mesh mesh = { 0 };
 	mesh.vertexCount = vertexCount;
-	mesh.triangleCount = triangleCount;
-	mesh.vaoId = vaoId;
+	mesh.triangleCount = quadCount;
 
-	// DON'T allocate vboId array - leave it NULL
-	// LoadModelFromMesh will handle this
-	mesh.vboId = nullptr;
+	mesh.vertices = (float*)MemAlloc(vertexCount * 3 * sizeof(float));
+	mesh.normals = (float*)MemAlloc(vertexCount * 3 * sizeof(float));
+	mesh.texcoords = (float*)MemAlloc(vertexCount * 2 * sizeof(float));
+	mesh.indices = (unsigned short*)MemAlloc(quadCount * 3 * sizeof(unsigned short));
 
-	// Important: NULL out ALL pointers
-	mesh.vertices = nullptr;
-	mesh.texcoords = nullptr;
-	mesh.normals = nullptr;
-	mesh.colors = nullptr;
-	mesh.tangents = nullptr;
-	mesh.texcoords2 = nullptr;
-	mesh.indices = nullptr;
-	mesh.animVertices = nullptr;
-	mesh.animNormals = nullptr;
-	mesh.boneIds = nullptr;
-	mesh.boneWeights = nullptr;
-	mesh.boneMatrices = nullptr;
+	for (int i = 0; i < vertexCount; i++)
+	{
+		mesh.vertices[i * 3 + 0] = vertices[i].x;
+		mesh.vertices[i * 3 + 1] = vertices[i].y;
+		mesh.vertices[i * 3 + 2] = vertices[i].z;
 
-	// LoadModelFromMesh will allocate its own vboId array
-	Model terrainModelRaw = LoadModelFromMesh(mesh);
+		mesh.normals[i * 3 + 0] = normals[i].x;
+		mesh.normals[i * 3 + 1] = normals[i].y;
+		mesh.normals[i * 3 + 2] = normals[i].z;
 
-	// Now manually set the vboId values we want
-	if (terrainModelRaw.meshCount > 0) {
-		Mesh& modelMesh = terrainModelRaw.meshes[0];
-		if (modelMesh.vboId && vboIds.size() >= 4) {
-			modelMesh.vboId[0] = vboIds[0]; // vertices
-			modelMesh.vboId[1] = vboIds[1]; // texcoords
-			modelMesh.vboId[2] = vboIds[2]; // normals
-			modelMesh.vboId[6] = vboIds[3]; // indices
-		}
+		mesh.texcoords[i * 2 + 0] = texcoords[i].x;
+		mesh.texcoords[i * 2 + 1] = texcoords[i].y;
 	}
 
-	model = new std::pair<Model, int>(terrainModelRaw, 1);
-	terrainModel = true;
+	memcpy(mesh.indices, indices.data(), indices.size() * sizeof(unsigned short));
+
+	UploadMesh(&mesh, true);
+
+	// --- Build Model ---
+    model = new std::pair<Model, int>(LoadModelFromMesh(mesh), 1);
+
+	//if (material)
+ //       model->first.materials[0] = *material->GetRaylibMaterial();
+	//else
+ //       model->first.materials[0] = Material::defaultMaterial;
+
+    terrainModel = true;
 
 	// Set shader
 	modelShader = ShaderManager::LitStandard;
+
 	for (size_t i = 0; i < model->first.materialCount; ++i)
 		model->first.materials[i].shader = { shadowShader.first, shadowShader.second };
 
-	// Set embedded materials
 	for (int i = 0; i < model->first.materialCount; i++)
-	{
 		model->first.materials[i].params[0] = static_cast<int>(1);
-	}
 
-	this->path = "";
+	this->path = path;
+
+	// Set embeded materials
 	SetEmbeddedMaterials();
 
-	ConsoleLogger::InfoLog("Terrain model created: " + std::to_string(vertexCount) +
-		" vertices, " + std::to_string(triangleCount) + " triangles, VAO: " +
-		std::to_string(vaoId));
+	return true;
 }
 
 void RaylibModel::Unload()
@@ -266,11 +308,7 @@ void RaylibModel::Unload()
                 ++it;
         }
     }
-    else if (terrainModel)
-    {
-        UnloadModel(model->first);
-    }
-    else
+    else if (!terrainModel)
     {
         auto it = models.begin();
         while (it != models.end())
@@ -296,6 +334,9 @@ void RaylibModel::Unload()
 
 void RaylibModel::DeleteInstance()
 {
+    if (!model)
+        return;
+
     model->second--;
     if (model->second <= 0)
         Unload();

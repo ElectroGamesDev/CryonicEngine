@@ -19,7 +19,12 @@ class RaylibModel
 {
 public:
 	bool Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath);
-	void CreateTerrain(int vertexCount, int triangleCount, unsigned int vaoId, std::vector<unsigned int> vboIds);
+public:
+	bool CreateFromHeightData(const std::vector<std::vector<float>>& heightData,
+		int width,
+		int depth,
+		float maxHeight,
+		RaylibWrapper::Material* material);
 	void Unload();
 	void DeleteInstance();
 	void DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA);
