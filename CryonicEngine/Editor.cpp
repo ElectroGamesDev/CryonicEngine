@@ -920,7 +920,7 @@ void Editor::UpdateViewport()
         // Movement handling
         if (movingObjectX || movingObjectY || movingObjectZ)
         {
-            RaylibWrapper::Vector2 mousePosition = RaylibWrapper::GetMousePosition();
+			RaylibWrapper::Vector2 mousePosition = RaylibWrapper::GetMousePosition();
             RaylibWrapper::Vector2 deltaMouse = RaylibWrapper::Vector2Subtract(mousePosition, lastMousePosition);
 
             float sensitivity = 0.01f;
@@ -999,7 +999,11 @@ void Editor::UpdateViewport()
         // Input
         if (RaylibWrapper::IsMouseButtonPressed(RaylibWrapper::MOUSE_BUTTON_LEFT))
         {
-            RaylibWrapper::Ray mouseRay = RaylibWrapper::GetMouseRay(RaylibWrapper::GetMousePosition(), camera);
+			RaylibWrapper::Vector2 mousePosition = RaylibWrapper::GetMousePosition();
+			mousePosition.x = (mousePosition.x - viewportPosition.x) / (viewportPosition.z - viewportPosition.x) * RaylibWrapper::GetScreenWidth();
+			mousePosition.y = (mousePosition.y - viewportPosition.y) / (viewportPosition.w - viewportPosition.y) * RaylibWrapper::GetScreenHeight();
+
+            RaylibWrapper::Ray mouseRay = RaylibWrapper::GetMouseRay(mousePosition, camera);
             float minDistance = 10000.0f;
             int selectedAxis = 0; // 0=none, 1=X, 2=Y, 3=Z, 4=XY, 5=XZ, 6=YZ
 
@@ -1011,9 +1015,15 @@ void Editor::UpdateViewport()
             float arrowHeadSize = 0.2f * scaleFactor;
             float squareSize = arrowLength * 0.3f;
             float squareOffset = arrowLength * 0.2f;
-            float collisionPadding = arrowThickness * 3;
+            //float collisionPadding = arrowThickness * 3;
+            float collisionPadding = 0;
 
-            // Todo: Consider usingn GetRayCollisionMesh() instead
+			RaylibWrapper::Vector3 xBoxMin = { position.x - collisionPadding, position.y - arrowThickness * scaleFactor - collisionPadding, position.z - arrowThickness * scaleFactor - collisionPadding };
+			RaylibWrapper::Vector3 xBoxMax = { position.x + arrowLength + arrowHeadSize + collisionPadding, position.y + arrowThickness * scaleFactor + collisionPadding, position.z + arrowThickness * scaleFactor + collisionPadding };
+			RaylibWrapper::Vector3 xBoxCenter = RaylibWrapper::Vector3Scale(RaylibWrapper::Vector3Add(xBoxMin, xBoxMax), 0.5f);
+			RaylibWrapper::Vector3 xBoxSize = RaylibWrapper::Vector3Subtract(xBoxMax, xBoxMin);
+			RaylibWrapper::DrawCube(xBoxCenter, xBoxSize.x, xBoxSize.y, xBoxSize.z, { 255, 0, 0, 77 }); // Red, semi-transparent
+			RaylibWrapper::DrawCubeWires(xBoxCenter, xBoxSize.x, xBoxSize.y, xBoxSize.z, { 255, 0, 0, 255 }); // Solid red wireframe
 
             // Check X-axis arrow
             RaylibWrapper::RayCollision xCollision = RaylibWrapper::GetRayCollisionBox(mouseRay,
