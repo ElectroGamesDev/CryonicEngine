@@ -473,6 +473,33 @@ namespace RaylibWrapper {
         return ::ExportImage({image.data, image.width, image.height, image.mipmaps, image.format}, fileName);
     }
 
+    void ImageResize(Image* image, int newWidth, int newHeight) {
+        ::Image img = { image->data, image->width, image->height, image->mipmaps, image->format };
+        ::ImageResize(&img, newWidth, newHeight);
+        image->data = img.data;
+        image->width = img.width;
+        image->height = img.height;
+        image->mipmaps = img.mipmaps;
+		image->format = img.format;
+    }
+
+    Color* LoadImageColors(Image image) {
+        ::Color* colors = ::LoadImageColors({ image.data, image.width, image.height, image.mipmaps, image.format });
+        Color* result = new Color[image.width * image.height];
+        for (int i = 0; i < image.width * image.height; i++) {
+            result[i] = { colors[i].r, colors[i].g, colors[i].b, colors[i].a };
+        }
+        ::RL_FREE(colors);
+		return result;
+    }
+
+    void UnloadImageColors(Color* colors) {
+        ::Color* cols = new ::Color[1]; // Dummy allocation to avoid passing nullptr
+        cols[0] = { colors->r, colors->g, colors->b, colors->a };
+        ::UnloadImageColors(cols);
+        delete[] cols;
+	}
+
 
     // Texture loading functions
     Texture2D LoadTexture(const char* fileName) {
@@ -1614,6 +1641,14 @@ namespace RaylibWrapper {
         return {};
     }
 
+    void UploadMesh(Mesh* mesh, bool dynamic) {
+		::UploadMesh((::Mesh*)mesh, dynamic);
+    }
+
+    void UnloadMesh(Mesh mesh) {
+        ::UnloadMesh({ mesh.vertexCount, mesh.triangleCount, mesh.vertices, mesh.texcoords, mesh.texcoords2, mesh.normals, mesh.tangents, mesh.colors, mesh.indices, mesh.animVertices,
+            mesh.animNormals, mesh.boneIds, mesh.boneWeights, (::Matrix*)mesh.boneMatrices, mesh.boneCount, mesh.vaoId, mesh.vboId});
+    }
 
     // ImGui Raylib
     bool ImGui_ImplRaylib_Init() {

@@ -5,6 +5,7 @@
 namespace RaylibWrapper
 {
     constexpr int MAX_MATERIAL_MAPS = 12; // Defined "12" in raylib's config.h
+    constexpr int MAX_MESH_VERTEX_BUFFERS = 9;
 
     // Vector2, 2 components
     typedef struct Vector2 {
@@ -798,6 +799,9 @@ namespace RaylibWrapper
     void UnloadImage(Image image);
 
     bool ExportImage(Image image, const char* fileName);
+    void ImageResize(Image* image, int newWidth, int newHeight);
+    Color* LoadImageColors(Image image);
+    void UnloadImageColors(Color* colors);
 
     // Texture loading functions
     Texture2D LoadTexture(const char* fileName);
@@ -1006,6 +1010,9 @@ namespace RaylibWrapper
 
     // Model functions
     Model LoadModelFromMesh(Mesh mesh);
+    void UploadMesh(Mesh* mesh, bool dynamic);
+    void UnloadMesh(Mesh mesh);
+
 
     // Image functions
     Image GenImageColor(int width, int height, Color color);
