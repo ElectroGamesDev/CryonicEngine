@@ -18,7 +18,7 @@ public:
 	{
 		runInEditor = true;
 		name = "Terrain";
-		iconUnicode = "\xef\x84\xb8";
+		iconUnicode = "\xee\x94\xaf";
 #if defined(EDITOR)
 		std::string variables = R"(
         [
@@ -114,8 +114,10 @@ public:
 
 	// Terrain generation
 	void GenerateTerrain();
-	void LoadHeightmap(const std::filesystem::path& path);
+	void LoadHeightmap(Sprite* sprite);
 	void GenerateFlatTerrain();
+	void DebugPrintMeshData(const std::vector<float>& vertices,
+		const std::vector<unsigned short>& indices);
 
 	// Height manipulation
 	void SetHeight(int x, int z, float height);
@@ -150,6 +152,8 @@ public:
 	bool IsValidTerrainPosition(int x, int z) const;
 
 private:
+	bool editorSetup = true;
+
 	// Terrain data
 	std::vector<float> heightData;
 	std::vector<Vector3> normals;
@@ -161,7 +165,7 @@ private:
 	int terrainDepth = 256;
 	float terrainHeight = 50.0f;
 	float heightScale = 1.0f;
-	Sprite* heightmapSprite;
+	Sprite* heightmapSprite = nullptr;
 
 	// Rendering
 	RaylibModel terrainModel;
@@ -182,7 +186,7 @@ private:
 		std::vector<float>& texcoords, std::vector<float>& normals, int lodLevel = 0);
 	void CalculateNormals();
 	Vector3 CalculateNormalAt(int x, int z) const;
-	void ApplyHeightmapToTerrain(const std::filesystem::path& path);
+	void ApplyHeightmapToTerrain(Sprite* sprite);
 
 	// Sculpting helpers
 	float GetBrushWeight(float distance, float radius) const;
@@ -193,7 +197,7 @@ private:
 	void UpdateSplatMap();
 
 	// LOD helpers
-	int CalculateLODLevel(float distance) const;
+	//int CalculateLODLevel(float distance) const;
 	void SwitchLODMesh(int lodLevel);
 };
 
