@@ -12,6 +12,7 @@
 #include "../Components/ScriptLoader.h"
 #include "../Components/Component.h"
 #include "../Components/MeshRenderer.h"
+#include "../Components/Terrain.h"
 #include "../Components/ScriptComponent.h"
 #include "../Components/CameraComponent.h"
 #include "../Components/Lighting.h"
@@ -327,6 +328,11 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
                 SetupScriptComponent(gameObject, componentData["id"], componentData["active"], std::filesystem::path(componentData["header_path"]).stem().string());
 #endif
             }
+			else if (componentData["name"] == "Terrain")
+			{
+				Terrain& component = gameObject->AddComponentInternal<Terrain>(componentData["id"]);
+				setExposedVariables(component, componentData);
+			}
             else if (componentData["name"] == "CameraComponent")
             {
                 CameraComponent& component = gameObject->AddComponentInternal<CameraComponent>(componentData["id"]);

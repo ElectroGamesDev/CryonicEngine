@@ -32,6 +32,7 @@
 #include "Components/Image.h"
 #include "Components/Button.h"
 #include "Components/CanvasRenderer.h"
+#include "Components/Terrain.h"
 #include "IconManager.h"
 #include "ShaderManager.h"
 #include "ShadowManager.h"
@@ -3107,6 +3108,7 @@ void Editor::RenderComponentsWin()
             });
         AddComponentInternalButton("Sprite Renderer", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<SpriteRenderer>(); });
         AddComponentInternalButton("Mesh Renderer", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<MeshRenderer>(); });
+		AddComponentInternalButton("Terrain", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<Terrain>(); });
         AddComponentInternalButton("Tilemap Renderer", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<TilemapRenderer>(); });
         AddComponentInternalButton("Animation Player", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<AnimationPlayer>(); });
         AddComponentInternalButton("Audio Player", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<AudioPlayer>(); });
@@ -4140,6 +4142,7 @@ void Editor::RenderHierarchy()
                 {"Create Sphere", "Sphere", 3, Sphere},
                 {"Create Plane", "Plane", 3, Plane},
                 {"Create Cone", "Cone", 3, Cone},
+				{"Create Terrain", "Terrain", 3, Custom},
                 {"Create Light", "Light", 3, Custom},
                 {"Create Square", "Square", 2, Custom},
                 {"Create Circle", "Circle", 2, Custom},
@@ -4223,6 +4226,10 @@ void Editor::RenderHierarchy()
                 else if (objectToCreate.name == "Tilemap")
                 {
                     gameObject->AddComponentInternal<TilemapRenderer>();
+                }
+                else if (objectToCreate.name == "Terrain")
+                {
+                    gameObject->AddComponentInternal<Terrain>();
                 }
                 else if (objectToCreate.name != "GameObject" && guiObjectToCreate.name == "")
                 {
