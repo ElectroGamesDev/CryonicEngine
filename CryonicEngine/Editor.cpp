@@ -119,6 +119,7 @@ float brushStrength = 5.0f;
 float brushSize = 5.0f;
 int selectedTerrainLayer = -1;
 int selectedTerrainMesh = -1;
+int selectedAutoMeshRule = -1;
 float meshPaintDensity = 5.0f;
 float meshScaleVariation = 0.3f;
 float meshRotationRandomness = 1.0f;
@@ -3285,7 +3286,7 @@ void Editor::RenderTerrainToolsWin()
 				// Paint Tool
 				bool isPaintTool = (currentTerrainTool == TerrainTool::TexturePaint);
 				if (isPaintTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
-				if (ImGui::Button((ICON_FA_PAINT_ROLLER + std::string(" Paint")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+				if (ImGui::Button((ICON_FA_PAINT_ROLLER + std::string(" Paint Texture")).c_str(), ImVec2(buttonWidth, buttonHeight)))
 					currentTerrainTool = TerrainTool::TexturePaint;
 				if (isPaintTool) ImGui::PopStyleColor();
 
@@ -3336,6 +3337,161 @@ void Editor::RenderTerrainToolsWin()
 					ImGui::SliderFloat("##RotationRandom", &meshRotationRandomness, 0.0f, 1.0f, "%.2f");
 
 					ImGui::Checkbox("Align to Normal", &meshAlignToNormal);
+				}
+
+				ImGui::Unindent(10.0f);
+			}
+
+			// Terrain Layers Section
+			if (ImGui::CollapsingHeader(ICON_FA_LAYER_GROUP " Terrain Layers", ImGuiTreeNodeFlags_None))
+			{
+				ImGui::Spacing();
+				ImGui::Indent(10.0f);
+
+				int layerCount = selectedTerrain->GetLayerCount();
+
+				if (layerCount > 0)
+				{
+					ImGui::BeginChild("LayersList", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
+					for (int i = 0; i < layerCount; i++)
+					{
+						ImGui::PushID(i);
+						bool isSelected = (selectedTerrainLayer == i);
+
+						const TerrainLayer* layer = selectedTerrain->GetLayer(i);
+						if (layer)
+						{
+							ImGui::BeginGroup();
+
+							if (isSelected)
+							{
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 1.0f, 1.00f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.00f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.3f, 0.6f, 1.00f));
+							}
+
+							if (ImGui::Button(ICON_FA_IMAGE, ImVec2(50, 50)))
+								selectedTerrainLayer = i;
+
+							if (isSelected)
+								ImGui::PopStyleColor(3);
+
+							ImGui::SameLine();
+							ImGui::BeginGroup();
+							ImGui::Text("%s", layer->name.c_str());
+							if (layer->material)
+							{
+								std::string matName = std::filesystem::path(layer->material->GetPath()).stem().string();
+								ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Material: %s", matName.c_str());
+							}
+							else
+								ImGui::TextColored(ImVec4(0.7f, 0.3f, 0.3f, 1.0f), "No Material");
+
+							ImGui::EndGroup();
+
+							ImGui::EndGroup();
+
+							// Delete button
+							ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
+							if (ImGui::Button((ICON_FA_TRASH + std::string("##") + std::to_string(i)).c_str()))
+							{
+								selectedTerrain->RemoveTerrainLayer(i);
+								if (selectedTerrainLayer >= layerCount - 1)
+									selectedTerrainLayer = -1;
+							}
+
+							// Make the whole row clickable
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 60);
+							ImGui::InvisibleButton(("##LayerSelect" + std::to_string(i)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x - 40, 60));
+							if (ImGui::IsItemClicked())
+								selectedTerrainLayer = i;
+
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 60);
+						}
+
+						ImGui::Separator();
+						ImGui::PopID();
+					}
+					ImGui::EndChild();
+				}
+				else
+					ImGui::TextDisabled("Add a layer to start painting.");
+
+				// Add Layer Section
+				static char layerNameInput[128] = "New Layer";
+				static std::string selectedMaterialPath = "";
+				static std::string fileSelectorOpenVariable = "";
+
+				if (ImGui::CollapsingHeader("Add New Layer", ImGuiTreeNodeFlags_None))
+				{
+					ImGui::Spacing();
+					ImGui::Indent(10.0f);
+
+					// Layer Name Input
+					ImGui::Text("Layer Name");
+					ImGui::SetNextItemWidth(-1);
+					ImGui::InputText("##LayerNameInput", layerNameInput, IM_ARRAYSIZE(layerNameInput));
+
+					ImGui::Spacing();
+
+					// Material Selection
+					ImGui::Text("Material");
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
+					std::string selectedFile = "None Selected";
+					if (!selectedMaterialPath.empty() && selectedMaterialPath != "nullptr")
+						selectedFile = std::filesystem::path(selectedMaterialPath).stem().string();
+
+					if (ImGui::Button((selectedFile + "##MaterialSelector").c_str(), ImVec2(-1, 20)))
+						fileSelectorOpenVariable = "AddLayerMaterial";
+					ImGui::PopStyleColor();
+
+					if (!fileSelectorOpenVariable.empty() && fileSelectorOpenVariable == "AddLayerMaterial")
+					{
+						std::string currentlySelected = (selectedMaterialPath == "nullptr") ? "" : selectedMaterialPath;
+						selectedFile = RenderFileSelector(29857, "AddLayerMaterial", currentlySelected, { ".mat" }, false, { ImGui::GetCursorScreenPos().x + 100, ImGui::GetCursorScreenPos().y - 40 });
+						if (selectedFile == "NULL")
+							fileSelectorOpenVariable = "";
+						else if (!selectedFile.empty())
+						{
+							if (selectedFile == "None")
+								selectedMaterialPath = "nullptr";
+							else
+								selectedMaterialPath = selectedFile;
+							fileSelectorOpenVariable = "";
+						}
+					}
+
+					ImGui::Spacing();
+					ImGui::Spacing();
+
+					// Add Layer Button
+					bool canAddLayer = strlen(layerNameInput) > 0 && !selectedMaterialPath.empty() && selectedMaterialPath != "nullptr";
+					if (!canAddLayer)
+					{
+						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+					}
+
+					if (ImGui::Button((ICON_FA_CHECK + std::string(" Add Layer")).c_str(), ImVec2(-1, 32)))
+					{
+						// Add the layer to the terrain
+						selectedTerrain->AddTerrainLayer(selectedMaterialPath, std::string(layerNameInput));
+
+						// Reset the inputs
+						strcpy_s(layerNameInput, sizeof(layerNameInput), "New Layer");
+						selectedMaterialPath = "";
+
+						// Close the header
+						ImGui::GetStateStorage()->SetInt(ImGui::GetID((ICON_FA_PLUS + std::string(" Add New Layer")).c_str()), 0);
+					}
+
+					if (!canAddLayer)
+					{
+						ImGui::PopItemFlag();
+						ImGui::PopStyleVar();
+					}
+
+					ImGui::Unindent(10.0f);
 				}
 
 				ImGui::Unindent(10.0f);
@@ -3526,24 +3682,24 @@ void Editor::RenderTerrainToolsWin()
 				ImGui::Unindent(10.0f);
 			}
 
-			// Terrain Layers Section
-			if (ImGui::CollapsingHeader(ICON_FA_LAYER_GROUP " Terrain Layers", ImGuiTreeNodeFlags_None))
+			// Automatic Mesh Placement Section
+			if (ImGui::CollapsingHeader(ICON_FA_TREE " Automatic Mesh Placement", ImGuiTreeNodeFlags_None))
 			{
 				ImGui::Spacing();
 				ImGui::Indent(10.0f);
 
-				int layerCount = selectedTerrain->GetLayerCount();
+				int autoMeshCount = selectedTerrain->GetAutoMeshRuleCount();
 
-				if (layerCount > 0)
+				if (autoMeshCount > 0)
 				{
-					ImGui::BeginChild("LayersList", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
-					for (int i = 0; i < layerCount; i++)
+					ImGui::BeginChild("AutoMeshList", ImVec2(0, 250), true, ImGuiWindowFlags_HorizontalScrollbar);
+					for (int i = 0; i < autoMeshCount; i++)
 					{
 						ImGui::PushID(i);
-						bool isSelected = (selectedTerrainLayer == i);
+						bool isSelected = (selectedAutoMeshRule == i);
 
-						const TerrainLayer* layer = selectedTerrain->GetLayer(i);
-						if (layer)
+						const AutoMeshRule* rule = selectedTerrain->GetAutoMeshRule(i);
+						if (rule)
 						{
 							ImGui::BeginGroup();
 
@@ -3554,41 +3710,45 @@ void Editor::RenderTerrainToolsWin()
 								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.3f, 0.6f, 1.00f));
 							}
 
-							if (ImGui::Button(ICON_FA_IMAGE, ImVec2(50, 50)))
-								selectedTerrainLayer = i;
+							if (ImGui::Button(ICON_FA_CUBES, ImVec2(50, 50)))
+								selectedAutoMeshRule = i;
 
 							if (isSelected)
 								ImGui::PopStyleColor(3);
 
 							ImGui::SameLine();
 							ImGui::BeginGroup();
-							ImGui::Text("%s", layer->name.c_str());
-							if (layer->material)
+							ImGui::Text("%s", rule->name.c_str());
+
+							// Show target layer
+							if (rule->targetLayerIndex >= 0 && rule->targetLayerIndex < selectedTerrain->GetLayerCount())
 							{
-								std::string matName = std::filesystem::path(layer->material->GetPath()).stem().string();
-								ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Material: %s", matName.c_str());
+								const TerrainLayer* layer = selectedTerrain->GetLayer(rule->targetLayerIndex);
+								ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Layer: %s", layer->name.c_str());
 							}
 							else
-								ImGui::TextColored(ImVec4(0.7f, 0.3f, 0.3f, 1.0f), "No Material");
+								ImGui::TextColored(ImVec4(0.7f, 0.3f, 0.3f, 1.0f), "Invalid Layer");
+
+							// Show variant count
+							ImGui::TextColored(ImVec4(0.5f, 0.8f, 0.5f, 1.0f), "Variants: %d", (int)rule->meshVariants.size());
 
 							ImGui::EndGroup();
-
 							ImGui::EndGroup();
 
 							// Delete button
 							ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
 							if (ImGui::Button((ICON_FA_TRASH + std::string("##") + std::to_string(i)).c_str()))
 							{
-								selectedTerrain->RemoveTerrainLayer(i);
-								if (selectedTerrainLayer >= layerCount - 1)
-									selectedTerrainLayer = -1;
+								selectedTerrain->RemoveAutoMeshRule(i);
+								if (selectedAutoMeshRule >= autoMeshCount - 1)
+									selectedAutoMeshRule = -1;
 							}
 
 							// Make the whole row clickable
 							ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 60);
-							ImGui::InvisibleButton(("##LayerSelect" + std::to_string(i)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x - 40, 60));
+							ImGui::InvisibleButton(("##AutoMeshSelect" + std::to_string(i)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x - 40, 60));
 							if (ImGui::IsItemClicked())
-								selectedTerrainLayer = i;
+								selectedAutoMeshRule = i;
 
 							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 60);
 						}
@@ -3597,79 +3757,284 @@ void Editor::RenderTerrainToolsWin()
 						ImGui::PopID();
 					}
 					ImGui::EndChild();
+
+					// Generate/Regenerate/Clear buttons
+					ImGui::Spacing();
+					if (ImGui::Button("Generate Meshes", ImVec2(-1, 32)))
+						selectedTerrain->GenerateAutoMeshes();
+
+					ImGui::Spacing();
+					if (ImGui::Button("Regenerate Meshes", ImVec2(-1, 32)))
+						selectedTerrain->RegenerateAutoMeshes();
+
+					ImGui::Spacing();
+					if (ImGui::Button("Clear Meshes", ImVec2(-1, 32)))
+						selectedTerrain->ClearAutoGeneratedMeshes();
 				}
 				else
-					ImGui::TextDisabled("Add a layer to start painting.");
+					ImGui::TextDisabled("Add an auto-mesh rule to start.");
 
-				// Add Layer Section
-				static char layerNameInput[128] = "New Layer";
-				static std::string selectedMaterialPath = "";
-				static std::string fileSelectorOpenVariable = "";
+				ImGui::Spacing();
 
-				if (ImGui::CollapsingHeader("Add New Layer", ImGuiTreeNodeFlags_None))
+				// Edit Selected Rule
+				if (selectedAutoMeshRule >= 0 && selectedAutoMeshRule < autoMeshCount)
+				{
+					if (ImGui::CollapsingHeader("Edit Selected Rule", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						ImGui::Spacing();
+						ImGui::Indent(10.0f);
+
+						AutoMeshRule* rule = selectedTerrain->GetAutoMeshRule(selectedAutoMeshRule);
+						if (rule)
+						{
+							// Rule Name
+							static char ruleNameBuf[128] = "";
+							if (ImGui::IsWindowAppearing())
+								strcpy_s(ruleNameBuf, sizeof(ruleNameBuf), rule->name.c_str());
+
+							ImGui::Text("Rule Name");
+							if (ImGui::InputText("##RuleName", ruleNameBuf, IM_ARRAYSIZE(ruleNameBuf)))
+								rule->name = std::string(ruleNameBuf);
+
+							ImGui::Spacing();
+
+							// Target Layer Selection
+							ImGui::Text("Target Texture Layer");
+							if (ImGui::BeginCombo("##TargetLayer", rule->targetLayerIndex >= 0 ? selectedTerrain->GetLayer(rule->targetLayerIndex)->name.c_str() : "Select Layer"))
+							{
+								for (int i = 0; i < selectedTerrain->GetLayerCount(); i++)
+								{
+									const TerrainLayer* layer = selectedTerrain->GetLayer(i);
+									bool isSelected = (rule->targetLayerIndex == i);
+									if (ImGui::Selectable(layer->name.c_str(), isSelected))
+										rule->targetLayerIndex = i;
+									if (isSelected)
+										ImGui::SetItemDefaultFocus();
+								}
+								ImGui::EndCombo();
+							}
+
+							ImGui::Spacing();
+
+							// Density
+							ImGui::Text("Density");
+							ImGui::SliderFloat("##Density", &rule->density, 0.01f, 10.0f, "%.2f");
+
+							// Min/Max Slope
+							ImGui::Text("Slope Range (degrees)");
+							ImGui::SliderFloat("##MinSlope", &rule->minSlope, 0.0f, 90.0f, "Min: %.1f");
+							ImGui::SliderFloat("##MaxSlope", &rule->maxSlope, 0.0f, 90.0f, "Max: %.1f");
+
+							// Min/Max Height
+							ImGui::Text("Height Range");
+							ImGui::SliderFloat("##MinHeight", &rule->minHeight, 0.0f, selectedTerrain->GetTerrainHeight(), "Min: %.1f");
+							ImGui::SliderFloat("##MaxHeight", &rule->maxHeight, 0.0f, selectedTerrain->GetTerrainHeight(), "Max: %.1f");
+
+							// Texture Weight Threshold
+							ImGui::Text("Min Texture Weight");
+							ImGui::SliderFloat("##WeightThreshold", &rule->textureWeightThreshold, 0.0f, 1.0f, "%.2f");
+							if (ImGui::IsItemHovered())
+								ImGui::SetTooltip("Minimum weight of the target texture layer required to place meshes");
+
+							ImGui::Spacing();
+
+							// Scale Variation
+							ImGui::Text("Scale Variation");
+							ImGui::SliderFloat("##ScaleVar", &rule->scaleVariation, 0.0f, 1.0f, "%.2f");
+
+							// Rotation Randomness
+							ImGui::Text("Rotation Randomness");
+							ImGui::SliderFloat("##RotRand", &rule->rotationRandomness, 0.0f, 1.0f, "%.2f");
+
+							// Align to Normal
+							ImGui::Checkbox("Align to Terrain Normal", &rule->alignToNormal);
+
+							// Random Offset
+							ImGui::Text("Random Position Offset");
+							ImGui::SliderFloat("##RandomOffset", &rule->randomOffset, 0.0f, 5.0f, "%.2f");
+
+							ImGui::Spacing();
+							ImGui::Separator();
+							ImGui::Spacing();
+
+							// Mesh Variants
+							ImGui::Text("Mesh Variants");
+							ImGui::BeginChild("VariantsList", ImVec2(0, 150), true);
+
+							for (int v = 0; v < (int)rule->meshVariants.size(); v++)
+							{
+								ImGui::PushID(v);
+
+								std::string variantName = std::filesystem::path(rule->meshVariants[v].modelPath).stem().string();
+								ImGui::Text("%s", variantName.c_str());
+
+								ImGui::SameLine();
+								ImGui::Text("Weight:");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(80);
+								ImGui::SliderFloat(("##Weight" + std::to_string(v)).c_str(), &rule->meshVariants[v].weight, 0.1f, 10.0f, "%.1f");
+
+								ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
+								if (ImGui::Button((ICON_FA_TRASH + std::string("##Del") + std::to_string(v)).c_str()))
+								{
+									rule->meshVariants.erase(rule->meshVariants.begin() + v);
+									v--;
+								}
+
+								ImGui::PopID();
+							}
+
+							ImGui::EndChild();
+
+							// Add Variant Button
+							static std::string variantModelPath = "";
+							static std::string variantMaterialPath = "";
+							static std::string variantFileSelector = "";
+
+							if (ImGui::Button((ICON_FA_PLUS + std::string(" Add Variant")).c_str(), ImVec2(-1, 0)))
+								ImGui::OpenPopup("AddVariantPopup");
+
+							if (ImGui::BeginPopup("AddVariantPopup"))
+							{
+								ImGui::Text("Add Mesh Variant");
+								ImGui::Separator();
+
+								// Model Selection
+								ImGui::Text("Model");
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
+								std::string modelDisplay = variantModelPath.empty() ? "Select Model" : std::filesystem::path(variantModelPath).stem().string();
+								if (ImGui::Button((modelDisplay + "##VariantModel").c_str(), ImVec2(250, 0)))
+									variantFileSelector = "VariantModel";
+								ImGui::PopStyleColor();
+
+								if (!variantFileSelector.empty() && variantFileSelector == "VariantModel")
+								{
+									std::string selected = RenderFileSelector(29858, "VariantModel", variantModelPath, { ".obj", ".gltf", ".glb" }, false, { ImGui::GetCursorScreenPos().x + 100, ImGui::GetCursorScreenPos().y - 40 });
+									if (selected == "NULL")
+										variantFileSelector = "";
+									else if (!selected.empty())
+									{
+										variantModelPath = (selected == "None") ? "" : selected;
+										variantFileSelector = "";
+									}
+								}
+
+								// Material Selection (Optional)
+								ImGui::Text("Material (Optional)");
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
+								std::string matDisplay = variantMaterialPath.empty() ? "None" : std::filesystem::path(variantMaterialPath).stem().string();
+								if (ImGui::Button((matDisplay + "##VariantMat").c_str(), ImVec2(250, 0)))
+									variantFileSelector = "VariantMaterial";
+								ImGui::PopStyleColor();
+
+								if (!variantFileSelector.empty() && variantFileSelector == "VariantMaterial")
+								{
+									std::string selected = RenderFileSelector(29859, "VariantMaterial", variantMaterialPath, { ".mat" }, false, { ImGui::GetCursorScreenPos().x + 100, ImGui::GetCursorScreenPos().y - 40 });
+									if (selected == "NULL")
+										variantFileSelector = "";
+									else if (!selected.empty())
+									{
+										variantMaterialPath = (selected == "None") ? "" : selected;
+										variantFileSelector = "";
+									}
+								}
+
+								ImGui::Spacing();
+
+								bool canAdd = !variantModelPath.empty();
+								if (!canAdd)
+								{
+									ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+									ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+								}
+
+								if (ImGui::Button("Add", ImVec2(120, 0)))
+								{
+									MeshVariant variant;
+									variant.modelPath = variantModelPath;
+									variant.materialPath = variantMaterialPath;
+									variant.weight = 1.0f;
+									rule->meshVariants.push_back(variant);
+
+									variantModelPath = "";
+									variantMaterialPath = "";
+									ImGui::CloseCurrentPopup();
+								}
+
+								if (!canAdd)
+								{
+									ImGui::PopItemFlag();
+									ImGui::PopStyleVar();
+								}
+
+								ImGui::SameLine();
+								if (ImGui::Button("Cancel", ImVec2(120, 0)))
+								{
+									variantModelPath = "";
+									variantMaterialPath = "";
+									ImGui::CloseCurrentPopup();
+								}
+
+								ImGui::EndPopup();
+							}
+						}
+
+						ImGui::Unindent(10.0f);
+					}
+				}
+
+				ImGui::Spacing();
+
+				// Add New Rule Section
+				if (ImGui::CollapsingHeader("Add New Rule", ImGuiTreeNodeFlags_None))
 				{
 					ImGui::Spacing();
 					ImGui::Indent(10.0f);
 
-					// Layer Name Input
-					ImGui::Text("Layer Name");
-					ImGui::SetNextItemWidth(-1);
-					ImGui::InputText("##LayerNameInput", layerNameInput, IM_ARRAYSIZE(layerNameInput));
+					static char newRuleName[128] = "New Rule";
+					static int newRuleLayer = -1;
+
+					ImGui::Text("Rule Name");
+					ImGui::InputText("##NewRuleName", newRuleName, IM_ARRAYSIZE(newRuleName));
 
 					ImGui::Spacing();
 
-					// Material Selection
-					ImGui::Text("Material");
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
-					std::string selectedFile = "None Selected";
-					if (!selectedMaterialPath.empty() && selectedMaterialPath != "nullptr")
-						selectedFile = std::filesystem::path(selectedMaterialPath).stem().string();
+					ImGui::Text("Target Texture Layer");
+					const char* layerPreview = (newRuleLayer >= 0 && newRuleLayer < selectedTerrain->GetLayerCount())
+						? selectedTerrain->GetLayer(newRuleLayer)->name.c_str()
+						: "Select Layer";
 
-					if (ImGui::Button((selectedFile + "##MaterialSelector").c_str(), ImVec2(-1, 20)))
-						fileSelectorOpenVariable = "AddLayerMaterial";
-					ImGui::PopStyleColor();
-
-					if (!fileSelectorOpenVariable.empty() && fileSelectorOpenVariable == "AddLayerMaterial")
+					if (ImGui::BeginCombo("##NewRuleLayer", layerPreview))
 					{
-						std::string currentlySelected = (selectedMaterialPath == "nullptr") ? "" : selectedMaterialPath;
-						selectedFile = RenderFileSelector(29857, "AddLayerMaterial", currentlySelected, { ".mat" }, false, { ImGui::GetCursorScreenPos().x + 100, ImGui::GetCursorScreenPos().y - 40 });
-						if (selectedFile == "NULL")
-							fileSelectorOpenVariable = "";
-						else if (!selectedFile.empty())
+						for (int i = 0; i < selectedTerrain->GetLayerCount(); i++)
 						{
-							if (selectedFile == "None")
-								selectedMaterialPath = "nullptr";
-							else
-								selectedMaterialPath = selectedFile;
-							fileSelectorOpenVariable = "";
+							const TerrainLayer* layer = selectedTerrain->GetLayer(i);
+							bool isSelected = (newRuleLayer == i);
+							if (ImGui::Selectable(layer->name.c_str(), isSelected))
+								newRuleLayer = i;
+							if (isSelected)
+								ImGui::SetItemDefaultFocus();
 						}
+						ImGui::EndCombo();
 					}
 
 					ImGui::Spacing();
-					ImGui::Spacing();
 
-					// Add Layer Button
-					bool canAddLayer = strlen(layerNameInput) > 0 && !selectedMaterialPath.empty() && selectedMaterialPath != "nullptr";
-					if (!canAddLayer)
+					bool canAdd = strlen(newRuleName) > 0 && newRuleLayer >= 0;
+					if (!canAdd)
 					{
 						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 					}
 
-					if (ImGui::Button((ICON_FA_CHECK + std::string(" Add Layer")).c_str(), ImVec2(-1, 32)))
+					if (ImGui::Button((ICON_FA_CHECK + std::string(" Create Rule")).c_str(), ImVec2(-1, 32)))
 					{
-						// Add the layer to the terrain
-						selectedTerrain->AddTerrainLayer(selectedMaterialPath, std::string(layerNameInput));
-
-						// Reset the inputs
-						strcpy_s(layerNameInput, sizeof(layerNameInput), "New Layer");
-						selectedMaterialPath = "";
-
-						// Close the header
-						ImGui::GetStateStorage()->SetInt(ImGui::GetID((ICON_FA_PLUS + std::string(" Add New Layer")).c_str()), 0);
+						selectedTerrain->AddAutoMeshRule(std::string(newRuleName), newRuleLayer);
+						strcpy_s(newRuleName, sizeof(newRuleName), "New Rule");
+						newRuleLayer = -1;
 					}
 
-					if (!canAddLayer)
+					if (!canAdd)
 					{
 						ImGui::PopItemFlag();
 						ImGui::PopStyleVar();
