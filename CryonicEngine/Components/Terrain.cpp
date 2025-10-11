@@ -1,6 +1,7 @@
 #include "Terrain.h"
 #include "../RaylibWrapper.h"
 #include <algorithm>
+#include <random>
 
 void Terrain::Awake()
 {
@@ -54,8 +55,14 @@ void Terrain::GenerateFromHeightmap()
 
 void Terrain::Render(bool renderShadows)
 {
-	if (!modelGenerated || (renderShadows && !castShadows))
+	if (!modelGenerated)
 		return;
+
+	if (renderShadows && !castShadows)
+	{
+		RenderTerrainMeshs(true); // Renders the meshs' shadows even if the Terrain doesn't cast them
+		return;
+	}
 
 	Vector3 pos = gameObject->transform.GetPosition();
 	Quaternion rot = gameObject->transform.GetRotation();
@@ -104,18 +111,13 @@ void Terrain::Render(bool renderShadows)
 		RaylibWrapper::rlActiveTextureSlot(0);
 	}
 
-	ConsoleLogger::ErrorLog("------------------------------------------------------------------------ ");
-	for (int i = 0; i < raylibModel.GetMaterialCount(); i++)
-	{
-		int matID = raylibModel.GetTextureID(i, RaylibWrapper::MATERIAL_MAP_ALBEDO);
-		ConsoleLogger::ErrorLog("Terrain Texture ID " + std::to_string(i) + ": " + std::to_string(matID));
-		ConsoleLogger::ErrorLog("Shader ID " + std::to_string(i) + ": " + std::to_string(raylibModel.GetShaderID(i)));
-	}
-
 	raylibModel.DrawModelWrapper(centeredPos.x, centeredPos.y, centeredPos.z,
 		scale.x, scale.y, scale.z,
 		rot.x, rot.y, rot.z, rot.w,
 		255, 255, 255, 255);
+
+	// Render Meshs (painted meshes)
+	RenderTerrainMeshs(renderShadows);
 }
 
 void Terrain::Update()
@@ -232,6 +234,38 @@ void Terrain::Destroy()
 		delete terrainMaterial; // Material destructor handles unloading the texture
 		terrainMaterial = nullptr;
 	}
+
+	// Clean up meshs
+	for (TerrainMesh& mesh : terrainMeshs)
+	{
+		if (mesh.cachedModel)
+		{
+			// Check if this is the last reference to this model
+			bool isLastReference = true;
+			for (TerrainMesh& otherMesh : terrainMeshs)
+			{
+				if (&otherMesh != &mesh &&
+					otherMesh.cachedModel == mesh.cachedModel &&
+					otherMesh.modelPath == mesh.modelPath)
+				{
+					isLastReference = false;
+					break;
+				}
+			}
+
+			if (isLastReference)
+			{
+				mesh.cachedModel->DeleteInstance();
+				delete mesh.cachedModel;
+			}
+
+			mesh.cachedModel = nullptr;
+		}
+
+		mesh.cachedMaterial = nullptr; // Don't delete, managed by Material system
+	}
+
+	terrainMeshs.clear();
 }
 
 bool Terrain::RaycastToTerrain(const RaylibWrapper::Ray& ray, Vector3& hitPos)
@@ -845,4 +879,377 @@ void Terrain::LoadLayerData(const nlohmann::json& data)
 	}
 
 	needsSplatmapUpdate = true;
+}
+
+// ============= Mesh Painting Implementation =============
+
+void Terrain::PaintMeshes(float worldX, float worldZ, float radius, float density, int terrainMeshIndex,
+	float scaleVariation, float rotationRandomness, bool alignToNormal, float deltaTime)
+{
+	if (terrainMeshIndex < 0 || terrainMeshIndex >= GetTerrainMeshCount())
+		return;
+
+	TerrainMesh& terrainMesh = terrainMeshs[terrainMeshIndex];
+
+	// Random number generation
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+	// Calculate number of meshes to attempt to place based on density and deltaTime
+	static float paintAccumulator = 0.0f;
+	paintAccumulator += density * deltaTime * 10.0f;
+	int meshesToPlace = static_cast<int>(paintAccumulator);
+	paintAccumulator -= meshesToPlace;
+
+	// Convert world coordinates to heightmap coordinates
+	float centeredX = WorldToHeightmapX(worldX);
+	float centeredZ = WorldToHeightmapZ(worldZ);
+
+	for (int i = 0; i < meshesToPlace; i++)
+	{
+		// Random position within brush radius
+		float angle = dist(gen) * 2.0f * 3.14159f;
+		float distance = sqrtf(dist(gen)) * radius; // Square root for uniform distribution
+
+		float offsetX = cosf(angle) * distance;
+		float offsetZ = sinf(angle) * distance;
+
+		float placeX = centeredX + offsetX;
+		float placeZ = centeredZ + offsetZ;
+
+		// Check if within terrain bounds
+		if (placeX < 0 || placeX >= terrainWidth || placeZ < 0 || placeZ >= terrainDepth)
+			continue;
+
+		// Check if too close to existing instances (density control)
+		bool tooClose = false;
+		float minDistance = 2.0f / density; // Closer spacing for higher density
+
+		for (const MeshInstance& existing : terrainMesh.instances)
+		{
+			float dx = existing.position.x - (worldX + offsetX);
+			float dz = existing.position.z - (worldZ + offsetZ);
+			float distToExisting = sqrtf(dx * dx + dz * dz);
+
+			if (distToExisting < minDistance)
+			{
+				tooClose = true;
+				break;
+			}
+		}
+
+		if (tooClose)
+			continue;
+
+		// Create new mesh instance
+		MeshInstance instance;
+
+		// Position on terrain surface
+		float terrainY = GetHeight((int)placeX, (int)placeZ);
+		instance.position = { worldX + offsetX, terrainY, worldZ + offsetZ };
+
+		// Scale with variation
+		float baseScale = 1.0f;
+		float scaleRandom = 1.0f + (dist(gen) - 0.5f) * 2.0f * scaleVariation;
+		instance.scale = { baseScale * scaleRandom, baseScale * scaleRandom, baseScale * scaleRandom };
+
+		// Rotation
+		if (alignToNormal)
+		{
+			// Align to terrain normal
+			Vector3 normal = GetNormalAtWorldPosition(placeX, placeZ);
+
+			// Calculate rotation from up vector to normal
+			Vector3 up = { 0.0f, 1.0f, 0.0f };
+			Vector3 axis = {
+				up.y * normal.z - up.z * normal.y,
+				up.z * normal.x - up.x * normal.z,
+				up.x * normal.y - up.y * normal.x
+			};
+
+			float axisLength = sqrtf(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+			if (axisLength > 0.001f)
+			{
+				axis.x /= axisLength;
+				axis.y /= axisLength;
+				axis.z /= axisLength;
+
+				float angle = acosf(up.x * normal.x + up.y * normal.y + up.z * normal.z);
+				instance.rotation.x = axis.x * angle;
+				instance.rotation.y = axis.y * angle;
+				instance.rotation.z = axis.z * angle;
+			}
+			else
+				instance.rotation = { 0.0f, 0.0f, 0.0f };
+
+			// Add random Y rotation
+			instance.rotation.y += dist(gen) * 2.0f * 3.14159f * rotationRandomness;
+		}
+		else
+		{
+			// Random rotation around Y axis
+			instance.rotation.x = 0.0f;
+			instance.rotation.y = dist(gen) * 2.0f * 3.14159f;
+			instance.rotation.z = 0.0f;
+		}
+
+		// Add instance
+		terrainMesh.instances.push_back(instance);
+	}
+}
+
+void Terrain::EraseMeshes(float worldX, float worldZ, float radius, int terrainMeshIndex)
+{
+	if (terrainMeshIndex < 0 || terrainMeshIndex >= GetTerrainMeshCount())
+		return;
+
+	TerrainMesh& terrainMesh = terrainMeshs[terrainMeshIndex];
+
+	// Remove instances within radius
+	terrainMesh.instances.erase(
+		std::remove_if(terrainMesh.instances.begin(), terrainMesh.instances.end(),
+			[worldX, worldZ, radius](const MeshInstance& instance) {
+				float dx = instance.position.x - worldX;
+				float dz = instance.position.z - worldZ;
+				float dist = sqrtf(dx * dx + dz * dz);
+				return dist < radius;
+			}),
+		terrainMesh.instances.end()
+	);
+}
+
+void Terrain::AddTerrainMesh(const std::string& modelPath, const std::string& materialPath, const std::string& name)
+{
+	TerrainMesh newMesh;
+	newMesh.name = name;
+	newMesh.modelPath = modelPath;
+	newMesh.materialPath = materialPath;
+
+	// Determine model type from extension
+	std::string ext = std::filesystem::path(modelPath).extension().string();
+	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+	if (ext == ".obj" || ext == ".gltf" || ext == ".glb")
+		newMesh.modelType = Custom;
+	else
+		newMesh.modelType = Custom;
+
+	terrainMeshs.push_back(newMesh);
+
+	// Load the model and cache it
+	LoadTerrainMeshModels();
+}
+
+void Terrain::RemoveTerrainMesh(int layerIndex)
+{
+	if (layerIndex < 0 || layerIndex >= GetTerrainMeshCount())
+		return;
+
+	// Clean up cached model if it's the only layer using it
+	TerrainMesh& layer = terrainMeshs[layerIndex];
+	if (layer.cachedModel)
+	{
+		bool isUsedByOthers = false;
+		for (int i = 0; i < GetTerrainMeshCount(); i++)
+		{
+			if (i != layerIndex && terrainMeshs[i].modelPath == layer.modelPath)
+			{
+				isUsedByOthers = true;
+				break;
+			}
+		}
+
+		if (!isUsedByOthers)
+		{
+			layer.cachedModel->DeleteInstance();
+			delete layer.cachedModel;
+		}
+	}
+
+	terrainMeshs.erase(terrainMeshs.begin() + layerIndex);
+}
+
+TerrainMesh* Terrain::GetTerrainMesh(int index)
+{
+	if (index < 0 || index >= GetTerrainMeshCount())
+		return nullptr;
+	return &terrainMeshs[index];
+}
+
+const TerrainMesh* Terrain::GetTerrainMesh(int index) const
+{
+	if (index < 0 || index >= GetTerrainMeshCount())
+		return nullptr;
+	return &terrainMeshs[index];
+}
+
+void Terrain::LoadTerrainMeshModels()
+{
+	for (TerrainMesh& layer : terrainMeshs)
+	{
+		// Check if model is already cached
+		if (layer.cachedModel)
+			continue;
+
+		// Check if another layer already loaded this model
+		bool foundShared = false;
+		for (TerrainMesh& otherLayer : terrainMeshs)
+		{
+			if (&otherLayer != &layer && otherLayer.modelPath == layer.modelPath && otherLayer.cachedModel)
+			{
+				layer.cachedModel = otherLayer.cachedModel;
+				foundShared = true;
+				break;
+			}
+		}
+
+		if (foundShared)
+			continue;
+
+		// Load new model
+		layer.cachedModel = new RaylibModel();
+
+#if defined(EDITOR)
+		layer.cachedModel->Create(layer.modelType, layer.modelPath, ShaderManager::Shaders::LitStandard,
+			ProjectManager::projectData.path / "Assets");
+#else
+		std::filesystem::path assetsPath = exeParent.empty() ? "Resources/Assets" :
+			std::filesystem::path(exeParent) / "Resources" / "Assets";
+		layer.cachedModel->Create(layer.modelType, layer.modelPath, ShaderManager::Shaders::LitStandard, assetsPath);
+#endif
+
+		// Load material if specified
+		if (!layer.materialPath.empty())
+		{
+			layer.cachedMaterial = Material::GetMaterial(layer.materialPath);
+			if (layer.cachedMaterial)
+				layer.cachedModel->SetMaterials({ layer.cachedMaterial->GetRaylibMaterial() });
+		}
+		else
+		{
+			// Use embedded materials
+			layer.cachedModel->SetEmbeddedMaterials();
+		}
+	}
+}
+
+void Terrain::RenderTerrainMeshs(bool renderShadows)
+{
+	for (TerrainMesh& layer : terrainMeshs)
+	{
+		if (!layer.cachedModel || layer.instances.empty())
+			continue;
+
+		// Render all instances of this Mesh
+		for (const MeshInstance& instance : layer.instances)
+		{
+			// Convert euler angles to quaternion for rendering
+			Quaternion quat = EulerToQuaternion(instance.rotation.x * DEG2RAD, instance.rotation.y * DEG2RAD, instance.rotation.z * DEG2RAD);
+
+			// Set material if needed
+			if (layer.cachedMaterial && !layer.cachedModel->CompareMaterials({ layer.cachedMaterial->GetID() }))
+				layer.cachedModel->SetMaterials({ layer.cachedMaterial->GetRaylibMaterial() });
+			else if (!layer.cachedMaterial && layer.cachedModel->GetMaterialID(0) != 1)
+				layer.cachedModel->SetEmbeddedMaterials();
+
+			// Draw the instance
+			layer.cachedModel->DrawModelWrapper(
+				instance.position.x, instance.position.y, instance.position.z,
+				instance.scale.x, instance.scale.y, instance.scale.z,
+				quat.x, quat.y, quat.z, quat.w,
+				255, 255, 255, 255
+			);
+		}
+	}
+}
+
+nlohmann::json Terrain::SerializeTerrainMeshData()
+{
+	nlohmann::json terrainMeshsJson;
+
+	for (const TerrainMesh& terrainMesh : terrainMeshs)
+	{
+		nlohmann::json layerJson;
+		layerJson["name"] = terrainMesh.name;
+		layerJson["modelPath"] = terrainMesh.modelPath;
+		layerJson["materialPath"] = terrainMesh.materialPath;
+		layerJson["modelType"] = static_cast<int>(terrainMesh.modelType);
+
+		nlohmann::json instancesJson;
+		for (const MeshInstance& instance : terrainMesh.instances)
+		{
+			nlohmann::json instanceJson;
+			instanceJson["position"] = { instance.position.x, instance.position.y, instance.position.z };
+			instanceJson["rotation"] = { instance.rotation.x, instance.rotation.y, instance.rotation.z };
+			instanceJson["scale"] = { instance.scale.x, instance.scale.y, instance.scale.z };
+			instancesJson.push_back(instanceJson);
+		}
+		layerJson["instances"] = instancesJson;
+
+		terrainMeshsJson.push_back(layerJson);
+	}
+
+	return terrainMeshsJson;
+}
+
+void Terrain::LoadTerrainMeshData(const nlohmann::json& data)
+{
+	if (!data.is_array())
+	{
+		ConsoleLogger::ErrorLog(gameObject->GetName() + "'s Terrain failed to load Mesh data.");
+		return;
+	}
+
+	terrainMeshs.clear();
+
+	for (const nlohmann::json& layerJson : data)
+	{
+		TerrainMesh terrainMesh;
+
+		if (layerJson.contains("name"))
+			terrainMesh.name = layerJson["name"].get<std::string>();
+
+		if (layerJson.contains("modelPath"))
+			terrainMesh.modelPath = layerJson["modelPath"].get<std::string>();
+
+		if (layerJson.contains("materialPath"))
+			terrainMesh.materialPath = layerJson["materialPath"].get<std::string>();
+
+		if (layerJson.contains("modelType"))
+			terrainMesh.modelType = static_cast<ModelType>(layerJson["modelType"].get<int>());
+
+		if (layerJson.contains("instances") && layerJson["instances"].is_array())
+		{
+			for (const nlohmann::json& instanceJson : layerJson["instances"])
+			{
+				MeshInstance instance;
+
+				if (instanceJson.contains("position") && instanceJson["position"].is_array())
+				{
+					auto pos = instanceJson["position"];
+					instance.position = { pos[0].get<float>(), pos[1].get<float>(), pos[2].get<float>() };
+				}
+
+				if (instanceJson.contains("rotation") && instanceJson["rotation"].is_array())
+				{
+					auto rot = instanceJson["rotation"];
+					instance.rotation = { rot[0].get<float>(), rot[1].get<float>(), rot[2].get<float>() };
+				}
+
+				if (instanceJson.contains("scale") && instanceJson["scale"].is_array())
+				{
+					auto scl = instanceJson["scale"];
+					instance.scale = { scl[0].get<float>(), scl[1].get<float>(), scl[2].get<float>() };
+				}
+
+				terrainMesh.instances.push_back(instance);
+			}
+		}
+
+		terrainMeshs.push_back(terrainMesh);
+	}
+
+	// Load all Mesh models
+	LoadTerrainMeshModels();
 }

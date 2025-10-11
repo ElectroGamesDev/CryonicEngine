@@ -6,7 +6,7 @@
 #include "../RaylibWrapper.h"
 #include <vector>
 #include <string>
-#include <cmath>\
+#include <cmath>
 #include "json.hpp"
 
 struct TerrainLayer
@@ -14,6 +14,26 @@ struct TerrainLayer
 	Material* material = nullptr;
 	std::string name = "Layer";
 	std::vector<std::vector<float>> splatmap; // Per-vertex weight (0-1)
+};
+
+struct MeshInstance
+{
+	Vector3 position;
+	Vector3 rotation;
+	Vector3 scale;
+};
+
+struct TerrainMesh
+{
+	std::string name = "Mesh";
+	std::string modelPath;
+	std::string materialPath; // Optional override material
+	ModelType modelType = Custom;
+	std::vector<MeshInstance> instances;
+
+	// Cached rendering data
+	RaylibModel* cachedModel = nullptr;
+	Material* cachedMaterial = nullptr;
 };
 
 class Terrain : public Component
@@ -57,7 +77,6 @@ public:
 #endif
 	void Destroy() override;
 
-	// Todo: Add setter functions, and make sure to regenerate the terrain if any of these values change
 	bool RaycastToTerrain(const RaylibWrapper::Ray& ray, Vector3& hitPos);
 	int WorldToHeightmapX(float worldX) const;
 	int WorldToHeightmapZ(float worldZ) const;
@@ -93,11 +112,23 @@ public:
 	TerrainLayer* GetLayer(int index);
 	const TerrainLayer* GetLayer(int index) const;
 
+	// Mesh Painting
+	void PaintMeshes(float worldX, float worldZ, float radius, float density, int terrainMeshIndex,
+		float scaleVariation, float rotationRandomness, bool alignToNormal, float deltaTime);
+	void EraseMeshes(float worldX, float worldZ, float radius, int terrainMeshIndex);
+	void AddTerrainMesh(const std::string& modelPath, const std::string& materialPath, const std::string& name = "Mesh");
+	void RemoveTerrainMesh(int layerIndex);
+	int GetTerrainMeshCount() const { return static_cast<int>(terrainMeshs.size()); }
+	TerrainMesh* GetTerrainMesh(int index);
+	const TerrainMesh* GetTerrainMesh(int index) const;
+
 	// Terrain serialization, saving, and loading
 	nlohmann::json SerializeHeightData();
 	void LoadHeightData(const nlohmann::json& data);
 	nlohmann::json SerializeLayerData();
 	void LoadLayerData(const nlohmann::json& data);
+	nlohmann::json SerializeTerrainMeshData();
+	void LoadTerrainMeshData(const nlohmann::json& data);
 
 private:
 	// internal generation
@@ -110,6 +141,8 @@ private:
 	void LoadTerrainShader();
 	void UpdateShaderTextures();
 	void InitializeMaterial();
+	void LoadTerrainMeshModels();
+	void RenderTerrainMeshs(bool renderShadows);
 
 private:
 	bool setupEditor = true;
@@ -136,16 +169,16 @@ private:
 	std::pair<unsigned int, int*> terrainShader;
 
 	bool needsRebuild = false;
-	float lastRebuild = 0.0f; // Seconds since the last rebuild
+	float lastRebuild = 0.0f;
 	bool needsSplatmapUpdate = false;
 
 	std::vector<std::vector<float>> heightData;
 	std::vector<TerrainLayer> terrainLayers;
+	std::vector<TerrainMesh> terrainMeshs;
 
 	RaylibModel raylibModel;
 	bool modelGenerated = false;
 
-	// Splatmap texture for GPU
 	RaylibWrapper::Texture2D splatmapTexture = { 0 };
 	bool splatmapGenerated = false;
 };
