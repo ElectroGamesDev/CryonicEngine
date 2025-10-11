@@ -68,6 +68,29 @@ Material* Material::GetMaterial(std::string path)
         return new Material(path); // Material's constructor handles everything. Todo: This material isn't deleted if it fails in the constructor
 }
 
+RaylibWrapper::Texture2D Material::GenerateCheckerboardTexture(int width, int height, int checkSize)
+{
+	// Create a blank white image first
+    RaylibWrapper::Image image = RaylibWrapper::GenImageColor(width, height, {255, 255, 255, 255});
+
+	// Draw alternating squares
+	for (int y = 0; y < height; y += checkSize)
+	{
+		for (int x = 0; x < width; x += checkSize)
+		{
+			bool isDark = ((x / checkSize + y / checkSize) % 2) == 0;
+            RaylibWrapper::Color color = isDark ? RaylibWrapper::Color{ 200, 200, 200, 255 } : RaylibWrapper::Color{ 100, 100, 100, 255 };
+            RaylibWrapper::ImageDrawRectangle(&image, x, y, checkSize, checkSize, color);
+		}
+	}
+
+	// Upload to GPU and clean up CPU-side image
+    RaylibWrapper::Texture2D texture = RaylibWrapper::LoadTextureFromImage(image);
+    RaylibWrapper::UnloadImage(image);
+
+	return texture;
+}
+
 RaylibWrapper::Material* Material::GetRaylibMaterial()
 {
     return &raylibMaterial;
