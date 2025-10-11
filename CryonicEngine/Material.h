@@ -29,19 +29,37 @@ public:
 
         this->path = path;
 
-        LoadData();
+        if (path != "null")
+        {
+            LoadData();
 
 #ifdef EDITOR
-        FileWatcher::AddFileMoveCallback(path, [this](const std::string& oldPath, const std::string& newPath) {
-            this->OnFileMoved(oldPath, newPath);
-            });
+            FileWatcher::AddFileMoveCallback(path, [this](const std::string& oldPath, const std::string& newPath) {
+                this->OnFileMoved(oldPath, newPath);
+                });
 
-        FileWatcher::AddFileModifyCallback(path, [this]() {
-            this->OnFileModified();
-            });
+            FileWatcher::AddFileModifyCallback(path, [this]() {
+                this->OnFileModified();
+                });
 #endif
 
-        materials[path] = this;
+            materials[path] = this;
+        }
+		else // New material without a path
+        {
+			raylibMaterial.shader.id = ShadowManager::shader.id;
+            raylibMaterial.shader.locs = ShadowManager::shader.locs;
+
+            // Only initalizing the albedo map since this is currently only used by Terrains, and it breaks if there's more than one map
+            raylibMaterial.maps = new RaylibWrapper::MaterialMap[1]; // RaylibWrapper::MAX_MATERIAL_MAPS
+            raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_ALBEDO] = { Material::whiteTexture , { 220, 220, 220, 255 }, 1 };
+            //raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_NORMAL] = { Material::whiteTexture , { 128, 128, 255 }, 1 }; // { 128, 128, 255 } is "flat" for normal map
+            //raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_ROUGHNESS] = { Material::whiteTexture , { 255, 255, 255, 255 }, 0.5 };
+            //raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_METALNESS] = { Material::whiteTexture , { 255, 255, 255, 255 }, 0 };
+            //raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_EMISSION] = { Material::whiteTexture , { 255, 255, 255, 255 }, 0 };
+
+            raylibMaterial.params[0] = static_cast<float>(0);
+        }
 
         id = nextId;
         raylibMaterial.params[0] = static_cast<float>(id);
@@ -106,7 +124,8 @@ public:
 
         RaylibWrapper::UnloadMaterial(raylibMaterial); // Most likely the same material is going to be loaded again, but in case it isn't (different material or the material fails to load), I'll unload it. This shouldn't really add any overhead.
 
-        delete[] raylibMaterial.maps;
+		if (path != "null") // The engine crashes if I call the following code on a material with the path "null"
+            delete[] raylibMaterial.maps;
         raylibMaterial = {};
         raylibMaterial.params[0] = static_cast<float>(id);
     }
@@ -252,6 +271,12 @@ public:
      * @brief Gets the emission intensity of the material.
      */
     float GetEmission() const { return emission; }
+
+    // Todo: Move this function to a texture utility class
+    /**
+     * @brief Generates a checkerbaord texture.
+     */
+    static RaylibWrapper::Texture2D GenerateCheckerboardTexture(int width = 512, int height = 512, int checkSize = 32);
 
     // Hide in API
     RaylibWrapper::Material* GetRaylibMaterial();
