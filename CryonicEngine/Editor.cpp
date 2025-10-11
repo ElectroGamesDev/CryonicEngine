@@ -113,7 +113,7 @@ enum class TerrainTool
 };
 TerrainTool currentTerrainTool = TerrainTool::None;
 Terrain* selectedTerrain = nullptr;
-float brushStrength = 1.0f;
+float brushStrength = 5.0f;
 float brushSize = 5.0f;
 
 bool resetComponentsWin = true;
@@ -1125,6 +1125,47 @@ void Editor::UpdateViewport()
     for (RenderableTexture* texture : RenderableTexture::textures) // Renders Sprites and Tilemaps
         if (texture)
             texture->Render();
+
+
+	// Terrain tools
+	if (currentTerrainTool != TerrainTool::None && selectedTerrain)
+	{
+		RaylibWrapper::Vector2 mousePosition = RaylibWrapper::GetMousePosition();
+		mousePosition.x = (mousePosition.x - viewportPosition.x) / (viewportPosition.z - viewportPosition.x) * RaylibWrapper::GetScreenWidth();
+		mousePosition.y = (mousePosition.y - viewportPosition.y) / (viewportPosition.w - viewportPosition.y) * RaylibWrapper::GetScreenHeight();
+
+		RaylibWrapper::Ray ray = RaylibWrapper::GetMouseRay(mousePosition, camera);
+        Vector3 hitPos;
+		Vector3 terrainPosition = selectedTerrain->gameObject->transform.GetPosition();
+
+        if (selectedTerrain->RaycastToTerrain(ray, hitPos))
+        {
+            RaylibWrapper::DrawFilledCircle3D({ hitPos.x, hitPos.y + 0.25f, hitPos.z }, brushSize, { 255, 0, 0, 127 });
+
+            // This code should align and rotate the circle to the terrain, but it does not work
+			//Vector3 normal = selectedTerrain->GetNormalAtWorldPosition(hitPos.x, hitPos.z);
+            //RaylibWrapper::DrawFilledCircle3DAligned({ hitPos.x, hitPos.y, hitPos.z }, brushSize, { normal.x, normal.y, normal.z }, { 255, 0, 0, 128 });
+
+            if (RaylibWrapper::IsMouseButtonDown(RaylibWrapper::MOUSE_LEFT_BUTTON))
+            {
+				int tx = selectedTerrain->WorldToHeightmapX(hitPos.x);
+				int tz = selectedTerrain->WorldToHeightmapZ(hitPos.z);
+
+                if (currentTerrainTool == TerrainTool::Raise)
+                {
+                    if (RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_LEFT_SHIFT) || RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_RIGHT_SHIFT))
+                        selectedTerrain->LowerTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+                    else
+                        selectedTerrain->RaiseTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+                }
+                else if (currentTerrainTool == TerrainTool::Smooth)
+                    selectedTerrain->SmoothTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+				else if (currentTerrainTool == TerrainTool::Flatten)
+					selectedTerrain->FlattenTerrain(tx, tz, brushSize, brushStrength, hitPos.y, RaylibWrapper::GetFrameTime());
+            }
+        }
+	}
+
 
     switch (dragData.first)
     {
@@ -3183,15 +3224,10 @@ void Editor::RenderTerrainToolsWin()
 		if (selectedTerrain)
 		{
 			// Tool Selection Section
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
-			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.26f, 0.35f, 0.6f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.45f, 0.7f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.26f, 0.5f, 0.7f, 1.0f));
-
 			if (ImGui::CollapsingHeader((ICON_FA_TOOLBOX + std::string(" Sculpting Tools")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				ImGui::Spacing();
-				const float buttonWidth = ImGui::GetContentRegionAvail().x * 0.45f;
+				const float buttonWidth = -1; // ImGui::GetContentRegionAvail().x * 0.45f
 				const float buttonHeight = 32.0f;
 
 				// Raise/Lower Tool
@@ -3229,8 +3265,6 @@ void Editor::RenderTerrainToolsWin()
 				if (isPaintTool) ImGui::PopStyleColor();
 			}
 
-			ImGui::PopStyleColor(3);
-			ImGui::PopStyleVar();
 
 			// Brush Settings Section
 			if (ImGui::CollapsingHeader((ICON_FA_BRUSH + std::string(" Brush Settings")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
@@ -3241,7 +3275,7 @@ void Editor::RenderTerrainToolsWin()
 				ImGui::SliderFloat("##BrushSize", &brushSize, 1.0f, 100.0f);
 
 				ImGui::Text("Brush Strength");
-				ImGui::SliderFloat("##BrushStrength", &brushStrength, 0.0f, 1.0f, "%.2f");
+				ImGui::SliderFloat("##BrushStrength", &brushStrength, 0.1f, 100.0f, "%.2f");
 
 				//ImGui::Text("Brush Falloff");
 				//ImGui::SliderFloat("##BrushFalloff", &brushFalloff, 0.0f, 1.0f, "%.2f");
