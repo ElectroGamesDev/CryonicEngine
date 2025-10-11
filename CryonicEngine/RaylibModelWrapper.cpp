@@ -272,10 +272,15 @@ bool RaylibModel::CreateFromHeightData(const std::vector<std::vector<float>>& he
     terrainModel = true;
 
 	// Set shader
-	modelShader = ShaderManager::LitStandard;
+	modelShader = ShaderManager::Terrain;
 
-	for (size_t i = 0; i < model->first.materialCount; ++i)
-		model->first.materials[i].shader = { shadowShader.first, shadowShader.second };
+    SetMaterials({ material });
+
+    for (size_t i = 0; i < model->first.materialCount; ++i)
+    {
+        std::pair<unsigned int, int*> terrainShader = ShaderManager::GetShader(ShaderManager::Terrain);
+        model->first.materials[i].shader = { terrainShader.first, terrainShader.second };
+    }
 
 	for (int i = 0; i < model->first.materialCount; i++)
 		model->first.materials[i].params[0] = static_cast<int>(1);
@@ -420,6 +425,11 @@ void RaylibModel::SetShader(int materialIndex, ShaderManager::Shaders shader)
     }
 }
 
+int RaylibModel::GetShaderID(int materialIndex)
+{
+	return model->first.materials[materialIndex].shader.id;
+}
+
 bool RaylibModel::IsPrimitive()
 {
     return primitiveModel;
@@ -541,6 +551,11 @@ void RaylibModel::SetMaterials(std::vector<RaylibWrapper::Material*> mats) // To
 int RaylibModel::GetMaterialID(int index)
 {
     return static_cast<int>(model->first.materials[index].params[0]);
+}
+
+int RaylibModel::GetTextureID(int materialIndex, int mapIndex)
+{
+	return model->first.materials[materialIndex].maps[mapIndex].texture.id;
 }
 
 void RaylibModel::SetEmbeddedMaterials()

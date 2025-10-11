@@ -36,10 +36,12 @@ public:
 	bool CompareMaterials(std::vector<int> matIDs);
 	int GetMaterialCount();
 	int GetMaterialID(int index);
+	int GetTextureID(int materialIndex, int mapIndex);
 	//RaylibWrapper::Material GetMaterial(int index);
 	void SetShaderValue(int materialIndex, int locIndex, const void* value, int uniformType);
 	int GetShaderLocation(int materialIndex, std::string uniformName);
 	void SetShader(int materialIndex, ShaderManager::Shaders shader);
+	int GetShaderID(int materialIndex);
 	static void SetShadowShader(unsigned int id, int* locs);
 	static void SetMaterialPreviewShader(unsigned int id, int* locs);
 	bool IsPrimitive();
