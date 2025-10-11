@@ -834,6 +834,12 @@ namespace RaylibWrapper
     // A modified version of DrawCircleSector to flip the quad
     void DrawCircleSectorFlipped(Vector2 center, float radius, float startAngle, float endAngle, int segments, Color color);
 
+    // Texture Misc
+    void SetTextureFilter(Texture2D texture, int filter);
+
+    // Image Drawing
+    void ImageDrawRectangle(Image* dst, int posX, int posY, int width, int height, Color color);
+
     // Input-related functions: keyboard
     bool IsKeyPressed(int key);
     bool IsKeyDown(int key);

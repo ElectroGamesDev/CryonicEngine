@@ -560,19 +560,19 @@ namespace RaylibWrapper {
 
     Color* LoadImageColors(Image image) {
         ::Color* colors = ::LoadImageColors({ image.data, image.width, image.height, image.mipmaps, image.format });
+
         Color* result = new Color[image.width * image.height];
-        for (int i = 0; i < image.width * image.height; i++) {
+        for (int i = 0; i < image.width * image.height; i++) 
             result[i] = { colors[i].r, colors[i].g, colors[i].b, colors[i].a };
-        }
+
         ::RL_FREE(colors);
-		return result;
+
+        return result;
     }
 
-    void UnloadImageColors(Color* colors) {
-        ::Color* cols = new ::Color[1]; // Dummy allocation to avoid passing nullptr
-        cols[0] = { colors->r, colors->g, colors->b, colors->a };
-        ::UnloadImageColors(cols);
-        delete[] cols;
+
+	void UnloadImageColors(Color* colors) {
+		delete[] colors;
 	}
 
     void ImageFormat(Image* image, int newFormat) {
@@ -915,6 +915,21 @@ namespace RaylibWrapper {
         }
         ::rlEnd();
 #endif
+    }
+
+    void SetTextureFilter(Texture2D texture, int filter)
+    {
+		::SetTextureFilter({ texture.id, texture.width, texture.height, texture.mipmaps, texture.format }, filter);
+    }
+
+    void ImageDrawRectangle(Image* dst, int posX, int posY, int width, int height, Color color)
+    {
+        ::Image img = { dst->data, dst->width, dst->height, dst->mipmaps, dst->format };
+        ::ImageDrawRectangle(&img, posX, posY, width, height, { color.r, color.g, color.b, color.a });
+        dst->data = img.data;
+        dst->width = img.width;
+        dst->height = img.height;
+		dst->mipmaps = img.mipmaps;
     }
 
     void DrawCircleLinesV(Vector2 center, float radius, Color color)
