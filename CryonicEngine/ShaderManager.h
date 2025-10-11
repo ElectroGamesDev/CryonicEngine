@@ -9,7 +9,8 @@ public:
 	enum Shaders
 	{
 		None,
-		LitStandard
+		LitStandard,
+		Terrain
 	};
 
 	static void Init();
