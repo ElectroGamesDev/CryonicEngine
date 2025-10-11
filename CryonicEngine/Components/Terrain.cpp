@@ -54,7 +54,8 @@ void Terrain::Render(bool renderShadows)
 
 	Vector3 pos = gameObject->transform.GetPosition();
 	Quaternion rot = gameObject->transform.GetRotation();
-	Vector3 scale = gameObject->transform.GetScale();
+	//Vector3 scale = gameObject->transform.GetScale(); // Terrain scaling from GameObject Transform is not supported
+	Vector3 scale = { 1.0f, 1.0f, 1.0f };
 
 	Vector3 centeredPos = {
 		pos.x - (terrainWidth * 0.5f * scale.x),
@@ -66,6 +67,22 @@ void Terrain::Render(bool renderShadows)
 		scale.x, scale.y, scale.z,
 		rot.x, rot.y, rot.z, rot.w,
 		255, 255, 255, 255);
+}
+
+void Terrain::Update()
+{
+	if (needsRebuild)
+	{
+		if (lastRebuild >= 0.05f)
+		{
+			RebuildMesh(); // Todo: Should this call GenerateFromHeightmap() if a heightmap is being used?
+
+			needsRebuild = false;
+			lastRebuild = 0.0f;
+		}
+		else
+			lastRebuild += RaylibWrapper::GetFrameTime();
+	}
 }
 
 #if defined(EDITOR)
@@ -127,14 +144,14 @@ void Terrain::EditorUpdate()
 	{
 		terrainMaterial = Material::GetMaterial(matPath);
 		if (modelGenerated)
-			RebuildMesh();
+			RebuildMesh(); // Todo: Should this call GenerateFromHeightmap() if a heightmap is being used?
 	}
 
 	// --- Perform rebuild if needed ---
 	if (shouldRebuild)
 	{
 		if (heightmapSprite)
-			GenerateFromHeightmap();
+			GenerateFromHeightmap(); // Todo: Should RebuildMesh() be called instead?
 		else
 			RebuildMesh();
 	}
@@ -157,6 +174,57 @@ void Terrain::Destroy()
 		raylibModel.DeleteInstance();
 }
 
+bool Terrain::RaycastToTerrain(const RaylibWrapper::Ray& ray, Vector3& hitPos)
+{
+	float maxDistance = 1000.0f;
+	float step = 0.5f; // Acciracuy of the raycast. Smaller = more accurate.
+	for (float t = 0; t < maxDistance; t += step)
+	{
+		RaylibWrapper::Vector3 point = RaylibWrapper::Vector3Add(ray.position, RaylibWrapper::Vector3Scale(ray.direction, t));
+
+		// Convert world position to local terrain coordinates. This actually isnt needed
+		//RaylibWrapper::Vector3 local = WorldToLocal(point);
+		RaylibWrapper::Vector3 local = point;
+
+		// Center it since the terrain is rendered from the center
+		local.x = point.x - (gameObject->transform.GetPosition().x - terrainWidth / 2.0f);
+		local.z = point.z - (gameObject->transform.GetPosition().z - terrainDepth / 2.0f);
+
+		// Check bounds
+		if (local.x < 0 || local.x >= terrainWidth || local.z < 0 || local.z >= terrainDepth)
+			continue;
+
+		float terrainY = heightData[(int)local.z][(int)local.x];
+		//if (point.y <= terrainY)
+		//{
+		//	hitPos = { point.x, point.y, point.z };
+		//	return true;
+		//}
+		float prevY = heightData[(int)local.z][(int)local.x];
+		if (point.y <= prevY) {
+			hitPos = { point.x, prevY, point.z };
+			return true;
+		}
+	}
+	return false;
+}
+
+int Terrain::WorldToHeightmapX(float worldX) const
+{
+	// If I add support for game object scaling in the future, this function will need to be updated
+	float halfWidth = terrainWidth * 0.5f;
+	float terrainWorldX = gameObject->transform.GetPosition().x;
+	return (int)((worldX - (terrainWorldX - halfWidth)));
+}
+
+int Terrain::WorldToHeightmapZ(float worldZ) const
+{
+	// If I add support for game object scaling in the future, this function will need to be updated
+	float halfDepth = terrainDepth * 0.5f;
+	float terrainWorldZ = gameObject->transform.GetPosition().z;
+	return (int)((worldZ - (terrainWorldZ - halfDepth)));
+}
+
 // ============= Height Manipulation =============
 
 void Terrain::SetHeight(int x, int z, float height)
@@ -167,7 +235,13 @@ void Terrain::SetHeight(int x, int z, float height)
 
 float Terrain::GetHeight(int x, int z) const
 {
-	if (x < 0 || z < 0 || x >= terrainWidth || z >= terrainDepth) return 0.0f;
+	// Clamps the values
+	if (x < 0) x = 0;
+	else if (x >= terrainWidth) x = terrainWidth - 1;
+
+	if (z < 0) z = 0;
+	else if (z >= terrainDepth) z = terrainDepth - 1;
+
 	return heightData[z][x];
 }
 
@@ -196,6 +270,30 @@ Vector3 Terrain::GetNormalAtWorldPosition(float worldX, float worldZ) const
 	return { normalized.x, normalized.y, normalized.z };
 }
 
+//Vector3 Terrain::GetNormalAtWorldPosition(float worldX, float worldZ) const // Old method. This method might be faster, but may also have issues. Compare the two functions
+//{
+//	int x = (int)worldX;
+//	int z = (int)worldZ;
+//
+//	// Clamp to terrain range
+//	//x = Clamp(x, 1, terrainWidth - 2);
+//	//z = Clamp(z, 1, terrainDepth - 2);
+//
+//	if (x < 1) x = 1;
+//	if (x > terrainWidth - 2) x = terrainWidth - 2;
+//
+//	if (z < 1) z = 1;
+//	if (z > terrainDepth - 2) z = terrainDepth - 2;
+//
+//	float hL = heightData[z][x - 1];
+//	float hR = heightData[z][x + 1];
+//	float hD = heightData[z - 1][x];
+//	float hU = heightData[z + 1][x];
+//
+//	Vector3 normal = { hL - hR, 2.0f, hD - hU };
+//	return normal.Normalize();
+//}
+
 // ============= Sculpting =============
 
 void Terrain::RaiseTerrain(float worldX, float worldZ, float radius, float strength, float deltaTime)
@@ -210,11 +308,13 @@ void Terrain::RaiseTerrain(float worldX, float worldZ, float radius, float stren
 			if (dist < radius)
 			{
 				float falloff = 0.5f * (cosf(dist / radius * 3.14159f) + 1.0f);
-				heightData[z][x] += strength * falloff * deltaTime;
+				heightData[z][x] = std::min(heightData[z][x] + strength * falloff * deltaTime, terrainHeight);
 			}
 		}
 	}
-	RebuildMesh();
+
+	needsRebuild = true;
+	//RebuildMesh(); // Let Update() handle the rebuild
 }
 
 void Terrain::LowerTerrain(float worldX, float worldZ, float radius, float strength, float deltaTime)
@@ -245,11 +345,16 @@ void Terrain::SmoothTerrain(float worldX, float worldZ, float radius, float stre
 		}
 	}
 	heightData = newHeights;
-	RebuildMesh();
+
+	needsRebuild = true;
+	//RebuildMesh(); // Let Update() handle the rebuild
 }
 
-void Terrain::FlattenTerrain(float worldX, float worldZ, float radius, float targetHeight, float strength, float deltaTime)
+void Terrain::FlattenTerrain(float worldX, float worldZ, float radius, float strength, float targetHeight, float deltaTime)
 {
+	if (targetHeight > terrainHeight)
+		targetHeight = terrainHeight;
+
 	for (int z = 0; z < terrainDepth; z++)
 	{
 		for (int x = 0; x < terrainWidth; x++)
@@ -263,7 +368,9 @@ void Terrain::FlattenTerrain(float worldX, float worldZ, float radius, float tar
 			}
 		}
 	}
-	RebuildMesh();
+
+	needsRebuild = true;
+	//RebuildMesh(); // Let Update() handle the rebuild
 }
 
 // ============= Texture Painting =============
@@ -284,4 +391,27 @@ void Terrain::RemoveTerrainLayer(int layerIndex)
 {
 	if (layerIndex < 0 || layerIndex >= GetLayerCount()) return;
 	terrainLayers.erase(terrainLayers.begin() + layerIndex);
+}
+
+nlohmann::json Terrain::SerializeHeightData()
+{
+	nlohmann::json dataJson;
+
+	dataJson["heightData"] = heightData;
+
+	return dataJson;
+}
+
+void Terrain::LoadHeightData(const nlohmann::json& data)
+{
+	if (!data.contains("heightData") || !data["heightData"].is_array())
+	{
+		ConsoleLogger::ErrorLog(gameObject->GetName() + "'s Terrain failed to load terrain data.");
+		return;
+	}
+
+	heightData.clear();
+
+	for (auto& row : data["heightData"])
+		heightData.push_back(row.get<std::vector<float>>());
 }
