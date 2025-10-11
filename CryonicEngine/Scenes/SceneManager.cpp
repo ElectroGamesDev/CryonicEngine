@@ -122,6 +122,10 @@ bool SceneManager::SaveScene(Scene* scene)
             {
                 componentData["model_path"] = dynamic_cast<MeshRenderer*>(component)->GetModelPath();
             }
+			else if (dynamic_cast<Terrain*>(component))
+			{
+				componentData["height_data"] = dynamic_cast<Terrain*>(component)->SerializeHeightData();
+			}
             else if (dynamic_cast<ScriptComponent*>(component))
             {
                 auto formatPathForUnix = [](std::string path) {
@@ -332,6 +336,7 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
 			{
 				Terrain& component = gameObject->AddComponentInternal<Terrain>(componentData["id"]);
 				setExposedVariables(component, componentData);
+                component.LoadHeightData(componentData["height_data"]);
 			}
             else if (componentData["name"] == "CameraComponent")
             {
