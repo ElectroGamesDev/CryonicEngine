@@ -99,6 +99,7 @@ public:
     // Called once per frame to handle GUI rendering
     virtual void RenderGui() {};
 
+    // Todo: Change the parameter name to "isShadowPass"
     // Called once per frame to handle mesh rendering
     virtual void Render(bool renderShadows = false) {};
 
