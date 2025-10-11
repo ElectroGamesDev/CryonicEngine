@@ -9,6 +9,13 @@
 #include <cmath>\
 #include "json.hpp"
 
+struct TerrainLayer
+{
+	Material* material = nullptr;
+	std::string name = "Layer";
+	std::vector<std::vector<float>> splatmap; // Per-vertex weight (0-1)
+};
+
 class Terrain : public Component
 {
 public:
@@ -16,7 +23,7 @@ public:
 	{
 		runInEditor = true;
 		name = "Terrain";
-		iconUnicode = "\xef\x81\x8b"; // example icon
+		iconUnicode = "\xef\x81\x8b";
 
 #if defined(EDITOR)
 		std::string variables = R"(
@@ -28,7 +35,6 @@ public:
                 ["float","terrainHeight",50.0,"Max Height"],
                 ["float","heightScale",1.0,"Height Scale"],
                 ["Sprite","heightmapSprite","nullptr","Heightmap Texture",{"Extensions":[".png",".jpg",".jpeg"]}],
-                ["Material","terrainMaterial","nullptr","Terrain Material",{"Extensions":[".mat"]}],
                 ["bool","enableLOD",true,"Enable LOD"],
                 ["int","lodLevels",4,"LOD Levels"],
                 ["float","lodDistance",100.0,"LOD Distance"],
@@ -80,23 +86,36 @@ public:
 	void FlattenTerrain(float worldX, float worldZ, float radius, float strength, float targetHeight, float deltaTime);
 
 	// Texture Painting
-	void PaintTexture(float worldX, float worldZ, float radius, int layerIndex, float strength, float deltaTime);
-	void AddTerrainLayer(Material* material, const std::string& name = "Layer");
+	void PaintTexture(float worldX, float worldZ, float radius, float strength, int layerIndex, float deltaTime);
+	void AddTerrainLayer(const std::string& materialPath, const std::string& name = "Layer");
 	void RemoveTerrainLayer(int layerIndex);
 	int GetLayerCount() const { return static_cast<int>(terrainLayers.size()); }
+	TerrainLayer* GetLayer(int index);
+	const TerrainLayer* GetLayer(int index) const;
 
 	// Terrain serialization, saving, and loading
 	nlohmann::json SerializeHeightData();
 	void LoadHeightData(const nlohmann::json& data);
+	nlohmann::json SerializeLayerData();
+	void LoadLayerData(const nlohmann::json& data);
 
 private:
 	// internal generation
 	void GenerateTerrain();
 	void GenerateFromHeightmap();
 	void RebuildMesh();
+	void UpdateSplatmapTexture();
+	void InitializeSplatmaps();
+	void NormalizeSplatmaps(int x, int z);
+	void LoadTerrainShader();
+	void UpdateShaderTextures();
+	void InitializeMaterial();
 
 private:
 	bool setupEditor = true;
+
+	bool checkerboardTextureLoaded = false;
+	RaylibWrapper::Texture2D checkerboardTexture;
 
 	int terrainWidth = 256;
 	int terrainDepth = 256;
@@ -109,12 +128,24 @@ private:
 	float lodDistance = 100.0f;
 	bool castShadows = true;
 
+	int splatmapLoc = -1;
+	int texture1Loc = -1;
+	int texture2Loc = -1;
+	int texture3Loc = -1;
+	int textureScaleLoc = -1;
+	std::pair<unsigned int, int*> terrainShader;
+
 	bool needsRebuild = false;
 	float lastRebuild = 0.0f; // Seconds since the last rebuild
+	bool needsSplatmapUpdate = false;
 
 	std::vector<std::vector<float>> heightData;
-	std::vector<Material*> terrainLayers;
+	std::vector<TerrainLayer> terrainLayers;
 
 	RaylibModel raylibModel;
 	bool modelGenerated = false;
+
+	// Splatmap texture for GPU
+	RaylibWrapper::Texture2D splatmapTexture = { 0 };
+	bool splatmapGenerated = false;
 };

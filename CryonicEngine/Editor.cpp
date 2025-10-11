@@ -115,6 +115,7 @@ TerrainTool currentTerrainTool = TerrainTool::None;
 Terrain* selectedTerrain = nullptr;
 float brushStrength = 5.0f;
 float brushSize = 5.0f;
+int selectedTerrainLayer = -1;
 
 bool resetComponentsWin = true;
 bool resetPropertiesWin = true;
@@ -1148,20 +1149,22 @@ void Editor::UpdateViewport()
 
             if (RaylibWrapper::IsMouseButtonDown(RaylibWrapper::MOUSE_LEFT_BUTTON))
             {
-				int tx = selectedTerrain->WorldToHeightmapX(hitPos.x);
-				int tz = selectedTerrain->WorldToHeightmapZ(hitPos.z);
-
                 if (currentTerrainTool == TerrainTool::Raise)
                 {
                     if (RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_LEFT_SHIFT) || RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_RIGHT_SHIFT))
-                        selectedTerrain->LowerTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+                        selectedTerrain->LowerTerrain(hitPos.x, hitPos.z, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
                     else
-                        selectedTerrain->RaiseTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+                        selectedTerrain->RaiseTerrain(hitPos.x, hitPos.z, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
                 }
                 else if (currentTerrainTool == TerrainTool::Smooth)
-                    selectedTerrain->SmoothTerrain(tx, tz, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
+                    selectedTerrain->SmoothTerrain(hitPos.x, hitPos.z, brushSize, brushStrength, RaylibWrapper::GetFrameTime());
 				else if (currentTerrainTool == TerrainTool::Flatten)
-					selectedTerrain->FlattenTerrain(tx, tz, brushSize, brushStrength, hitPos.y, RaylibWrapper::GetFrameTime());
+					selectedTerrain->FlattenTerrain(hitPos.x, hitPos.z, brushSize, brushStrength, hitPos.y, RaylibWrapper::GetFrameTime());
+                else if (currentTerrainTool == TerrainTool::Paint)
+                {
+                    if (selectedTerrainLayer != -1)
+                        selectedTerrain->PaintTexture(hitPos.x, hitPos.z, brushSize, brushStrength, selectedTerrainLayer, deltaTime);
+                }
             }
         }
 	}
@@ -3221,140 +3224,237 @@ void Editor::RenderTerrainToolsWin()
 
 	if (ImGui::Begin((ICON_FA_PAINTBRUSH + std::string(" Terrain Tools")).c_str()))
 	{
-		if (selectedTerrain)
-		{
-			// Tool Selection Section
-			if (ImGui::CollapsingHeader((ICON_FA_TOOLBOX + std::string(" Sculpting Tools")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Spacing();
-				const float buttonWidth = -1; // ImGui::GetContentRegionAvail().x * 0.45f
-				const float buttonHeight = 32.0f;
+        if (selectedTerrain)
+        {
+            // Tool Selection Section
+            if (ImGui::CollapsingHeader((ICON_FA_TOOLBOX + std::string(" Sculpting Tools")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Spacing();
+                const float buttonWidth = -1; // ImGui::GetContentRegionAvail().x * 0.45f
+                const float buttonHeight = 32.0f;
 
-				// Raise/Lower Tool
-				bool isRaiseTool = (currentTerrainTool == TerrainTool::Raise);
-				if (isRaiseTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
-				if (ImGui::Button((ICON_FA_ARROW_UP + std::string(" Raise/Lower")).c_str(), ImVec2(buttonWidth, buttonHeight)))
-					currentTerrainTool = TerrainTool::Raise;
-				if (isRaiseTool) ImGui::PopStyleColor();
+                // Raise/Lower Tool
+                bool isRaiseTool = (currentTerrainTool == TerrainTool::Raise);
+                if (isRaiseTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
+                if (ImGui::Button((ICON_FA_ARROW_UP + std::string(" Raise/Lower")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+                    currentTerrainTool = TerrainTool::Raise;
+                if (isRaiseTool) ImGui::PopStyleColor();
 
-				ImGui::Spacing();
+                ImGui::Spacing();
 
-				// Smooth Tool
-				bool isSmoothTool = (currentTerrainTool == TerrainTool::Smooth);
-				if (isSmoothTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.98f, 0.6f, 0.6f));
-				if (ImGui::Button((ICON_FA_WATER + std::string(" Smooth")).c_str(), ImVec2(buttonWidth, buttonHeight)))
-					currentTerrainTool = TerrainTool::Smooth;
-				if (isSmoothTool) ImGui::PopStyleColor();
+                // Smooth Tool
+                bool isSmoothTool = (currentTerrainTool == TerrainTool::Smooth);
+                if (isSmoothTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.98f, 0.6f, 0.6f));
+                if (ImGui::Button((ICON_FA_WATER + std::string(" Smooth")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+                    currentTerrainTool = TerrainTool::Smooth;
+                if (isSmoothTool) ImGui::PopStyleColor();
 
-				ImGui::Spacing();
+                ImGui::Spacing();
 
-				// Flatten Tool
-				bool isFlattenTool = (currentTerrainTool == TerrainTool::Flatten);
-				if (isFlattenTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.6f, 0.7f, 0.6f));
-				if (ImGui::Button((ICON_FA_VECTOR_SQUARE + std::string(" Flatten")).c_str(), ImVec2(buttonWidth, buttonHeight)))
-					currentTerrainTool = TerrainTool::Flatten;
-				if (isFlattenTool) ImGui::PopStyleColor();
+                // Flatten Tool
+                bool isFlattenTool = (currentTerrainTool == TerrainTool::Flatten);
+                if (isFlattenTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.6f, 0.7f, 0.6f));
+                if (ImGui::Button((ICON_FA_VECTOR_SQUARE + std::string(" Flatten")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+                    currentTerrainTool = TerrainTool::Flatten;
+                if (isFlattenTool) ImGui::PopStyleColor();
 
-				ImGui::Spacing();
+                ImGui::Spacing();
 
-				// Paint Tool
-				bool isPaintTool = (currentTerrainTool == TerrainTool::Paint);
-				if (isPaintTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
-				if (ImGui::Button((ICON_FA_PAINT_ROLLER + std::string(" Paint")).c_str(), ImVec2(buttonWidth, buttonHeight)))
-					currentTerrainTool = TerrainTool::Paint;
-				if (isPaintTool) ImGui::PopStyleColor();
-			}
+                // Paint Tool
+                bool isPaintTool = (currentTerrainTool == TerrainTool::Paint);
+                if (isPaintTool) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.26f, 0.59f, 0.98f, 0.6f));
+                if (ImGui::Button((ICON_FA_PAINT_ROLLER + std::string(" Paint")).c_str(), ImVec2(buttonWidth, buttonHeight)))
+                    currentTerrainTool = TerrainTool::Paint;
+                if (isPaintTool) ImGui::PopStyleColor();
+            }
 
 
-			// Brush Settings Section
-			if (ImGui::CollapsingHeader((ICON_FA_BRUSH + std::string(" Brush Settings")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Spacing();
-				ImGui::Indent(10.0f);
-				ImGui::Text("Brush Size");
-				ImGui::SliderFloat("##BrushSize", &brushSize, 1.0f, 100.0f);
+            // Brush Settings Section
+            if (ImGui::CollapsingHeader((ICON_FA_BRUSH + std::string(" Brush Settings")).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Spacing();
+                ImGui::Indent(10.0f);
+                ImGui::Text("Brush Size");
+                ImGui::SliderFloat("##BrushSize", &brushSize, 1.0f, 100.0f);
 
-				ImGui::Text("Brush Strength");
-				ImGui::SliderFloat("##BrushStrength", &brushStrength, 0.1f, 100.0f, "%.2f");
+                ImGui::Text("Brush Strength");
+                ImGui::SliderFloat("##BrushStrength", &brushStrength, 0.1f, 100.0f, "%.2f");
 
-				//ImGui::Text("Brush Falloff");
-				//ImGui::SliderFloat("##BrushFalloff", &brushFalloff, 0.0f, 1.0f, "%.2f");
-				ImGui::Unindent(10.0f);
-			}
+                //ImGui::Text("Brush Falloff");
+                //ImGui::SliderFloat("##BrushFalloff", &brushFalloff, 0.0f, 1.0f, "%.2f");
+                ImGui::Unindent(10.0f);
+            }
 
-			// Terrain Layers Section
-			if (ImGui::CollapsingHeader(ICON_FA_LAYER_GROUP " Terrain Layers", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Spacing();
-				ImGui::Indent(10.0f);
+            // Terrain Layers Section
+            if (ImGui::CollapsingHeader(ICON_FA_LAYER_GROUP " Terrain Layers", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Spacing();
+                ImGui::Indent(10.0f);
 
-				if (ImGui::Button((ICON_FA_PLUS + std::string(" Add Layer")).c_str(), ImVec2(-1, 28)))
-					ImGui::OpenPopup("AddLayerPopup");
+                int layerCount = selectedTerrain->GetLayerCount();
 
-				if (ImGui::BeginPopup("AddLayerPopup"))
-				{
-                    if (ImGui::Selectable("Example"))
+                if (layerCount > 0)
+                {
+                    ImGui::BeginChild("LayersList", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
+                    for (int i = 0; i < layerCount; i++)
                     {
-                        //selectedTerrain->AddLayer("Example");
+                        ImGui::PushID(i);
+                        bool isSelected = (selectedTerrainLayer == i);
+
+                        const TerrainLayer* layer = selectedTerrain->GetLayer(i);
+                        if (layer)
+                        {
+                            ImGui::BeginGroup();
+                            
+							if (isSelected)
+							{
+                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 1.0f, 1.00f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.00f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.3f, 0.6f, 1.00f));
+							}
+
+                            if (ImGui::Button(ICON_FA_IMAGE, ImVec2(50, 50)))
+                                selectedTerrainLayer = i;
+
+							if (isSelected)
+								ImGui::PopStyleColor(3);
+
+                            ImGui::SameLine();
+                            ImGui::BeginGroup();
+                            ImGui::Text("%s", layer->name.c_str());
+                            if (layer->material)
+                            {
+                                std::string matName = std::filesystem::path(layer->material->GetPath()).stem().string();
+                                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Material: %s", matName.c_str());
+							}
+                            else
+                                ImGui::TextColored(ImVec4(0.7f, 0.3f, 0.3f, 1.0f), "No Material");
+
+                            ImGui::EndGroup();
+
+                            ImGui::EndGroup();
+
+                            // Delete button
+                            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
+                            if (ImGui::Button((ICON_FA_TRASH + std::string("##") + std::to_string(i)).c_str()))
+                            {
+                                selectedTerrain->RemoveTerrainLayer(i);
+                                if (selectedTerrainLayer >= layerCount - 1)
+                                    selectedTerrainLayer = -1;
+                            }
+
+                            // Selection
+                            if (ImGui::IsItemClicked() && !ImGui::IsItemHovered())
+                                selectedTerrainLayer = i;
+
+                            // Make the whole row clickable
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 60);
+                            ImGui::InvisibleButton(("##LayerSelect" + std::to_string(i)).c_str(), ImVec2(ImGui::GetContentRegionAvail().x - 40, 60));
+                            if (ImGui::IsItemClicked())
+                                selectedTerrainLayer = i;
+
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 60);
+                        }
+
+                        ImGui::Separator();
+                        ImGui::PopID();
                     }
-					if (ImGui::Selectable("Example2"))
+                    ImGui::EndChild();
+                }
+                else
+                    ImGui::TextDisabled("Add a layer to start painting.");
+
+				// Add Layer Section
+				static char layerNameInput[128] = "New Layer";
+				static std::string selectedMaterialPath = "";
+				static std::string fileSelectorOpenVariable = "";
+
+				if (ImGui::CollapsingHeader("Add New Layer", ImGuiTreeNodeFlags_None))
+				{
+					ImGui::Spacing();
+					ImGui::Indent(10.0f);
+
+					// Layer Name Input
+					ImGui::Text("Layer Name");
+					ImGui::SetNextItemWidth(-1);
+					ImGui::InputText("##LayerNameInput", layerNameInput, IM_ARRAYSIZE(layerNameInput));
+
+					ImGui::Spacing();
+
+					// Material Selection
+					ImGui::Text("Material");
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
+					std::string selectedFile = "None Selected";
+					if (!selectedMaterialPath.empty() && selectedMaterialPath != "nullptr")
+						selectedFile = std::filesystem::path(selectedMaterialPath).stem().string();
+
+					if (ImGui::Button((selectedFile + "##MaterialSelector").c_str(), ImVec2(-1, 20)))
+						fileSelectorOpenVariable = "AddLayerMaterial";
+					ImGui::PopStyleColor();
+
+					if (!fileSelectorOpenVariable.empty() && fileSelectorOpenVariable == "AddLayerMaterial")
 					{
-						//selectedTerrain->AddLayer("Example2");
+						std::string currentlySelected = (selectedMaterialPath == "nullptr") ? "" : selectedMaterialPath;
+						selectedFile = RenderFileSelector(29857, "AddLayerMaterial", currentlySelected, { ".mat" }, false, { ImGui::GetCursorScreenPos().x + 100, ImGui::GetCursorScreenPos().y - 40 });
+						if (selectedFile == "NULL")
+							fileSelectorOpenVariable = "";
+						else if (!selectedFile.empty())
+						{
+							if (selectedFile == "None")
+								selectedMaterialPath = "nullptr";
+							else
+								selectedMaterialPath = selectedFile;
+							fileSelectorOpenVariable = "";
+						}
 					}
-					ImGui::EndPopup();
+
+					ImGui::Spacing();
+					ImGui::Spacing();
+
+					// Add Layer Button
+					bool canAddLayer = strlen(layerNameInput) > 0 && !selectedMaterialPath.empty() && selectedMaterialPath != "nullptr";
+					if (!canAddLayer)
+					{
+						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+					}
+
+					if (ImGui::Button((ICON_FA_CHECK + std::string(" Add Layer")).c_str(), ImVec2(-1, 32)))
+					{
+						// Add the layer to the terrain
+						selectedTerrain->AddTerrainLayer(selectedMaterialPath, std::string(layerNameInput));
+
+						// Reset the inputs
+						strcpy_s(layerNameInput, sizeof(layerNameInput), "New Layer");
+						selectedMaterialPath = "";
+
+						// Close the header
+						ImGui::GetStateStorage()->SetInt(ImGui::GetID((ICON_FA_PLUS + std::string(" Add New Layer")).c_str()), 0);
+					}
+
+					if (!canAddLayer)
+					{
+						ImGui::PopItemFlag();
+						ImGui::PopStyleVar();
+					}
+
+					ImGui::Unindent(10.0f);
 				}
 
-				//auto& layers = selectedTerrain->GetLayers();
-				//ImGui::BeginChild("LayersList", ImVec2(0, 200), true, ImGuiWindowFlags_HorizontalScrollbar);
-				//for (int i = 0; i < layers.size(); i++)
-				//{
-				//	ImGui::PushID(i);
-				//	bool isSelected = (selectedLayerIndex == i);
-				//	if (isSelected) ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.26f, 0.59f, 0.0f, 1.0f));
+                ImGui::Unindent(10.0f);
+            }
+            else
+            {
+                // No terrain selected
+                ImVec2 textSize = ImGui::CalcTextSize(ICON_FA_MOUNTAIN);
+                ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
 
-				//	ImGui::BeginGroup();
-				//	ImGui::Image((void*)(intptr_t)layers[i].textureID, ImVec2(50, 50));
-				//	ImGui::SameLine();
-				//	ImGui::Text("%s", layers[i].name.c_str());
-				//	ImGui::Text("Opacity: %.0f%%", layers[i].opacity * 100.0f);
-				//	ImGui::EndGroup();
-
-				//	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 30);
-				//	if (ImGui::Button((ICON_FA_TRASH + std::to_string(i)).c_str()))
-				//	{
-				//		selectedTerrain->RemoveLayer(i);
-				//		if (selectedLayerIndex >= layers.size())
-				//			selectedLayerIndex = layers.size() - 1;
-				//	}
-
-				//	if (ImGui::IsItemClicked())
-				//		selectedLayerIndex = i;
-
-				//	if (isSelected) ImGui::PopStyleColor();
-				//	ImGui::PopID();
-				//}
-
-				//if (layers.empty())
-				//	ImGui::TextDisabled("No layers added. Click 'Add Layer' to start.");
-
-				//ImGui::EndChild();
-				ImGui::Unindent(10.0f);
-			}
-		}
-		else
-		{
-			// No terrain selected
-			ImVec2 textSize = ImGui::CalcTextSize(ICON_FA_MOUNTAIN);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-			ImGui::Text(ICON_FA_MOUNTAIN);
-			ImGui::PopStyleColor();
-
-			const char* instruction = "Select a terrain object to edit";
-			textSize = ImGui::CalcTextSize(instruction);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
-			ImGui::TextDisabled("%s", instruction);
-		}
+                const char* instruction = "Select a terrain object to edit";
+                textSize = ImGui::CalcTextSize(instruction);
+                ImGui::SetCursorPosX((ImGui::GetWindowWidth() - textSize.x) / 2);
+                ImGui::TextDisabled("%s", instruction);
+            }
+        }
 	}
 	ImGui::End();
 }
