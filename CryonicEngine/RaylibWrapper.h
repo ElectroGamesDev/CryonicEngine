@@ -785,6 +785,10 @@ namespace RaylibWrapper
     void Draw3DBillboardRec(Camera camera, Texture2D texture, Rectangle source, Vector3 position, Vector2 size, Color tint);
     void Draw3DBillboard(Camera camera, Texture2D texture, Vector3 position, float size, Color tint);
 
+    void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rotationAngle, Color color);
+    void DrawFilledCircle3D(Vector3 center, float radius, Color color);
+    void DrawFilledCircle3DAligned(Vector3 center, float radius, Vector3 normal, Color color);
+
     // Shaders
     Shader LoadShader(const char* vsFileName, const char* fsFileName);
     void UnloadShader(Shader shader);

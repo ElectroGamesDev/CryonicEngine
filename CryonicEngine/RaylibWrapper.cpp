@@ -415,10 +415,80 @@ namespace RaylibWrapper {
         ::rlPopMatrix();
     }
 
-    void Draw3DBillboard(Camera camera, Texture2D texture, Vector3 position, float size, Color tint)
-    {
+    void Draw3DBillboard(Camera camera, Texture2D texture, Vector3 position, float size, Color tint) {
         Draw3DBillboardRec(camera, texture, { 0, 0, (float)texture.width, (float)texture.height }, position, { size, size }, tint);
     }
+
+    void DrawCircle3D(Vector3 center, float radius, Vector3 rotationAxis, float rotationAngle, Color color) {
+		::DrawCircle3D({ center.x, center.y, center.z }, radius, { rotationAxis.x, rotationAxis.y, rotationAxis.z }, rotationAngle, { color.r, color.g, color.b, color.a });
+    }
+
+	void DrawFilledCircle3D(Vector3 center, float radius, Color color)
+	{
+		const int segments = 64;
+
+		rlPushMatrix();
+		rlTranslatef(center.x, center.y, center.z);
+		rlDisableBackfaceCulling();
+
+		rlBegin(RL_TRIANGLES);
+		rlColor4ub(color.r, color.g, color.b, color.a);
+
+		for (int i = 0; i < segments; i++)
+		{
+			float theta1 = ((float)i / segments) * 2.0f * PI;
+			float theta2 = ((float)(i + 1) / segments) * 2.0f * PI;
+
+			rlVertex3f(0.0f, 0.0f, 0.0f); // center
+			rlVertex3f(cosf(theta1) * radius, 0.0f, sinf(theta1) * radius);
+			rlVertex3f(cosf(theta2) * radius, 0.0f, sinf(theta2) * radius);
+		}
+
+		rlEnd();
+		rlPopMatrix();
+	}
+
+    // Todo: This may not work properly
+	void DrawFilledCircle3DAligned(Vector3 center, float radius, Vector3 normal, Color color)
+	{
+		const int segments = 64;
+		::Vector3 rlNormal = { normal.x, normal.y, normal.z };
+
+		// Normalize and ensure it's facing upward
+        rlNormal = ::Vector3Normalize(rlNormal);
+		if (rlNormal.y < 0) rlNormal = ::Vector3Negate(rlNormal);
+
+		::Vector3 up = { 0, 1, 0 };
+		::Vector3 axis = ::Vector3CrossProduct(up, rlNormal);
+		float dot = Vector3DotProduct(up, rlNormal);
+		float angle = acosf(fmaxf(fminf(dot, 1.0f), -1.0f)) * (180.0f / PI);
+
+		if (Vector3Length(axis) < 0.0001f)
+			axis = { 1, 0, 0 };
+
+		// Lift slightly to prevent z-fighting
+		center.y += 0.05f;
+
+		rlPushMatrix();
+		rlTranslatef(center.x, center.y, center.z);
+		rlRotatef(angle, axis.x, axis.y, axis.z);
+
+		rlBegin(RL_TRIANGLES);
+		rlColor4ub(color.r, color.g, color.b, color.a);
+
+		for (int i = 0; i < segments; i++)
+		{
+			float theta1 = (float)i / segments * 2.0f * PI;
+			float theta2 = (float)(i + 1) / segments * 2.0f * PI;
+
+			rlVertex3f(0.0f, 0.0f, 0.0f);
+			rlVertex3f(cosf(theta1) * radius, 0.0f, sinf(theta1) * radius);
+			rlVertex3f(cosf(theta2) * radius, 0.0f, sinf(theta2) * radius);
+		}
+
+		rlEnd();
+		rlPopMatrix();
+	}
 
     // Shaders
     Shader LoadShader(const char* vsFileName, const char* fsFileName) {
