@@ -1,8 +1,8 @@
 #pragma once
-
 #include "Component.h"
 #include "../AnimationGraph.h"
 #include "SpriteRenderer.h"
+#include <memory>
 
 class AnimationPlayer : public Component
 {
@@ -11,16 +11,15 @@ public:
 	{
 		name = "AnimationPlayer";
 		iconUnicode = "\xef\x9c\x8c";
-
 #if defined(EDITOR)
-        std::string variables = R"(
+		std::string variables = R"(
         [
             0,
             [
                 [
                     "AnimationGraph",
-                    "animationGraph",
-                    "nullptr",
+                    "animationGraphPath",
+                    "",
                     "Animation Graph",
                     {
                         "Extensions": [".animgraph"]
@@ -29,37 +28,79 @@ public:
             ]
         ]
     )";
-        exposedVariables = nlohmann::json::parse(variables);
+		exposedVariables = nlohmann::json::parse(variables);
 #endif
 	}
 
-    // Todo: Currently for each AnimationPlayer, its creating a new copy of the animations data. It should instead use references if its already been created.
-
 	void Awake() override;
 	void Update() override;
-    void Destroy() override;
+	void Destroy() override;
 
-    void Pause();
-    void Unpause();
-    bool IsPaused();
+	// Playback control
+	void Pause();
+	void Unpause();
+	bool IsPaused();
+	void Stop();
+	void Play();
 
-    void SetAnimationGraph(AnimationGraph* animationGraph);
-    AnimationGraph* GetAnimationGraph();
+	// Graph management
+	void SetAnimationGraph(std::shared_ptr<AnimationGraph> graph);
+	void SetAnimationGraph(const std::string& path);
+	std::shared_ptr<AnimationGraph> GetAnimationGraph();
 
-    void SetActiveAnimation(std::string animation);
+	// Animation state control
+	void SetActiveAnimation(const std::string& name);
+	void SetActiveAnimation(Animation* animation);
+	Animation* GetActiveAnimation();
+	void CrossFade(const std::string& name, float duration);
+	void CrossFade(Animation* animation, float duration);
 
-    void SetActiveAnimation(Animation* animation); // Todo: VisualStudio hints/autocomplete makes this the default SetActiveAnimation. The string paramter function should be the default
+	// Parameter forwarding to graph
+	void SetBool(const std::string& name, bool value);
+	void SetInt(const std::string& name, int value);
+	void SetFloat(const std::string& name, float value);
+	void SetTrigger(const std::string& name);
 
-    Animation* GetActiveAnimation();
+	bool GetBool(const std::string& name, bool defaultValue = false);
+	int GetInt(const std::string& name, int defaultValue = 0);
+	float GetFloat(const std::string& name, float defaultValue = 0.0f);
 
-    bool paused = false;
+	// Animation info
+	float GetNormalizedTime() const;
+	float GetCurrentTime() const;
+	float GetAnimationDuration() const;
+	bool IsTransitioning() const { return isBlending; }
 
-private:
-    SpriteRenderer* spriteRenderer = nullptr;
-    AnimationGraph* animationGraph = nullptr;
-    AnimationGraph::AnimationState* activeAnimationState = nullptr;
-    bool ownsGraph = false; // Currently when animations graphs are set as an exposed variables, they are created with a pointer. If its created by AnimationPlayer, this will be true so it knows to destroy it.
-    bool previouslyExisted = true; // Used to send a warning message if the SpriteRenderer was previously existed but now removed.
-    float timeElapsed = 0.0f; // The time elapsed sinnce the animation started.
-    int previousSprite = -1; // The previous animation sprite used. Used to determine whether the sprite needs to be changed
+	bool paused = false;
+
+protected:
+	struct BlendState
+	{
+		AnimationGraph::AnimationState* fromState = nullptr;
+		AnimationGraph::AnimationState* toState = nullptr;
+		float blendTime = 0.0f;
+		float blendDuration = 0.3f;
+		int fromSpriteIndex = 0;
+		int toSpriteIndex = 0;
+		float fromTime = 0.0f;
+		float toTime = 0.0f;
+	};
+
+	SpriteRenderer* spriteRenderer = nullptr;
+	std::shared_ptr<AnimationGraph> animationGraph;
+	AnimationGraph::AnimationState* activeAnimationState = nullptr;
+	bool previouslyExisted = true;
+	float timeElapsed = 0.0f;
+	int previousSprite = -1;
+	bool isPlaying = true;
+	bool isBlending = false;
+	BlendState blendState;
+	std::string animationGraphPath; // For editor serialization
+
+	void UpdateAnimation(float deltaTime);
+	void UpdateBlending(float deltaTime);
+	void CheckTransitions();
+	void SetSpriteFromAnimation(AnimationGraph::AnimationState* state, int index);
+	void StartTransition(AnimationGraph::AnimationState* toState, float duration);
+	int GetCurrentSpriteIndex(AnimationGraph::AnimationState* state, float time);
 };

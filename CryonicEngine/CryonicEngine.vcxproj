@@ -163,6 +163,9 @@
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\includes\imgui\rlImGui.cpp" />
     <ClCompile Include="..\includes\imnodes\imnodes.cpp" />
+    <ClCompile Include="AnimationBlending.cpp" />
+    <ClCompile Include="AnimationGraph.cpp" />
+    <ClCompile Include="AnimationImporter.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="AsyncPBODisplay.cpp" />
     <ClCompile Include="AudioClip.cpp" />
@@ -207,6 +210,7 @@
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="MenuManager.cpp" />
+    <ClCompile Include="MotionMatchingSystem.cpp" />
     <ClCompile Include="Physics2DDebugDraw.cpp" />
     <ClCompile Include="Physics3DDebugDraw.cpp" />
     <ClCompile Include="Prefab.cpp" />
@@ -249,7 +253,9 @@
     <ClInclude Include="..\includes\stb_image_write.h" />
     <ClInclude Include="..\includes\tiny_gltf.h" />
     <ClInclude Include="Animation.h" />
+    <ClInclude Include="AnimationBlending.h" />
     <ClInclude Include="AnimationGraph.h" />
+    <ClInclude Include="AnimationImporter.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="AsyncPBODisplay.h" />
     <ClInclude Include="AudioClip.h" />
@@ -296,6 +302,7 @@
     <ClInclude Include="MainThreadQueue.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="MenuManager.h" />
+    <ClInclude Include="MotionMatchingSystem.h" />
     <ClInclude Include="Physics2DDebugDraw.h" />
     <ClInclude Include="Physics3DDebugDraw.h" />
     <ClInclude Include="Prefab.h" />

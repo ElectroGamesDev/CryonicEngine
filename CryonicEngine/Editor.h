@@ -50,7 +50,16 @@ public:
 	void RenderScriptCreateWin();
 	void RenderCameraView();
 	void RenderConsole();
+
+	// Animation functions (need to move to its own class)
 	void RenderAnimationGraph();
+	void RenderAnimationParametersWin(bool& update);
+	void RenderAnimationNodePropertiesPanel(nlohmann::json* selectedNode, bool& update);
+	void RenderAnimationTransitionPropertiesPanel(nlohmann::json* selectedTransition, bool& update);
+	void CreateAnimationAnyStateNode();
+	void CreateAnimationState();
+	void RenderAnimationConditionEditor(nlohmann::json& condition, const nlohmann::json& parameters, bool& update);
+
 	void RenderProjectSettings();
 	void RenderTerrainToolsWin();
 	void Render();

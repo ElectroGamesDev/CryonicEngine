@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 #include <vector>
 #include "Sprite.h"
@@ -7,12 +6,12 @@
 class Animation
 {
 public:
-	int GetId()
+	int GetId() const
 	{
 		return id;
 	}
 
-	std::string GetName()
+	std::string GetName() const
 	{
 		return name;
 	}
@@ -22,7 +21,7 @@ public:
 		this->loop = loop;
 	}
 
-	bool IsLooped()
+	bool IsLooped() const
 	{
 		return loop;
 	}
@@ -32,20 +31,56 @@ public:
 		this->speed = speed;
 	}
 
-	float GetSpeed()
+	float GetSpeed() const
 	{
 		return speed;
 	}
 
-	const std::vector<Sprite*>& GetSprites()
+	const std::vector<Sprite*>& GetSprites() const
 	{
 		return sprites;
 	}
 
-	// Hide in API
-	int id;
+	// 3D animation support (for GLTF/GLB models)
+	void SetAnimationIndex(int index)
+	{
+		animationIndex = index;
+	}
+
+	int GetAnimationIndex() const
+	{
+		return animationIndex;
+	}
+
+	void SetModelPath(const std::string& path)
+	{
+		modelPath = path;
+	}
+
+	std::string GetModelPath() const
+	{
+		return modelPath;
+	}
+
+	// Check animation type
+	bool Is3DAnimation() const
+	{
+		return animationIndex >= 0 && !modelPath.empty();
+	}
+
+	bool Is2DAnimation() const
+	{
+		return !sprites.empty();
+	}
+
+	// Public members (Hide in API)
+	int id = 0;
 	std::string name;
-	bool loop;
-	float speed;
+	bool loop = false;
+	float speed = 1.0f;
 	std::vector<Sprite*> sprites;
+
+	// 3D animation data (for GLTF/GLB models)
+	int animationIndex = -1;
+	std::string modelPath;
 };

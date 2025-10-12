@@ -58,6 +58,7 @@
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "Jolt/Jolt.h"
+#include "AnimationImporter.h"
 JPH_SUPPRESS_WARNINGS
 
 RaylibWrapper::Camera Editor::camera = { 0 };
@@ -90,7 +91,7 @@ bool movingObjectZ = false;
 bool cameraSelected = false;
 
 RaylibWrapper::Vector2 lastMousePosition = { 0 };
-bool animationGraphHovered = false;
+bool animationGraphHovered = true;
 
 bool explorerContextMenuOpen = false;
 std::filesystem::path explorerContextMenuFile;
@@ -102,6 +103,14 @@ bool scriptCreateWinOpen = false;
 bool animationGraphWinOpen = false;
 bool projectSettingsWinOpen = false;
 bool terrainToolsWinOpen = false;
+
+bool showAnimationParametersWindow = false;
+//bool showProgressDialog = false;
+//std::string progressDialogTitle;
+//std::string progressDialogMessage;
+//float progressValue = 0.0f;
+//std::mutex graphDataMutex;
+//bool firstGraphLoad = true;
 
 enum class TerrainTool
 {
@@ -1952,54 +1961,74 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
 
                         // Todo: Place the nodes at the mouse position
 
-                        bool updatedAnimations = false;
+      //                  bool updatedAnimations = false;
 
-                        int index = 0;
-                        std::random_device rd;
-                        std::mt19937 gen(rd());
-                        std::uniform_int_distribution<int> distribution(999999, 99999999);
-                        // Todo: Popup a window with a progress bar
-                        // Todo: This function is really slow to get animations
-                        for (std::string& animationName : Utilities::GetGltfAnimationNames(std::any_cast<std::filesystem::path>(dragData.second["Path"])))
-                        {
-                            int id = 0;
-                            while (id == 0)
-                            {
-                                id = distribution(gen);
-                                for (auto& node : animationGraphData["nodes"])
-                                {
-                                    if (id == node["id"])
-                                    {
-                                        id = 0;
-                                        break;
-                                    }
-                                }
-                            }
+      //                  int index = 0;
+      //                  std::random_device rd;
+      //                  std::mt19937 gen(rd());
+      //                  std::uniform_int_distribution<int> distribution(999999, 99999999);
+      //                  // Todo: Popup a window with a progress bar
+      //                  // Todo: This function is really slow to get animations
 
-                            nlohmann::json node = {
-                                {"id", id},
-                                {"name", animationName},
-                                {"index", index},
-                                {"x", 350 + (index * 30)},
-                                {"y", 350 + (index * 30)},
-                                {"loop", true},
-                                {"speed", 1.0f}
-                            };
+						//auto animationNames = Utilities::GetGltfAnimationNames(std::any_cast<std::filesystem::path>(dragData.second["Path"]));
 
-                            animationGraphData["nodes"].push_back(node);
-                            updatedAnimations = true;
-                            index++;
-                        }
+						//for (const std::string& animationName : animationNames)
+      //                  {
+      //                      int id = 0;
+      //                      while (id == 0)
+      //                      {
+      //                          id = distribution(gen);
+      //                          for (auto& node : animationGraphData["nodes"])
+      //                          {
+      //                              if (id == node["id"])
+      //                              {
+      //                                  id = 0;
+      //                                  break;
+      //                              }
+      //                          }
+      //                      }
 
-                        if (updatedAnimations)
-                        {
-                            std::ofstream file(animationGraphData["path"].get<std::filesystem::path>());
-                            if (file.is_open())
-                            {
-                                file << std::setw(4) << animationGraphData << std::endl;
-                                file.close();
-                            }
-                        }
+      //                      nlohmann::json node = {
+      //                          {"id", id},
+      //                          {"name", animationName},
+      //                          {"index", index},
+      //                          {"x", 350 + (index * 30)},
+      //                          {"y", 350 + (index * 30)},
+      //                          {"loop", true},
+      //                          {"speed", 1.0f}
+      //                      };
+
+      //                      animationGraphData["nodes"].push_back(node);
+      //                      updatedAnimations = true;
+      //                      index++;
+      //                  }
+
+      //                  if (updatedAnimations)
+      //                  {
+      //                      std::ofstream file(animationGraphData["path"].get<std::filesystem::path>());
+      //                      if (file.is_open())
+      //                      {
+      //                          file << std::setw(4) << animationGraphData << std::endl;
+      //                          file.close();
+      //                      }
+      //                  }
+
+                        std::filesystem::path dragPath = std::any_cast<std::filesystem::path>(dragData.second["Path"]);
+
+						// Import asynchronously
+						auto future = std::async(std::launch::async, [this, dragPath, position]() {
+							AnimationImporter::ImportAnimationsToGraph(animationGraphData, dragPath, { position.x, position.y });
+
+							// Save graph
+							std::ofstream file(animationGraphData["path"].get<std::filesystem::path>());
+							if (file.is_open())
+							{
+								file << std::setw(4) << animationGraphData << std::endl;
+								file.close();
+							}
+
+							//showProgressDialog = false;
+							});
                     }
                 }
 
@@ -2134,29 +2163,80 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                         }
                     }},
                     {"Create Animation Graph", [&]() {
-                        std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "Animation Graph", "animgraph");
-                        if (filePath != "")
-                        {
-                            std::ofstream file(filePath);
-                            if (file.is_open())
-                            {
-                                nlohmann::json jsonData = {{"version", 1}, {"path", filePath}, {"model_path", ""},
-                                    {"nodes", {{{"id", -5}, {"name", "Start"}, {"x", 80}, {"y", 350}, {"loop", false}, {"speed", 0.0f}}}},
-                                    {"links", nlohmann::json::array()}};
-                                file << std::setw(4) << jsonData << std::endl;
-                            }
-                            else
-                            {
-                                // Todo: Properly handle if the file couldn't be opened. Maybe retry a few times, then popup with a message and delete the file.=
-                                std::filesystem::remove(filePath);
-                            }
-                            renamingFile = filePath;
-                            strcpy_s(newFileName, sizeof(newFileName), filePath.stem().string().c_str());
-                        }
-                        else
-                        {
-                            // Todo: Handle if it wasn't created
-                        }
+	                    std::filesystem::path filePath = Utilities::CreateUniqueFile(
+		                    fileExplorerPath,
+		                    "Animation Graph",
+		                    "animgraph"
+	                    );
+
+	                    if (filePath == "")
+	                    {
+		                    ConsoleLogger::ErrorLog("Failed to create animation graph file");
+		                    return;
+	                    }
+
+	                    std::ofstream file(filePath);
+	                    if (!file.is_open())
+	                    {
+		                    ConsoleLogger::ErrorLog("Failed to open file for writing: " + filePath.string());
+		                    std::filesystem::remove(filePath);
+		                    return;
+	                    }
+
+	                    nlohmann::json jsonData = {
+		                    {"version", 1},
+		                    {"path", filePath.string()},
+		                    {"model_path", ""},
+
+                            {"parameters", nlohmann::json::array()},
+
+		                    // Default nodes
+		                    {"nodes", nlohmann::json::array({
+			                    {
+				                    {"id", -5},
+				                    {"name", "Start"},
+				                    {"x", 80},
+				                    {"y", 350}
+			                    },
+			                    {
+				                    {"id", -6},
+				                    {"name", "Any State"},
+				                    {"x", 80},
+				                    {"y", 200}
+			                    }
+		                    })},
+
+		                    // Transitions
+		                    {"transitions", nlohmann::json::array()},
+
+		                    // Editor settings
+		                    {"editor_settings", {
+			                    {"grid_snap", true},
+			                    {"zoom", 1.0f},
+			                    {"pan_x", 0.0f},
+			                    {"pan_y", 0.0f}
+		                    }},
+
+		                    // Motion matching settings
+		                    {"motion_matching", {
+			                    {"enabled", false},
+			                    {"database_path", ""},
+			                    {"position_weight", 1.0f},
+			                    {"velocity_weight", 1.5f},
+			                    {"trajectory_weight", 2.0f}
+		                    }},
+
+		                    // Blend space configurations
+		                    {"blend_spaces", nlohmann::json::array()}
+	                    };
+
+	                    // Write formatted JSON
+	                    file << std::setw(4) << jsonData << std::endl;
+	                    file.close();
+
+	                    // Set up for renaming
+	                    renamingFile = filePath;
+	                    strcpy_s(newFileName, sizeof(newFileName), filePath.stem().string().c_str());
                     }},
                     {"Create Canvas", [&]() {
                         std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "Canvas", "canvas");
@@ -2554,345 +2634,765 @@ std::string RenderFileSelector(int id, std::string type, std::string selectedPat
 
 void Editor::RenderAnimationGraph()
 {
-    if (!animationGraphWinOpen) return;
-    //ImGui::SetNextWindowSize(ImVec2(180, 180));
-    //ImGui::SetNextWindowPos(ImVec2((RaylibWrapper::GetScreenWidth() - 180) / 2, (RaylibWrapper::GetScreenHeight() - 180) / 2));
+	if (!animationGraphWinOpen) return;
 
-    animationGraphHovered = true;
-    static nlohmann::json* selectedNode = nullptr;
+	static nlohmann::json* selectedNode = nullptr;
+    static nlohmann::json* selectedTransition = nullptr;
+	static bool showAnimationParametersWindow = false;
+	static bool showTransitionEditor = false;
 
-    // Todo: Check model to see if it has new animations (or if animations were moved/renamed)
+	ImGui::SetNextWindowClass(&EditorWindow::defaultWindowClass);
+	if (ImGui::Begin((ICON_FA_PERSON_RUNNING + std::string(" Animation Graph")).c_str(), &animationGraphWinOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+	{
+		bool update = false;
 
-    ImGui::SetNextWindowClass(&EditorWindow::defaultWindowClass);
-    if (ImGui::Begin((ICON_FA_PERSON_RUNNING + std::string(" Animation Graph")).c_str(), &animationGraphWinOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
-    {
-        bool update = false;
-        ImNodes::BeginNodeEditor();
-        if (animationGraphData.is_null())
+		if (animationGraphData.is_null())
+		{
+			ImNodes::BeginNodeEditor();
+			ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 25, false));
+			ImVec2 textSize = ImGui::CalcTextSize("No Animation Graph selected. Select or create one in the Content Browser.");
+			ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - textSize.x) * 0.5f, (ImGui::GetWindowHeight() - textSize.y) * 0.5f));
+			ImGui::Text("No Animation Graph selected. Select or create one in the Content Browser.");
+			ImGui::PopFont();
+			ImNodes::EndNodeEditor();
+			ImGui::End();
+			selectedNode = nullptr;
+			selectedTransition = nullptr;
+			return;
+		}
+
+		// Top toolbar
+		ImGui::BeginChild("##AnimGraphToolbar", ImVec2(0, 40), true);
+		if (ImGui::Button("Parameters", ImVec2(100, 30)))
+			showAnimationParametersWindow = !showAnimationParametersWindow;
+		ImGui::SameLine();
+		if (ImGui::Button("Create State", ImVec2(100, 30)))
+		{
+			CreateAnimationState();
+			update = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Create Any State", ImVec2(120, 30)))
+		{
+			CreateAnimationAnyStateNode();
+			update = true;
+		}
+		ImGui::EndChild();
+
+		// Main graph editor
+		ImNodes::BeginNodeEditor();
+
+		// Render nodes
+		for (auto& node : animationGraphData["nodes"])
+		{
+			int id = node["id"];
+
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImNodes::IsNodeSelected(id))
+			{
+				node["x"] = ImNodes::GetNodeGridSpacePos(id).x;
+				node["y"] = ImNodes::GetNodeGridSpacePos(id).y;
+				update = true;
+			}
+
+			if (!ImNodes::IsNodeSelected(id) && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+				ImNodes::SetNodeGridSpacePos(id, ImVec2(node["x"], node["y"]));
+
+			if (id == -5) // Start node
+			{
+				ImNodes::BeginNode(id);
+				ImNodes::BeginOutputAttribute(id);
+				ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 14, false));
+				ImGui::Text(ICON_FA_PLAY " Start");
+				ImGui::PopFont();
+				ImNodes::EndOutputAttribute();
+				ImNodes::EndNode();
+			}
+			else if (id == -6) // Any State node
+			{
+				ImNodes::BeginNode(id);
+				ImNodes::BeginOutputAttribute(id);
+				ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 14, false));
+				ImGui::Text(ICON_FA_STAR " Any State");
+				ImGui::PopFont();
+				ImNodes::EndOutputAttribute();
+				ImNodes::EndNode();
+			}
+			else // Regular animation state
+			{
+				ImNodes::BeginNode(id);
+
+				// Input attribute
+				ImNodes::BeginInputAttribute(abs(id));
+				ImNodes::EndInputAttribute();
+
+				// Node content
+				ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 14, false));
+				ImGui::Text("%s", node["name"].get<std::string>().c_str());
+				ImGui::PopFont();
+
+				// Show animation info
+				ImGui::PushFont(FontManager::GetFont("Familiar-Pro", 11, false));
+				if (node.contains("sprites") && !node["sprites"].is_null())
+					ImGui::Text("Sprites: %d", node["sprites"].size());
+				else
+					ImGui::Text("No sprites");
+				ImGui::PopFont();
+
+				// Output attribute
+				ImNodes::BeginOutputAttribute(-id);
+				ImNodes::EndOutputAttribute();
+
+				ImNodes::EndNode();
+			}
+		}
+
+		// Render links
+		if (animationGraphData.contains("transitions"))
+		{
+			for (auto& trans : animationGraphData["transitions"])
+			{
+				int fromId = trans["from"].get<int>();
+				int toId = trans["to"].get<int>();
+
+				// Convert to attribute IDs
+				int startAttr = (fromId == -5 || fromId == -6) ? fromId : -fromId;
+				int endAttr = abs(toId);
+
+				ImNodes::Link(trans["id"].get<int>(), startAttr, endAttr);
+			}
+		}
+
+		ImNodes::EndNodeEditor();
+
+		// Handle node selection
+		if (ImNodes::NumSelectedNodes() > 0)
+		{
+			std::vector<int> selectedNodes;
+			selectedNodes.resize(ImNodes::NumSelectedNodes());
+			ImNodes::GetSelectedNodes(selectedNodes.data());
+
+			if (selectedNode == nullptr || (*selectedNode)["id"] != selectedNodes.back())
+			{
+				for (auto& node : animationGraphData["nodes"])
+				{
+					if (node["id"] == selectedNodes.back())
+					{
+						selectedNode = &node;
+						break;
+					}
+				}
+			}
+		}
+		else
+			selectedNode = nullptr;
+
+		// Handle link/transition selection
+        if (ImNodes::NumSelectedLinks() > 0)
         {
-            // Todo: Fade background and make it so user can't move grid
-            ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 25, false));
-            ImVec2 textSize = ImGui::CalcTextSize("No Animation Graph selected. Select or create one in the Content Browser.");
-            ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - textSize.x) * 0.5f, (ImGui::GetWindowHeight() - textSize.y) * 0.5f));
-            ImGui::Text("No Animation Graph selected. Select or create one in the Content Browser.");
-            ImGui::PopFont();
-            ImNodes::EndNodeEditor();
-            ImGui::End();
-            selectedNode = nullptr;
-            return;
+            std::vector<int> selectedLinks;
+            selectedLinks.resize(ImNodes::NumSelectedLinks());
+            ImNodes::GetSelectedLinks(selectedLinks.data());
+
+			if (selectedTransition == nullptr || (*selectedTransition)["id"] != selectedLinks.back())
+			{
+				for (auto& transition : animationGraphData["transitions"])
+				{
+					if (transition["id"] == selectedLinks.back())
+					{
+						selectedTransition = &transition;
+						break;
+					}
+				}
+			}
         }
+		else
+            selectedTransition = nullptr;
 
-        // Todo: Add "Any State" node
-        // Todo: Ability to create multiple "Any State" nodes to cleanup the graph. Make it so ALL any state nodes can be removed including the last one
-        // Todo: Save user position in grid to load it. (It doesn't seem to be implemented into ImNodes)
-        // Todo: Make all nodes fixed sizes
-        // Todo: Add zooming
-        // Todo: Support external animations (from other model files).
-        // Todo: If a model is reimported, make sure to check the animations and make sure the animations index values are correct with the actual index
-        // Todo: Make sure it doesn't update when dragging a node, only once its dropped
-        // Todo: Use node titles to let the user know if theres any warnings/errors
-        // Todo: If the user selects any default nodes like Start and switches to a new graph while its still selected, it will move the position of the node in the new graph to where it was in the old graph
+		// Handle link creation
+		int startAttr, endAttr;
+		if (ImNodes::IsLinkCreated(&startAttr, &endAttr))
+		{
+			// Convert attribute IDs back to node IDs
+			int fromNodeId = (startAttr == -5 || startAttr == -6) ? startAttr : -startAttr;
+			int toNodeId = abs(endAttr);
 
-        for (auto& node : animationGraphData["nodes"])
-        {
-            int id = node["id"];
-            std::string name = node["name"];
-            if (id == -5) // Start node
-            {
-                if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImNodes::IsNodeSelected(-5))
-                {
-                    node["x"] = ImNodes::GetNodeGridSpacePos(id).x;
-                    node["y"] = ImNodes::GetNodeGridSpacePos(id).y;
-                    update = true;
-                }
-                if (!ImNodes::IsNodeSelected(id) && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
-                    ImNodes::SetNodeGridSpacePos(-5, ImVec2(node["x"], node["y"]));
-                ImNodes::BeginNode(-5);
-                ImNodes::BeginOutputAttribute(-5);
-                ImGui::Text("Start");
-                ImNodes::EndOutputAttribute();
-                ImNodes::EndNode();
-            }
-            else
-            {
-                if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImNodes::IsNodeSelected(id))
-                {
-                    node["x"] = ImNodes::GetNodeGridSpacePos(id).x;
-                    node["y"] = ImNodes::GetNodeGridSpacePos(id).y;
-                    update = true;
-                }
-                if (!ImNodes::IsNodeSelected(id) && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
-                    ImNodes::SetNodeGridSpacePos(id, ImVec2(node["x"], node["y"]));
-                ImNodes::BeginNode(id);
-                ImNodes::BeginInputAttribute(abs(node["id"].get<int>())); // Using the positive ID for input ID
-                ImNodes::EndInputAttribute();
-                ImNodes::BeginOutputAttribute(node["id"].get<int>() * -1); // Using the negative ID for output ID
-                ImGui::Text(node["name"].get<std::string>().c_str());
-                ImNodes::EndOutputAttribute();
-                ImNodes::EndNode();
-            }
-        }
+			// Create transition
+			if (!animationGraphData.contains("transitions"))
+				animationGraphData["transitions"] = nlohmann::json::array();
 
-        for (int i = 0; i < animationGraphData["links"].size(); ++i)
-            ImNodes::Link(i, animationGraphData["links"][i][0], animationGraphData["links"][i][1]);
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<int> distribution(999999, 99999999);
 
-        static int selectNode = 0;
-        int previousSelectNode = selectNode;
-        static int openAddSpriteWin = -1; // -2 = Don't open, -1 = open for a new sprite, any else opens to change the sprite at the index (openAddSpriteWin holds the index)
-        if (selectedNode == nullptr)
-            openAddSpriteWin = -2;
+			int id = 0;
+			while (id == 0)
+			{
+				id = distribution(gen);
+                bool idExists = false;
 
-        if (!animationGraphData.is_null())
-        {
-            if (selectedNode == nullptr || (*selectedNode)["id"] == -5) // Checks if selectedNode is null, or if the selected node is the Start node
-            {
-                ImGui::SetCursorPos({ ImGui::GetWindowWidth() - 130, 10 });
-                if (ImGui::Button("Create Animation", { 120, 30 }))
-                {
-                    // Todo: Place the node in the center of the current position rather than this hardcoded solution
+				for (auto& transition : animationGraphData["transitions"])
+				{
+					if (id == transition["id"])
+					{
+                        id = 0;
+                        idExists = true;
+						break;
+					}
+				}
 
-                    std::random_device rd;
-                    std::mt19937 gen(rd());
-                    std::uniform_int_distribution<int> distribution(999999, 99999999);
+                if (!idExists)
+                    break;
+			}
 
-                    int id = 0;
-                    while (id == 0)
-                    {
-                        id = distribution(gen);
-                        for (auto& node : animationGraphData["nodes"])
-                        {
-                            if (id == node["id"])
-                            {
-                                id = 0;
-                                break;
-                            }
-                        }
-                    }
+			nlohmann::json newTransition = {
+                {"id", id},
+				{"from", fromNodeId},
+				{"to", toNodeId},
+				{"duration", 0.3f},
+				{"exit_time", 0.0f},
+				{"has_exit_time", false},
+				{"can_transition_to_self", false},
+				{"conditions", nlohmann::json::array()}
+			};
 
-                    nlohmann::json node = {
-                        {"id", id},
-                        {"name", "New Animation"}, // Todo: It may be best to add numbers at the end of the name if there are others with this name
-                        {"index", 0}, // Todo: Not sure why node's have the index element, see if they are needed
-                        {"x", 350},
-                        {"y", 350},
-                        {"loop", true},
-                        {"speed", 1.0f},
-                        {"sprites", {}}
-                    };
-                    animationGraphData["nodes"].push_back(node);
-                    
-                    selectNode = id;
-                    update = true;
-                }
-            }
-            else
-            {
-                ImGui::SetCursorPos({ImGui::GetWindowWidth() - 160, 10});
-                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.14f, 0.15f, 1.0f));
-                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
+			animationGraphData["transitions"].push_back(newTransition);
+			update = true;
+		}
 
-                float height = 90;
-                if (selectedNode->contains("sprites"))
-                {
-                    height = 170 + (*selectedNode)["sprites"].size() * 100;
-                    if (height > ImGui::GetWindowHeight() - 20)
-                        height = ImGui::GetWindowHeight() - 20;
-                }
+		// Handle link deletion
+		int linkId;
+		if (ImNodes::IsLinkDestroyed(&linkId))
+		{
+			if (animationGraphData.contains("transitions") && linkId < animationGraphData["transitions"].size())
+			{
+				animationGraphData["transitions"].erase(animationGraphData["transitions"].begin() + linkId);
+				update = true;
+			}
+		}
 
-                ImGui::BeginChild("##Animation Graph Properties", {150, height });
-
-                char nameBuffer[256];
-                strcpy_s(nameBuffer, (*selectedNode)["name"].get<std::string>().c_str());
-                ImGui::SetCursorPos({10, 10});
-                ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 20);
-                if (ImGui::InputText("##AnimationName", nameBuffer, sizeof(nameBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
-                {
-                    std::string temp = nameBuffer;
-                    temp.erase(std::remove_if(temp.begin(), temp.end(), ::isspace), temp.end());
-                    if (!temp.empty())
-                    {
-                        // Todo: Consider checking if an animation with the name already exists and if it does then add a number to the end of it
-                        (*selectedNode)["name"] = nameBuffer;
-                        update = true;
-                    }
-                }
-
-                ImGui::SetCursorPos({ 10, 40 });
-                ImGui::Text("Loop");
-                bool loop = (*selectedNode)["loop"].get<bool>();
-                ImGui::SetCursorPos({ 60, 40 });
-                if (ImGui::Checkbox("##AnimationLoop", &loop))
-                {
-                    (*selectedNode)["loop"] = loop;
-                    update = true;
-                }
-
-                ImGui::SetCursorPos({ 10, 70 });
-                ImGui::Text("Speed");
-                float speed = (*selectedNode)["speed"].get<float>();
-                ImGui::SetNextItemWidth(40);
-                ImGui::SetCursorPos({ 60, 70 });
-                if (ImGui::InputFloat("##AnimationSpeed", &speed, 0, 0, "%.05g"))
-                {
-                    (*selectedNode)["speed"] = speed;
-                    update = true;
-                }
-                if (selectedNode->contains("sprites"))
-                {
-                    // Todo: Add support to re-order sprites.
-                    // Todo: Preview button and preview at the bottom. When preview button is clicked, it will expand the window even more to fit it if needed.
-                    // When hovering over sprite add X button top right to remove the sprite
-                    // Todo: Add sprite drag and drop support
-
-                    ImGui::GetWindowDrawList()->AddLine(ImVec2(ImGui::GetWindowPos().x + 10, ImGui::GetWindowPos().y + 100), ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - 10, ImGui::GetWindowPos().y + 100), IM_COL32(25, 25, 25, 255), 2);
-
-                    ImGui::SetCursorPos({ 50, 105 });
-                    ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 15, false));
-                    ImGui::Text("Sprites");
-                    ImGui::PopFont();
-
-                    ImGui::SetCursorPos({ 10, 123 });
-                    ImGui::BeginChild("#AnimationSprites", { ImGui::GetWindowWidth() - 10, ImGui::GetWindowHeight() - 133 });
-
-                    static ImVec2 spriteWinPos;
-
-                    float nextY = 10;
-                    int index = 0;
-                    for (auto& sprite : (*selectedNode)["sprites"])
-                    {
-                        // Todo: Check if path exists, if it doesn't then try to find the file by filename + extension in other folders. If it can't find it, then remove it or set it to a NULL/"File Not Found" image
-                        tempTextures.push_back(new RaylibWrapper::Texture2D(RaylibWrapper::LoadTexture((ProjectManager::projectData.path / "Assets" / sprite.get<std::string>()).string().c_str())));
-                        float aspectRatio = (float)tempTextures.back()->width / (float)tempTextures.back()->height;
-                        ImVec2 imageSize = ImVec2(0, 0);
-                        imageSize.x = aspectRatio > 1.0f ? 90 : 90 * aspectRatio;
-                        imageSize.y = aspectRatio > 1.0f ? 90 / aspectRatio : 90;
-                        int buttonSize = 90 + ImGui::GetStyle().FramePadding.x * 2;
-
-                        ImGui::SetCursorPos({17, nextY});
-                        ImVec2 cursorPos = ImGui::GetCursorPos();
-
-                        ImVec2 tempPos = ImGui::GetCursorScreenPos();
-                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.17f, 0.17f, 0.17f, 1.0f));
-                        if (ImGui::Button(("##" + std::to_string(index)).c_str(), ImVec2(buttonSize, buttonSize)))
-                        {
-                            openAddSpriteWin = index;
-                            spriteWinPos = tempPos;
-                        }
-                        ImGui::PopStyleColor();
-
-                        //if (ImGui::IsItemHovered())
-                        //{
-                        //    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-                        //    {
-
-                        //    }
-                        //}
-
-                        ImGui::SetCursorPos(ImVec2(cursorPos.x + (buttonSize - imageSize.x) / 2, cursorPos.y + (buttonSize - imageSize.y) / 2)); // Sets the position to the button position and centers it
-                        RaylibWrapper::rlImGuiImageSize(tempTextures.back(), imageSize.x, imageSize.y);
-                        nextY += 100;
-                        index++;
-                    }
-
-                    // Todo: Iterate the sprites, create a background of a lighter grey, then add the sprite inside of it (look at content browser for aspect ratio)
-
-                    if (ImGui::GetCursorPosY() > ImGui::GetWindowHeight())
-                        ImGui::SetCursorPos({ 15, nextY });
-                    else
-                        ImGui::SetCursorPos({ 15, ImGui::GetWindowHeight() - 20});
-                    ImVec2 tempPos = ImGui::GetCursorScreenPos();
-                    if (ImGui::Button("Add Sprite", { 100, 20 }))
-                    {
-                        openAddSpriteWin = -1;
-                        spriteWinPos = tempPos;
-                    }
-
-                    ImGui::EndChild();
-
-                    // Todo: Check if the position + height > window and if it is, then move it up
-                    // Todo: Consider using a random number as the RenderFileSelector ID so it fixes the issue with the scroll not always being at the top.
-                    // Checks if the Sprite File Selector window is open
-                    if (openAddSpriteWin != -2)
-                    {
-                        std::string selectedFile = RenderFileSelector((*selectedNode)["id"] + openAddSpriteWin, "Sprite", "", { ".png", ".jpeg", ".jpg" }, false, { spriteWinPos.x - 235, spriteWinPos.y - 40});
-                        // If NULL was returned, or if None was returned and its adding a new sprite, then close the window with no changes
-                        if (selectedFile == "NULL" || (openAddSpriteWin == -1 && selectedFile == "None"))
-                            openAddSpriteWin = -2;
-                        else if (!selectedFile.empty())
-                        {
-                            // If its replacing a sprite instead of adding a new one, either remove it, or replace it
-                            if (openAddSpriteWin != -1)
-                            {
-                                if (selectedFile == "None")
-                                    (*selectedNode)["sprites"].erase((*selectedNode)["sprites"].begin() + openAddSpriteWin);
-                                else
-                                    (*selectedNode)["sprites"][openAddSpriteWin] = selectedFile;
-                            }
-                            else
-                                (*selectedNode)["sprites"].push_back(selectedFile);
-                            openAddSpriteWin = -2;
-                        }
-                    }
-                }
-
-                ImGui::EndChild();
-                ImGui::PopStyleVar(2);
-                ImGui::PopStyleColor();
-            }
-        }
-
-        ImNodes::EndNodeEditor();
-
-        // This uses previousSelectNode to make it wait until the next iteration to select the node incase the node isn't created yet (Like when clicking "Create Animation")
-        if (selectNode != 0 && previousSelectNode == selectNode) // Todo: It may be good to check if the node actually exists since this waits an iteration and by that time something could happen and delete the node. Maybe make SelectNode() return true or false since it checks if the node exists. if it doesnt exist, set selectNode to 0
-        {
-            ImNodes::SelectNode(selectNode);
-            selectNode = 0;
-        }
-
-        if (ImNodes::NumSelectedNodes() > 0)
-        {
-            std::vector<int> selectedNodes;
-            selectedNodes.resize(ImNodes::NumSelectedNodes());
-            ImNodes::GetSelectedNodes(selectedNodes.data());
-            if (selectedNode == nullptr || (*selectedNode)["id"] != selectedNodes.back())
-            {
-                openAddSpriteWin = -2;
-                for (auto& node : animationGraphData["nodes"])
-                {
-                    if (node["id"] == selectedNodes.back())
-                    {
-                        selectedNode = &node;
-                        break;
-                    }
-                }
-            }
-        }
+		// Render properties panel
+        if (selectedNode)
+		    RenderAnimationNodePropertiesPanel(selectedNode, update);
         else
-            selectedNode = nullptr;
+			RenderAnimationTransitionPropertiesPanel(selectedTransition, update);
 
-        int start_attr, end_attr;
-        if (ImNodes::IsLinkCreated(&start_attr, &end_attr))
+		// Render parameters window
+		if (showAnimationParametersWindow)
+            RenderAnimationParametersWin(update);
+
+		// Save if needed
+		if (update)
+		{
+			std::ofstream file(animationGraphData["path"].get<std::filesystem::path>());
+			if (file.is_open())
+			{
+				file << std::setw(4) << animationGraphData << std::endl;
+				file.close();
+			}
+		}
+	}
+	ImGui::End();
+}
+
+void Editor::CreateAnimationState()
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> distribution(999999, 99999999);
+
+	int id = 0;
+	while (id == 0 || id == -5 || id == -6)
+	{
+		id = distribution(gen);
+		for (auto& node : animationGraphData["nodes"])
+		{
+			if (id == node["id"])
+			{
+				id = 0;
+				break;
+			}
+		}
+	}
+
+	nlohmann::json node = {
+		{"id", id},
+		{"name", "New Animation"},
+		{"x", 350},
+		{"y", 350},
+		{"loop", true},
+		{"speed", 1.0f},
+		{"sprites", nlohmann::json::array()}
+	};
+
+	animationGraphData["nodes"].push_back(node);
+}
+
+void Editor::RenderAnimationConditionEditor(nlohmann::json& condition, const nlohmann::json& parameters, bool& update)
+{
+	if (parameters.empty())
+	{
+		ImGui::Text("No parameters available");
+		return;
+	}
+
+	// Parameter selection
+	std::string currentParam = condition["parameter"].get<std::string>();
+
+	if (ImGui::BeginCombo("Parameter", currentParam.c_str()))
+	{
+		for (const auto& param : parameters)
+		{
+			std::string paramName = param["name"].get<std::string>();
+			bool isSelected = (currentParam == paramName);
+
+			if (ImGui::Selectable(paramName.c_str(), isSelected))
+			{
+				condition["parameter"] = paramName;
+
+				// Update condition type and value based on parameter type
+				std::string paramType = param["type"].get<std::string>();
+				if (paramType == "bool")
+				{
+					condition["type"] = "equal";
+					condition["value"] = false;
+				}
+				else if (paramType == "int")
+				{
+					condition["type"] = "equal";
+					condition["value"] = 0;
+				}
+				else if (paramType == "float")
+				{
+					condition["type"] = "equal";
+					condition["value"] = 0.0f;
+				}
+				else if (paramType == "trigger")
+				{
+					condition["type"] = "equal";
+					condition["value"] = true;
+				}
+
+				update = true;
+			}
+
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	// Find parameter type
+	std::string paramType = "bool";
+	for (const auto& param : parameters)
+	{
+		if (param["name"].get<std::string>() == currentParam)
+		{
+			paramType = param["type"].get<std::string>();
+			break;
+		}
+	}
+
+	// Condition type (only for non-trigger parameters)
+	if (paramType != "trigger")
+	{
+		std::string condType = condition["type"].get<std::string>();
+		const char* conditionTypes[] = { "Less", "Less or Equal", "Equal", "Not Equal", "Greater or Equal", "Greater" };
+		const char* conditionTypesStr[] = { "less", "less_equal", "equal", "not_equal", "greater_equal", "greater" };
+		const char* boolConditionTypes[] = { "Equal", "Not Equal" };
+		const char* boolConditionTypesStr[] = { "equal", "not_equal" };
+
+		int currentTypeIndex = 0;
+
+		if (paramType == "bool")
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				if (condType == boolConditionTypesStr[i])
+				{
+					currentTypeIndex = i;
+					break;
+				}
+			}
+
+			if (ImGui::Combo("Condition", &currentTypeIndex, boolConditionTypes, 2))
+			{
+				condition["type"] = boolConditionTypesStr[currentTypeIndex];
+				update = true;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				if (condType == conditionTypesStr[i])
+				{
+					currentTypeIndex = i;
+					break;
+				}
+			}
+
+			if (ImGui::Combo("Condition", &currentTypeIndex, conditionTypes, 6))
+			{
+				condition["type"] = conditionTypesStr[currentTypeIndex];
+				update = true;
+			}
+		}
+	}
+
+	// Value editor
+	if (paramType == "bool")
+	{
+		bool value = condition["value"].get<bool>();
+		if (ImGui::Checkbox("Value", &value))
+		{
+			condition["value"] = value;
+			update = true;
+		}
+	}
+	else if (paramType == "int")
+	{
+		int value = condition["value"].get<int>();
+		if (ImGui::InputInt("Value", &value))
+		{
+			condition["value"] = value;
+			update = true;
+		}
+	}
+	else if (paramType == "float")
+	{
+		float value = condition["value"].get<float>();
+		if (ImGui::InputFloat("Value", &value, 0.1f, 1.0f, "%.2f"))
+		{
+			condition["value"] = value;
+			update = true;
+		}
+	}
+	else if (paramType == "trigger")
+	{
+		ImGui::Text("Trigger (automatically resets)");
+	}
+}
+
+void Editor::CreateAnimationAnyStateNode()
+{
+	// Check if any state node already exists
+	for (auto& node : animationGraphData["nodes"])
+	{
+		if (node["id"] == -6)
+			return; // Already exists
+	}
+
+	nlohmann::json node = {
+		{"id", -6},
+		{"name", "Any State"},
+		{"x", 80},
+		{"y", 200}
+	};
+
+	animationGraphData["nodes"].push_back(node);
+}
+
+void Editor::RenderAnimationNodePropertiesPanel(nlohmann::json* selectedNode, bool& update)
+{
+	if (!selectedNode || (*selectedNode)["id"] == -5 || (*selectedNode)["id"] == -6)
+		return;
+
+	ImGui::SetCursorPos({ ImGui::GetWindowWidth() - 280, 50 });
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.14f, 0.15f, 1.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+
+	float height = 400;
+	if (selectedNode->contains("sprites") && !(*selectedNode)["sprites"].is_null())
+	{
+		height = 300 + (*selectedNode)["sprites"].size() * 100;
+		if (height > ImGui::GetWindowHeight() - 60)
+			height = ImGui::GetWindowHeight() - 60;
+	}
+
+	ImGui::BeginChild("##AnimGraphProps", { 270, height });
+
+	// Name
+	char nameBuffer[256];
+	strcpy_s(nameBuffer, (*selectedNode)["name"].get<std::string>().c_str());
+	ImGui::SetCursorPos({ 10, 10 });
+	ImGui::Text("Name:");
+	ImGui::SetNextItemWidth(250);
+	if (ImGui::InputText("##AnimName", nameBuffer, sizeof(nameBuffer)))
+	{
+		(*selectedNode)["name"] = nameBuffer;
+		update = true;
+	}
+
+	// Loop
+	ImGui::SetCursorPos({ 10, 60 });
+	bool loop = (*selectedNode)["loop"].get<bool>();
+	if (ImGui::Checkbox("Loop", &loop))
+	{
+		(*selectedNode)["loop"] = loop;
+		update = true;
+	}
+
+	// Speed
+	ImGui::SetCursorPos({ 10, 90 });
+	ImGui::Text("Speed:");
+	ImGui::SetNextItemWidth(100);
+	float speed = (*selectedNode)["speed"].get<float>();
+	if (ImGui::InputFloat("##Speed", &speed, 0.01f, 0.1f, "%.2f"))
+	{
+		(*selectedNode)["speed"] = std::max(0.01f, speed);
+		update = true;
+	}
+
+	// Sprites section
+	ImGui::SetCursorPos({ 10, 130 });
+	ImGui::Separator();
+	ImGui::Text("Sprites:");
+
+	if (ImGui::Button("Add Sprite", { 250, 25 }))
+	{
+		// Open sprite selector
+		// Implementation depends on your file browser
+	}
+
+	// List sprites
+	if (selectedNode->contains("sprites"))
+	{
+		int spriteIndex = 0;
+		for (auto it = (*selectedNode)["sprites"].begin(); it != (*selectedNode)["sprites"].end();)
+		{
+			ImGui::PushID(spriteIndex);
+			ImGui::Text("%d. %s", spriteIndex + 1, it->get<std::string>().c_str());
+			ImGui::SameLine();
+			if (ImGui::Button("X"))
+			{
+				it = (*selectedNode)["sprites"].erase(it);
+				update = true;
+			}
+			else
+				++it;
+			ImGui::PopID();
+			spriteIndex++;
+		}
+	}
+
+	ImGui::EndChild();
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor();
+}
+
+void Editor::RenderAnimationTransitionPropertiesPanel(nlohmann::json* selectedTransition, bool& update)
+{
+	if (!selectedTransition)
+		return;
+
+	ImGui::SetCursorPos({ ImGui::GetWindowWidth() - 280, 50 });
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.14f, 0.15f, 1.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+
+	float height = 400;
+
+	ImGui::BeginChild("##AnimGraphProps", { 270, height });
+
+    std::string fromNodeName;
+	for (const auto& node : animationGraphData["nodes"])
+	{
+        if (node["id"].get<int>() == (*selectedTransition)["from"])
         {
-            update = true;
-            animationGraphData["links"].push_back({ start_attr, end_attr });
+            fromNodeName = node["name"].get<std::string>();
+            break;
         }
+	}
 
-        if (update)
-        {
-            std::ofstream file(animationGraphData["path"].get<std::filesystem::path>());
-            if (file.is_open())
-            {
-                file << std::setw(4) << animationGraphData << std::endl;
-                file.close();
-                update = false;
-            }
-        }
+	std::string toNodeName;
+	for (const auto& node : animationGraphData["nodes"])
+	{
+		if (node["id"].get<int>() == (*selectedTransition)["to"])
+		{
+			toNodeName = node["name"].get<std::string>();
+			break;
+		}
+	}
 
-        // Todo: When saving, pop up saying the graph file was deleted or moved. Asked to recreate it or delete it
-    }
-    ImGui::End();
+	ImGui::PushFont(FontManager::GetFont("Familiar-Pro-Bold", 16, false));
+    ImGui::Text(std::string("Transition: " + fromNodeName + " -> " + toNodeName).c_str());
+	ImGui::PopFont();
+	ImGui::Separator();
+
+	// Duration
+	ImGui::Text("Blend Duration:");
+	float duration = (*selectedTransition).value("duration", 0.3f);
+	if (ImGui::SliderFloat("##Duration", &duration, 0.0f, 2.0f, "%.2f s"))
+	{
+        (*selectedTransition)["duration"] = duration;
+		update = true;
+	}
+
+	ImGui::Spacing();
+
+	// Exit time
+	bool hasExitTime = (*selectedTransition).value("has_exit_time", false);
+	if (ImGui::Checkbox("Has Exit Time", &hasExitTime))
+	{
+        (*selectedTransition)["has_exit_time"] = hasExitTime;
+		update = true;
+	}
+
+	if (hasExitTime)
+	{
+		ImGui::Indent();
+		float exitTime = (*selectedTransition).value("exit_time", 0.0f);
+		if (ImGui::SliderFloat("Exit Time", &exitTime, 0.0f, 1.0f, "%.2f"))
+		{
+            (*selectedTransition)["exit_time"] = exitTime;
+			update = true;
+		}
+		ImGui::Text("(Normalized time in animation)");
+		ImGui::Unindent();
+	}
+
+	ImGui::Spacing();
+
+	// Can transition to self
+	bool canTransitionToSelf = (*selectedTransition).value("can_transition_to_self", false);
+	if (ImGui::Checkbox("Can Transition To Self", &canTransitionToSelf))
+	{
+        (*selectedTransition)["can_transition_to_self"] = canTransitionToSelf;
+		update = true;
+	}
+
+	ImGui::Separator();
+	ImGui::Text("Conditions:");
+	ImGui::Spacing();
+
+	// Conditions list
+	if (!(*selectedTransition).contains("conditions"))
+        (*selectedTransition)["conditions"] = nlohmann::json::array();
+
+	auto& conditions = (*selectedTransition)["conditions"];
+
+	// Add condition button
+	if (ImGui::Button("Add Condition", ImVec2(150, 30)))
+	{
+		if ((*selectedTransition).contains("parameters") && !(*selectedTransition)["parameters"].empty())
+		{
+			nlohmann::json newCondition = {
+				{"parameter", (*selectedTransition)["parameters"][0]["name"].get<std::string>()},
+				{"type", "equal"},
+				{"value", false}
+			};
+			conditions.push_back(newCondition);
+			update = true;
+		}
+		else
+		{
+			ImGui::OpenPopup("NoParametersError");
+		}
+	}
+
+	// Error popup
+	if (ImGui::BeginPopup("NoParametersError"))
+	{
+		ImGui::Text("No parameters defined!");
+		ImGui::Text("Create parameters first.");
+		if (ImGui::Button("OK"))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+	}
+
+	ImGui::Spacing();
+
+	// Render each condition
+	int condIndex = 0;
+	for (auto it = conditions.begin(); it != conditions.end(); )
+	{
+		ImGui::PushID(condIndex);
+		ImGui::BeginChild(("##Condition" + std::to_string(condIndex)).c_str(),
+			ImVec2(0, 100), true);
+
+		RenderAnimationConditionEditor(*it, animationGraphData["parameters"], update);
+
+		ImGui::Spacing();
+		if (ImGui::Button("Remove Condition", ImVec2(150, 25)))
+		{
+			it = conditions.erase(it);
+			update = true;
+			ImGui::EndChild();
+			ImGui::PopID();
+			continue;
+		}
+
+		ImGui::EndChild();
+		ImGui::PopID();
+		++it;
+		++condIndex;
+	}
+
+	ImGui::EndChild();
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor();
+}
+
+void Editor::RenderAnimationParametersWin(bool& update)
+{
+	ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Animation Parameters", &showAnimationParametersWindow))
+	{
+		if (!animationGraphData.contains("parameters"))
+			animationGraphData["parameters"] = nlohmann::json::array();
+
+		if (ImGui::Button("Add Parameter", ImVec2(150, 30)))
+			ImGui::OpenPopup("AddParameter");
+
+		if (ImGui::BeginPopup("AddParameter"))
+		{
+			static char paramName[128] = "";
+			static int paramType = 0;
+
+			ImGui::InputText("Name", paramName, sizeof(paramName));
+			ImGui::Combo("Type", &paramType, "Bool\0Int\0Float\0Trigger\0");
+
+			if (ImGui::Button("Create"))
+			{
+				std::string typeStr[] = { "bool", "int", "float", "trigger" };
+				nlohmann::json param = {
+					{"name", paramName},
+					{"type", typeStr[paramType]},
+					{"value", paramType == 0 ? nlohmann::json(false) :
+							  paramType == 1 ? nlohmann::json(0) : nlohmann::json(0.0f)}
+				};
+				animationGraphData["parameters"].push_back(param);
+				update = true;
+				paramName[0] = '\0';
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+
+		// Display parameters
+		for (auto it = animationGraphData["parameters"].begin(); it != animationGraphData["parameters"].end();)
+		{
+			auto& param = *it;
+			ImGui::PushID(std::distance(animationGraphData["parameters"].begin(), it));
+
+			ImGui::Text("%s (%s)", param["name"].get<std::string>().c_str(),
+				param["type"].get<std::string>().c_str());
+
+			ImGui::SameLine(300);
+			if (ImGui::Button("Delete"))
+			{
+				it = animationGraphData["parameters"].erase(it);
+				update = true;
+				ImGui::PopID();
+				continue;
+			}
+
+			ImGui::PopID();
+			++it;
+		}
+	}
+	ImGui::End();
 }
 
 void Editor::RenderProjectSettings()
@@ -5916,6 +6416,9 @@ void Editor::Cleanup()
     materialPreviewMesh.Unload();
     Material::UnloadPreviewMaterial();
     Material::UnloadWhiteTexture();
+	AnimationImporter::SaveCache();
+	AnimationGraphCache::Clear();
+
 
     for (auto& image : tempTextures)
     {
@@ -5990,6 +6493,8 @@ void Editor::Init()
     ShadowManager::LoadShaders();
     Material::LoadWhiteTexture();
     Material::LoadDefaultMaterial();
+    AnimationImporter::Init();
+	AnimationImporter::LoadCache();
     InitMaterialPreview();
     InitMisc();
     InitScenes(); // Must go after InitMisc() and ShaderManager::Init()

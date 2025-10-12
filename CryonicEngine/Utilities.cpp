@@ -17,6 +17,7 @@
 #include <tlhelp32.h>
 #include "curl/curl.h"
 #include <random>
+#include "AnimationImporter.h"
 
 void Utilities::HideFile(std::filesystem::path path) // Todo: Figure out why the file isn't being hidden
 {
@@ -379,40 +380,13 @@ nlohmann::json Utilities::GetExposedVariables(std::filesystem::path path)
 
 std::vector<std::string> Utilities::GetGltfAnimationNames(std::filesystem::path path)
 {
-    tinygltf::Model model;
-    tinygltf::TinyGLTF loader;
-    std::string err;
-    std::string warn;
-    bool ret = false;
+	std::vector<std::string> names;
+	auto animations = AnimationImporter::GetAnimationInfo(path);
 
-    // Todo: This is really slow, even slower than loading and drawing a model in the viewport
-    //  One solution would be to when models are imported access the data then and save it into a file, but still it would be slower than it should
+	for (const auto& anim : animations)
+		names.push_back(anim.name);
 
-    // Todo: Popup a window with a progress bar
-
-    if (path.extension() == ".gltf")
-        ret = loader.LoadASCIIFromFile(&model, &err, &warn, path.string());
-    else if (path.extension() == ".glb")
-        ret = loader.LoadBinaryFromFile(&model, &err, &warn, path.string());
-
-    if (!warn.empty())
-        ConsoleLogger::WarningLog(warn);
-
-    if (!err.empty())
-        ConsoleLogger::ErrorLog(err);
-
-    if (!ret)
-    {
-        // Todo: Pop this message up on screen
-        ConsoleLogger::ErrorLog("Failed to parse GLTF model. Canceling ");
-        return {};
-    }
-
-    std::vector<std::string> animationNames;
-    for (size_t i = 0; i < model.animations.size(); ++i)
-    {
-        animationNames.push_back(model.animations[i].name);
-    }
+	return names;
 }
 
 bool Utilities::CreateDataFile(std::filesystem::path path)
