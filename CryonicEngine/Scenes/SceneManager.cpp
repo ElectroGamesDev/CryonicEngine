@@ -17,6 +17,7 @@
 #include "../Components/CameraComponent.h"
 #include "../Components/Lighting.h"
 #include "../Components/SpriteRenderer.h"
+#include "../Components/Skybox.h"
 #include "../Components/Collider2D.h"
 #include "../Components/Rigidbody2D.h"
 #if defined(IS3D) || defined(EDITOR)
@@ -353,6 +354,11 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
                 Collider2D& component = gameObject->AddComponentInternal<Collider2D>(componentData["id"]);
                 setExposedVariables(component, componentData);
             }
+			else if (componentData["name"] == "Skybox")
+			{
+				Skybox& component = gameObject->AddComponentInternal<Skybox>(componentData["id"]);
+				setExposedVariables(component, componentData);
+			}
             else if (componentData["name"] == "Rigidbody2D")
             {
                 Rigidbody2D& component = gameObject->AddComponentInternal<Rigidbody2D>(componentData["id"]);
