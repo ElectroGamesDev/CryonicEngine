@@ -43,6 +43,8 @@ void ShadowManager::Init(int id, int width, int height)
     lightColLoc = RaylibWrapper::GetShaderLocation(shader, ("lightColor[" + std::to_string(id - 1) + "]").c_str());
     lightTypeLoc = RaylibWrapper::GetShaderLocation(shader, ("lightType[" + std::to_string(id - 1) + "]").c_str());
     lightVPLoc = RaylibWrapper::GetShaderLocation(shader, ("lightVP[" + std::to_string(id - 1) + "]").c_str());
+    spotInnerLoc = RaylibWrapper::GetShaderLocation(shader, ("spotInnerCutoff[" + std::to_string(id - 1) + "]").c_str());
+    spotOuterLoc = RaylibWrapper::GetShaderLocation(shader, ("spotOuterCutoff[" + std::to_string(id - 1) + "]").c_str());
     shadowMapLoc = RaylibWrapper::GetShaderLocation(shader, ("shadowMap[" + std::to_string(id - 1) + "]").c_str());
 
     RaylibWrapper::SetShaderValue(shader, shadowMapLoc, &id, RaylibWrapper::SHADER_UNIFORM_INT);
@@ -54,6 +56,7 @@ void ShadowManager::Init(int id, int width, int height)
 
     RaylibWrapper::Vector4 lightColorNormalized = RaylibWrapper::ColorNormalize({ 255, 255, 255, 0 });
 
+    // Todo: Do I need to set spotInnerLoc and spotOuterLoc here?
     RaylibWrapper::SetShaderValue(shader, lightDirLoc, &lightDir, RaylibWrapper::SHADER_UNIFORM_VEC3);
     RaylibWrapper::SetShaderValue(shader, lightPosLoc, &lightPos, RaylibWrapper::SHADER_UNIFORM_VEC3);
     RaylibWrapper::SetShaderValue(shader, lightColLoc, &lightColorNormalized, RaylibWrapper::SHADER_UNIFORM_VEC4);

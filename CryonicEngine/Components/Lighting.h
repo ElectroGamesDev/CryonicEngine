@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Component.h"
 #include <filesystem>
 #include <deque>
@@ -14,7 +13,6 @@ public:
 		iconUnicode = "\xef\x83\xab";
 		runInEditor = true;
 		Awake();
-
 #if defined(EDITOR)
 		std::string variables = R"(
         [
@@ -34,51 +32,94 @@ public:
                     [
                         "Point",
                         "Spot",
-						"Directional"
+                        "Directional"
                     ]
+                ],
+                [
+                    "Intensity",
+                    "intensity",
+                    1.0,
+                    "Float"
+                ],
+                [
+                    "Range",
+                    "range",
+                    10.0,
+                    "Float"
+                ],
+                [
+                    "Spot Inner Angle",
+                    "spotInnerAngle",
+                    22.5,
+                    "Float"
+                ],
+                [
+                    "Spot Outer Angle",
+                    "spotOuterAngle",
+                    30.0,
+                    "Float"
+                ],
+                [
+                    "Cast Shadows",
+                    "castShadows",
+                    true,
+                    "Bool"
                 ]
             ]
         ]
-		)";
+        )";
 		exposedVariables = nlohmann::json::parse(variables);
 #endif
 	}
 
 	enum Type
 	{
-		Point,
-		Spot,
-		Directional
+		Point = 0,
+		Spot = 1,
+		Directional = 2
 	};
 
 	Lighting* Clone() override
 	{
 		return new Lighting(gameObject, -1);
 	}
-	//void Start() override;
+
 	void Awake() override;
 	void Destroy() override;
 	void Enable() override;
 	void Disable() override;
 	void RenderLight(int index);
+
 #ifdef EDITOR
 	void EditorUpdate() override;
 #endif
-	//void Destroy() override;
 
-	//static Lighting* main; // Todo: Remove this
-	//static bool setMain;
 	static std::deque<Lighting*> lights;
 	static int nextId;
+
 	int lightId;
+	Color color = { 255, 255, 255, 255 };
+	Type type = Point;
+	float intensity = 1.0f;
+	float range = 10.0f;
+	float spotInnerAngle = 22.5f;  // Degrees
+	float spotOuterAngle = 30.0f;  // Degrees
+	bool castShadows = true;
 
 private:
 	bool wasLastActive = false;
-	bool wasGOLastActive = false;
+	bool needsShaderUpdate = true;
 	ShadowManager shadowManager;
-	Vector3 lastPosition;
-	Quaternion lastRotation;
 
-	Color color;
-	Type type;
+	Vector3 lastPosition = { 0, 0, 0 };
+	Quaternion lastRotation = { 0, 0, 0, 1 };
+	Color lastColor = { 0, 0, 0, 0 };
+	Type lastType = Point;
+	float lastIntensity = -1.0f;
+	float lastRange = -1.0f;
+	float lastSpotInnerAngle = -1.0f;
+	float lastSpotOuterAngle = -1.0f;
+
+	void UpdateShaderProperties();
+	void UpdateShadowCamera();
 };

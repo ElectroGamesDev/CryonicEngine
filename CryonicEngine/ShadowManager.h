@@ -28,6 +28,8 @@ public:
     int lightPosLoc;
     int lightTypeLoc;
     int lightVPLoc;
+    int spotInnerLoc;
+	int spotOuterLoc;
     int shadowMapLoc;
 private:
     Vector2 size;

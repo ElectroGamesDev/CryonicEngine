@@ -17,16 +17,20 @@ out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
 
-// NOTE: Add your custom variables here
-
 void main()
 {
-    // Send vertex attributes to fragment shader
-    fragPosition = vec3(matModel*vec4(vertexPosition, 1.0));
+    // Calculate world space position
+    fragPosition = vec3(matModel * vec4(vertexPosition, 1.0));
+    
+    // Pass through texture coordinates
     fragTexCoord = vertexTexCoord;
+    
+    // Pass through vertex color
     fragColor = vertexColor;
-    fragNormal = normalize(vec3(matNormal*vec4(vertexNormal, 1.0)));
-
-    // Calculate final vertex position
-    gl_Position = mvp*vec4(vertexPosition, 1.0);
+    
+    // Transform normal to world space
+    fragNormal = normalize(vec3(matNormal * vec4(vertexNormal, 1.0)));
+    
+    // Calculate final vertex position (clip space)
+    gl_Position = mvp * vec4(vertexPosition, 1.0);
 }
