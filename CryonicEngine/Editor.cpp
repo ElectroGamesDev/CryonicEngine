@@ -33,6 +33,7 @@
 #include "Components/Button.h"
 #include "Components/CanvasRenderer.h"
 #include "Components/Terrain.h"
+#include "Components/Skybox.h"
 #include "IconManager.h"
 #include "ShaderManager.h"
 #include "ShadowManager.h"
@@ -3683,6 +3684,7 @@ void Editor::RenderComponentsWin()
         // Internal components
         AddComponentInternalButton("Camera", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<CameraComponent>(); });
         AddComponentInternalButton("Light", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<Lighting>(); });
+		AddComponentInternalButton("Skybox", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<Skybox>(); });
         AddComponentInternalButton("Collider2D", [&]() { std::get<GameObject*>(objectInProperties)->AddComponentInternal<Collider2D>(); });
         AddComponentInternalButton("Rigidbody2D", [&]()
             {
@@ -4908,17 +4910,6 @@ void Editor::RenderProperties()
                                 if (ImGui::Checkbox(("##" + name).c_str(), &value))
                                     (*it)[2] = value;
                             }
-                            else if ((*it)[0] == "string" || (*it)[0] == "char")
-                            {
-                                ImGui::SameLine();
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
-                                ImGui::SetNextItemWidth(120);
-                                std::string inputText = (*it)[2].get<std::string>();
-                                char buffer[256];
-                                strcpy_s(buffer, sizeof(buffer), inputText.c_str());
-                                ImGui::InputText(("##" + name).c_str(), buffer, sizeof(buffer));
-                                (*it)[2] = buffer;
-                            }
                             else if ((*it)[0] == "float")
                             {
                                 ImGui::SameLine();
@@ -5004,77 +4995,87 @@ void Editor::RenderProperties()
                                 ImGui::InputFloat(("##Z" + name).c_str(), &z, 0, 0, "%.10g");
                                 (*it)[2][2] = z;
                             }
-                            else if ((*it).size() > 4 && (*it)[4].contains("Extensions"))
-                            {
-                                static bool openSelector = false;
-                                // Todo: If the user deselects or closes the component, it will hide the menu, but once it is reopened, or another one with Extensions, it will open the menu. Maybe right here right after the bool, run RenderFIleSelector() with a special parameter to check if the old ID != new ID and if it doesnt equal, then return "NULL" and it will know it shouldn't be open
-                                ImGui::SameLine();
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
-                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
-                                std::string selectedFile = "None Selected";
-                                if (!(*it)[2].is_null() && (*it)[2].get<std::string>() != "nullptr")
-                                {
-                                    if ((*it)[4]["Extensions"].size() > 1)
-                                        selectedFile = std::filesystem::path((*it)[2].get<std::string>()).filename().string();
-                                    else
-                                        selectedFile = std::filesystem::path((*it)[2].get<std::string>()).stem().string();
-                                }
-                                ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-                                if (ImGui::Button(selectedFile.c_str(), { ImGui::GetWindowWidth() - 130, 20 }))
-                                    openSelector = true;
+							else if ((*it).size() > 4 && (*it)[4].contains("Extensions")) // This must go above the "string" check since an extension can use strings
+							{
+								static std::string openSelector = ""; // Stores the variable name currently opened in the file selector
+								ImGui::SameLine();
+								ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.17f, 0.18f, 1.00f));
+								std::string selectedFile = "None Selected";
+								if (!(*it)[2].is_null() && (*it)[2].get<std::string>() != "nullptr")
+								{
+									if ((*it)[4]["Extensions"].size() > 1)
+										selectedFile = std::filesystem::path((*it)[2].get<std::string>()).filename().string();
+									else
+										selectedFile = std::filesystem::path((*it)[2].get<std::string>()).stem().string();
+								}
+								ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+								if (ImGui::Button(std::string(selectedFile + "##" + (*it)[1].get<std::string>()).c_str(), { ImGui::GetWindowWidth() - 130, 20 }))
+									openSelector = (*it)[1].get<std::string>();
 
-                                // If right clicked, then go to it in the content browser
-                                if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) &&
-                                    std::filesystem::exists(ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>())))
-                                {
-                                    // Set content browser path to the file
-                                    fileExplorerPath = ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>()).parent_path();
+								// If right clicked, then go to it in the content browser
+								if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) &&
+									std::filesystem::exists(ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>())))
+								{
+									// Set content browser path to the file
+									fileExplorerPath = ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>()).parent_path();
 
-                                    // Focus Content Browser
-                                    ImGuiWindow* window = ImGui::FindWindowByName((ICON_FA_FOLDER_OPEN + std::string(" Content Browser")).c_str());
-                                    if (window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL)
-                                        window->DockNode->TabBar->NextSelectedTabId = window->TabId;
+									// Focus Content Browser
+									ImGuiWindow* window = ImGui::FindWindowByName((ICON_FA_FOLDER_OPEN + std::string(" Content Browser")).c_str());
+									if (window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL)
+										window->DockNode->TabBar->NextSelectedTabId = window->TabId;
 
-                                    focusContentBrowserFile = (ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>())).string();
-                                }
+									focusContentBrowserFile = (ProjectManager::projectData.path / "Assets" / std::filesystem::path((*it)[2].get<std::string>())).string();
+								}
 
-                                // Checks to see if the user is hovering over the button while dragging a file with a file type that can be used for the variable
-                                else if (ImGui::IsMouseHoveringRect(cursorScreenPos, { cursorScreenPos.x + ImGui::GetWindowWidth() - 130, cursorScreenPos.y + 20 }) && dragData.first != None && dragData.second.find("Path") != dragData.second.end()) // Using this since ImGui::IsItemHovered() won't work while dragging.
-                                {
-                                    std::vector<std::string> extensions;
-                                    for (const auto& extension : (*it)[4]["Extensions"])
-                                        extensions.push_back(extension);
-                                    if (std::find(extensions.begin(), extensions.end(), std::any_cast<std::filesystem::path>(dragData.second["Path"]).extension().string()) != extensions.end())
-                                    {
-                                        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-                                            (*it)[2] = std::filesystem::relative(std::any_cast<std::filesystem::path>(dragData.second["Path"]), ProjectManager::projectData.path / "Assets").string();
-                                        dragData.second["HoveringValidElement"] = true; // This lets the code in the Content Browser know its hovering something it can be placed in, so it can change the cursor icon
-                                    }
-                                }
+								// Checks to see if the user is hovering over the button while dragging a file with a file type that can be used for the variable
+								else if (ImGui::IsMouseHoveringRect(cursorScreenPos, { cursorScreenPos.x + ImGui::GetWindowWidth() - 130, cursorScreenPos.y + 20 }) && dragData.first != None && dragData.second.find("Path") != dragData.second.end()) // Using this since ImGui::IsItemHovered() won't work while dragging.
+								{
+									std::vector<std::string> extensions;
+									for (const auto& extension : (*it)[4]["Extensions"])
+										extensions.push_back(extension);
+									if (std::find(extensions.begin(), extensions.end(), std::any_cast<std::filesystem::path>(dragData.second["Path"]).extension().string()) != extensions.end())
+									{
+										if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+											(*it)[2] = std::filesystem::relative(std::any_cast<std::filesystem::path>(dragData.second["Path"]), ProjectManager::projectData.path / "Assets").string();
+										dragData.second["HoveringValidElement"] = true; // This lets the code in the Content Browser know its hovering something it can be placed in, so it can change the cursor icon
+									}
+								}
 
-                                ImGui::PopStyleColor();
+								ImGui::PopStyleColor();
 
-                                if (openSelector)
-                                {
-                                    // Adds the extensions to the extensions vector so it can be passed into RenderFileSelector()
-                                    std::vector<std::string> extensions;
-                                    for (const auto& extension : (*it)[4]["Extensions"])
-                                        extensions.push_back(extension);
+								if (!openSelector.empty() && openSelector == (*it)[1].get<std::string>())
+								{
+									// Adds the extensions to the extensions vector so it can be passed into RenderFileSelector()
+									std::vector<std::string> extensions;
+									for (const auto& extension : (*it)[4]["Extensions"])
+										extensions.push_back(extension);
 
-                                    std::string currentlySelected = ((*it)[2] == "nullptr") ? "" : (*it)[2];
-                                    std::string selectedFile = RenderFileSelector(componentsNum, name, currentlySelected, extensions, false, {ImGui::GetCursorScreenPos().x - 100, ImGui::GetCursorScreenPos().y - 40});
-                                    if (selectedFile == "NULL")
-                                        openSelector = false;
-                                    else if (!selectedFile.empty())
-                                    {
-                                        if (selectedFile == "None")
-                                            (*it)[2] = "nullptr";
-                                        else
-                                            (*it)[2] = selectedFile;
-                                        openSelector = false;
-                                    }
-                                }
-                            }
+									std::string currentlySelected = ((*it)[2] == "nullptr") ? "" : (*it)[2];
+									std::string selectedFile = RenderFileSelector(Utilities::HashString((*it)[1].get<std::string>()), name, currentlySelected, extensions, false, { ImGui::GetCursorScreenPos().x - 100, ImGui::GetCursorScreenPos().y - 40 });
+									if (selectedFile == "NULL")
+										openSelector = "";
+									else if (!selectedFile.empty())
+									{
+										if (selectedFile == "None")
+											(*it)[2] = "nullptr";
+										else
+											(*it)[2] = selectedFile;
+										openSelector = "";
+									}
+								}
+							}
+							else if ((*it)[0] == "string" || (*it)[0] == "char") // This must go below the "extensions" check since an extension can use strings
+							{
+								ImGui::SameLine();
+								ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
+								ImGui::SetNextItemWidth(120);
+								std::string inputText = (*it)[2].get<std::string>();
+								char buffer[256];
+								strcpy_s(buffer, sizeof(buffer), inputText.c_str());
+								ImGui::InputText(("##" + name).c_str(), buffer, sizeof(buffer));
+								(*it)[2] = buffer;
+							}
                             else if ((*it).size() > 4) // This is probably not a good solution for checking if its an enum or not. Maybe give the array a key
                             {
                                 // Todo: The enum values won't be capitalized or have spaces, only the selected enum value will be capitalized with spaces
@@ -5567,6 +5568,7 @@ void Editor::RenderHierarchy()
                 {"Create Cone", "Cone", 3, Cone},
 				{"Create Terrain", "Terrain", 3, Custom},
                 {"Create Light", "Light", 3, Custom},
+				{"Create Skybox", "Skybox", 3, Custom},
                 {"Create Square", "Square", 2, Custom},
                 {"Create Circle", "Circle", 2, Custom},
                 {"Create Tilemap", "Tilemap", 2, Custom},
@@ -5654,6 +5656,10 @@ void Editor::RenderHierarchy()
                 {
                     gameObject->AddComponentInternal<Terrain>();
                 }
+				else if (objectToCreate.name == "Skybox")
+				{
+					gameObject->AddComponentInternal<Skybox>();
+				}
                 else if (objectToCreate.name != "GameObject" && guiObjectToCreate.name == "")
                 {
                     if (ProjectManager::projectData.is3D)
