@@ -124,7 +124,7 @@ bool SceneManager::SaveScene(Scene* scene)
             }
 			else if (dynamic_cast<Terrain*>(component))
 			{
-				componentData["height_data"] = dynamic_cast<Terrain*>(component)->SerializeHeightData();
+				componentData["data"] = dynamic_cast<Terrain*>(component)->SerializeTerrainData();
 			}
             else if (dynamic_cast<ScriptComponent*>(component))
             {
@@ -336,7 +336,7 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
 			{
 				Terrain& component = gameObject->AddComponentInternal<Terrain>(componentData["id"]);
 				setExposedVariables(component, componentData);
-                component.LoadHeightData(componentData["height_data"]);
+                component.LoadTerrainData(componentData["data"]);
 			}
             else if (componentData["name"] == "CameraComponent")
             {

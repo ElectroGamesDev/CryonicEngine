@@ -52,7 +52,7 @@ struct AutoMeshRule
 	float maxSlope = 45.0f;
 	float minHeight = 0.0f;
 	float maxHeight = 100.0f;
-	float textureWeightThreshold = 0.25f;
+	float textureWeightThreshold = 0.15f;
 	float scaleVariation = 0.0f;
 	float rotationRandomness = 1.0f;
 	bool alignToNormal = true;
@@ -171,12 +171,14 @@ public:
 	void GenerateAutoMeshesForRule(AutoMeshRule& rule);
 
 	// Serialization
+	nlohmann::json SerializeTerrainData();
+	void LoadTerrainData(const nlohmann::json& data);
 	nlohmann::json SerializeHeightData();
 	void LoadHeightData(const nlohmann::json& data);
 	nlohmann::json SerializeLayerData();
 	void LoadLayerData(const nlohmann::json& data);
-	nlohmann::json SerializeTerrainMeshData();
-	void LoadTerrainMeshData(const nlohmann::json& data);
+	nlohmann::json SerializeMeshData();
+	void LoadMeshData(const nlohmann::json& datas);
 	nlohmann::json SerializeAutoMeshRules();
 	void LoadAutoMeshRules(const nlohmann::json& data);
 
