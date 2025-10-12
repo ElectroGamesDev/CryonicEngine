@@ -25,4 +25,5 @@ namespace Utilities
     void TerminateJob(JobHandle jobHandle);
     std::filesystem::path CreateTempFolder(std::filesystem::path projectPath);
     std::filesystem::path GetExePath();
+    uint32_t HashString(const std::string& str);
 };

@@ -699,3 +699,15 @@ std::filesystem::path Utilities::GetExePath()
         return std::filesystem::current_path();
     }
 }
+
+uint32_t Utilities::HashString(const std::string& str)
+{
+	uint32_t hash = 0x811c9dc5;
+	for (char c : str)
+    {
+		hash ^= static_cast<uint8_t>(c);
+        hash *= 0x01000193;
+	}
+
+	return hash;
+}
