@@ -28,7 +28,7 @@ struct TerrainMesh
 	std::string name = "Mesh";
 	std::string modelPath;
 	std::string materialPath;
-	ModelType modelType = Custom;
+	ModelType modelType = ModelType::Custom;
 	std::vector<MeshInstance> instances;
 
 	// Cached rendering data

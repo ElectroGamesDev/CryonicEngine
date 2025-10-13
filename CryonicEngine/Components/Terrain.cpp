@@ -1061,9 +1061,9 @@ void Terrain::AddTerrainMesh(const std::string& modelPath, const std::string& ma
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
 	if (ext == ".obj" || ext == ".gltf" || ext == ".glb")
-		newMesh.modelType = Custom;
+		newMesh.modelType = ModelType::Custom;
 	else
-		newMesh.modelType = Custom;
+		newMesh.modelType = ModelType::Custom;
 
 	terrainMeshs.push_back(newMesh);
 
@@ -1462,7 +1462,7 @@ void Terrain::LoadAutoMeshRuleModels(AutoMeshRule& rule)
 			// Load new model
 			cached.model = new RaylibModel();
 
-			ModelType modelType = Custom;
+			ModelType modelType = ModelType::Custom;
 			std::string ext = std::filesystem::path(variant.modelPath).extension().string();
 			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
