@@ -1632,6 +1632,11 @@ namespace RaylibWrapper {
         ::rlDrawRenderBatchActive();
     }
 
+    void rlSetBlendMode(int mode)
+    {
+		::rlSetBlendMode(mode);
+    }
+
     // raymath functions
 
     Matrix MatrixOrtho(double left, double right, double bottom, double top, double nearPlane, double farPlane) {
