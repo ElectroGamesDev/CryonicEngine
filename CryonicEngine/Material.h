@@ -29,8 +29,22 @@ public:
 
         this->path = path;
 
-        if (path != "null")
+        bool fileExists;
+#ifdef EDITOR
+        fileExists = std::filesystem::exists(ProjectManager::projectData.path / "/Assets/" / path);
+#else
+		if (exeParent.empty())
+            fileExists = std::filesystem::exists("Resources/Assets" / path);
+		else
+            fileExists = std::filesystem::exists(std::filesystem::path(exeParent) / "Resources" / "Assets" / path);
+#endif
+
+        if (fileExists && std::filesystem::path(path).extension() != ".mat")
+            fileExists = false;
+
+        if (fileExists)
         {
+            loadedFromFile = true;
             LoadData();
 
 #ifdef EDITOR
@@ -45,8 +59,9 @@ public:
 
             materials[path] = this;
         }
-		else // New material without a path
+		else // New material without a path. Used for things like terrains and water
         {
+            loadedFromFile = false;
 			raylibMaterial.shader.id = ShadowManager::shader.id;
             raylibMaterial.shader.locs = ShadowManager::shader.locs;
 
@@ -124,7 +139,7 @@ public:
 
         RaylibWrapper::UnloadMaterial(raylibMaterial); // Most likely the same material is going to be loaded again, but in case it isn't (different material or the material fails to load), I'll unload it. This shouldn't really add any overhead.
 
-		if (path != "null") // The engine crashes if I call the following code on a material with the path "null"
+		if (loadedFromFile) // The engine crashes if I call the following code on a material that isnt loaded from a file
             delete[] raylibMaterial.maps;
         raylibMaterial = {};
         raylibMaterial.params[0] = static_cast<float>(id);
@@ -334,6 +349,7 @@ public:
 private:
     std::string path = "";
     int id;
+    bool loadedFromFile;
     Color albedoColor = { 255, 255, 255, 255 };
     float metallic = 0.0f;
     float roughness = 0.5f;
