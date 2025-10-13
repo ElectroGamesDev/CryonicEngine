@@ -36,34 +36,34 @@ public:
                     ]
                 ],
                 [
-                    "Intensity",
+                    "float",
                     "intensity",
                     1.0,
-                    "Float"
+                    "Intensity"
                 ],
                 [
-                    "Range",
+                    "float",
                     "range",
                     10.0,
-                    "Float"
+                    "Range"
                 ],
                 [
-                    "Spot Inner Angle",
+                    "float",
                     "spotInnerAngle",
                     22.5,
-                    "Float"
+                    "Spot Inner Angle"
                 ],
                 [
-                    "Spot Outer Angle",
+                    "float",
                     "spotOuterAngle",
                     30.0,
-                    "Float"
+                    "Spot Outer Angle"
                 ],
                 [
-                    "Cast Shadows",
+                    "bool",
                     "castShadows",
                     true,
-                    "Bool"
+                    "Cast Shadows"
                 ]
             ]
         ]
