@@ -12,7 +12,8 @@ public:
 		LitStandard,
 		Terrain,
 		Cubemap,
-		Skybox
+		Skybox,
+		Water
 	};
 
 	static void Init();

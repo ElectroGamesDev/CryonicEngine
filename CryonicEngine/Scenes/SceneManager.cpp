@@ -13,6 +13,7 @@
 #include "../Components/Component.h"
 #include "../Components/MeshRenderer.h"
 #include "../Components/Terrain.h"
+#include "../Components/Ocean.h"
 #include "../Components/ScriptComponent.h"
 #include "../Components/CameraComponent.h"
 #include "../Components/Lighting.h"
@@ -357,6 +358,11 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
 			else if (componentData["name"] == "Skybox")
 			{
 				Skybox& component = gameObject->AddComponentInternal<Skybox>(componentData["id"]);
+				setExposedVariables(component, componentData);
+			}
+			else if (componentData["name"] == "Ocean")
+			{
+                Ocean& component = gameObject->AddComponentInternal<Ocean>(componentData["id"]);
 				setExposedVariables(component, componentData);
 			}
             else if (componentData["name"] == "Rigidbody2D")

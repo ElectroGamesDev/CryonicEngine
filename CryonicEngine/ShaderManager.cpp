@@ -86,6 +86,21 @@ void ShaderManager::Init()
 	}
 #endif
 
+	// Water
+#if defined (EDITOR)
+	// Todo: This won't work for PC's other than mine
+	RaylibShader::shaders[ShaderManager::Water].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/water.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/water.fs").string().c_str());
+#else
+	if (exeParent.empty())
+	{
+		RaylibShader::shaders[ShaderManager::Water].Load("Resources/shaders/glsl330/water.vs", "Resources/shaders/glsl330/water.fs");
+	}
+	else
+	{
+		RaylibShader::shaders[ShaderManager::Water].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/water.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/water.fs").string().c_str());
+	}
+#endif
+
 
     //std::string currentDirectory = GetWorkingDirectory();
     //std::string relativePath = "resources/shaders/glsl330/lighting.vs";

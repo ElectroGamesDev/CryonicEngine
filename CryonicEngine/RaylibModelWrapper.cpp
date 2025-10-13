@@ -13,7 +13,7 @@ std::pair<unsigned int, int*> RaylibModel::shadowShader;
 std::pair<unsigned int, int*> RaylibModel::materialPreviewShadowShader;
 //std::unordered_map<Model, std::vector<RaylibWrapper::Material>> RaylibModel::rWrapperMaterials;
 
-bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath)
+bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath, std::vector<float> data)
 {
     // Todo: Don't create new meshes for primitives
     switch (type)
@@ -70,7 +70,15 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
         }
         else
         {
-            primitiveModels[ModelType::Plane] = std::make_pair(LoadModelFromMesh(GenMeshPlane(1, 1, 1, 1)), 1);
+			int size = 1;
+			if (!data.empty() && data[0] > 0)
+                size = data[0];
+
+            int subDivisions = 1;
+            if (!data.empty() && data[1] > 0)
+				subDivisions = data[1];
+
+            primitiveModels[ModelType::Plane] = std::make_pair(LoadModelFromMesh(GenMeshPlane(size, size, subDivisions, subDivisions)), 1);
             model = &primitiveModels[ModelType::Plane];
         }
         primitiveModel = true;
@@ -478,7 +486,6 @@ std::vector<int> RaylibModel::GetMaterialIDs()
 bool RaylibModel::CompareMaterials(std::vector<int> matIDs)
 {
     // This assumes the materials are in the same order, which they should be
-
     if (model->first.materialCount != matIDs.size())
         return false;
 

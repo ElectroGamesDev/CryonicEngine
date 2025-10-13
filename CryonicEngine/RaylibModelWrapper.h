@@ -19,7 +19,7 @@ enum class ModelType
 class RaylibModel
 {
 public:
-	bool Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath);
+	bool Create(ModelType type, std::filesystem::path path, ShaderManager::Shaders shader, std::filesystem::path projectPath, std::vector<float> data = {});
 public:
 	bool CreateFromHeightData(const std::vector<std::vector<float>>& heightData,
 		int width,

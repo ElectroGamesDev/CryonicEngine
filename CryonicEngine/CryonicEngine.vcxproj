@@ -186,6 +186,7 @@
     <ClCompile Include="Components\Label.cpp" />
     <ClCompile Include="Components\Lighting.cpp" />
     <ClCompile Include="Components\MeshRenderer.cpp" />
+    <ClCompile Include="Components\Ocean.cpp" />
     <ClCompile Include="Components\Rigidbody2D.cpp" />
     <ClCompile Include="Components\Rigidbody3D.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
@@ -274,6 +275,7 @@
     <ClInclude Include="Components\Label.h" />
     <ClInclude Include="Components\Lighting.h" />
     <ClInclude Include="Components\MeshRenderer.h" />
+    <ClInclude Include="Components\Ocean.h" />
     <ClInclude Include="Components\Rigidbody2D.h" />
     <ClInclude Include="Components\Rigidbody3D.h" />
     <ClInclude Include="Components\ScriptComponent.h" />

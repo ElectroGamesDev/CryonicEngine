@@ -34,6 +34,7 @@
 #include "Components/CanvasRenderer.h"
 #include "Components/Terrain.h"
 #include "Components/Skybox.h"
+#include "Components/Ocean.h"
 #include "IconManager.h"
 #include "ShaderManager.h"
 #include "ShadowManager.h"
@@ -5618,6 +5619,7 @@ void Editor::RenderHierarchy()
 				{"Create Terrain", "Terrain", 3, ModelType::Custom},
                 {"Create Light", "Light", 3, ModelType::Custom},
 				{"Create Skybox", "Skybox", 3, ModelType::Custom},
+				{"Create Ocean", "Ocean", 3, ModelType::Custom},
                 {"Create Square", "Square", 2, ModelType::Custom},
                 {"Create Circle", "Circle", 2, ModelType::Custom},
                 {"Create Tilemap", "Tilemap", 2, ModelType::Custom},
@@ -5708,6 +5710,10 @@ void Editor::RenderHierarchy()
 				else if (objectToCreate.name == "Skybox")
 				{
 					gameObject->AddComponentInternal<Skybox>();
+				}
+				else if (objectToCreate.name == "Ocean")
+				{
+					gameObject->AddComponentInternal<Ocean>();
 				}
                 else if (objectToCreate.name != "GameObject" && guiObjectToCreate.name == "")
                 {
