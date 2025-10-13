@@ -43,7 +43,7 @@ Below is a list of current and planned features for Cryonic Engine.
 | Advanced GUI Editor                     | ✅          |
 | 2D Animation System                     | ✅          |
 | 3D Animation System                     | ⚠️          |
-| Terrain System                          | ❌          |
+| Terrain System                          | ✅          |
 | Tilemap Support                         | ⚠️          |
 | Tilemap Editor                          | ❌          |
 | AI Navigation                           | ⚠️          |
@@ -71,6 +71,28 @@ Cryonic Engine is open for contributions. Feel free to fork the repository, make
 </a>
 
 
-## License
+## License Summary
+[Click here for the full license](https://github.com/ElectroGamesDev/CryonicEngine/blob/master/LICENSE)
 
-Cryonic Engine is licensed under the [GPL-3.0 License](LICENSE).
+### Key Points
+
+- **Usage:** You can use, modify, and distribute the Engine, Modifications, or Derived Engines for any purpose, including commercial projects.  
+- **Sublicensing:** Allowed only under the same license terms.  
+
+---
+
+### Splash Screen
+
+- **Every Product must display the Cryonic Engine Splash Screen for at startup.**  
+- Removal is only allowed with a **paid plan** that removes the slash screen. Unauthorized removal is a breach.
+
+---
+
+### Royalties
+
+- **Royalty Rate:** 4% on all revenue **above $250,000 USD per Product that uses the engine**.  
+- Applies to **any Product using the Engine or Derived Engine**, modified or unmodified.  
+
+---
+
+By using the Engine, you agree to the full Cryonic Engine License.
