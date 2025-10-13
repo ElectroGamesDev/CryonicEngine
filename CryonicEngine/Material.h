@@ -258,6 +258,15 @@ public:
     Color GetAlbedoColor() const { return albedoColor; }
 
     /**
+	 * @brief Sets the albedo color of the material.
+	 */
+    void SetAlbedoColor(Color color)
+    {
+        albedoColor = { color.r, color.g, color.b, color.a };
+		raylibMaterial.maps[RaylibWrapper::MATERIAL_MAP_ALBEDO].color = { color.r, color.g, color.b, color.a };
+    }
+
+    /**
      * @brief Gets the metallic value of the material.
      */
     float GetMetallic() const { return metallic; }
