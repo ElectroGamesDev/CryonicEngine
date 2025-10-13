@@ -558,6 +558,18 @@ void SceneManager::CreateScene(std::filesystem::path path)
         }
 	}
 
+	// Directional Light
+	if (ProjectManager::projectData.is3D)
+	{
+		GameObject* lightObject = scene.AddGameObject();
+        lightObject->SetName("Directional Light");
+		lightObject->transform.SetRotationEuler({ 46, 46, 0 });
+
+		Lighting* light = lightObject->AddComponent<Lighting>();
+        light->gameObject = lightObject;
+        light->exposedVariables[1][1][2] = "Directional"; // Set light to directional
+	}
+
     // Camera
     GameObject* cameraObject = scene.AddGameObject();
     if (ProjectManager::projectData.is3D)
