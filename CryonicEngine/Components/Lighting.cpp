@@ -97,9 +97,13 @@ void Lighting::UpdateShadowCamera()
 #if defined(EDITOR)
 		RaylibWrapper::Vector3 focusPoint = Editor::camera.target;
 #else
-		RaylibWrapper::Vector3 focusPoint = CameraComponent::main ?
-			CameraComponent::main->gameObject->transform.GetPosition() :
-			Vector3{ 0, 0, 0 };
+		RaylibWrapper::Vector3 focusPoint = { 0, 0, 0 };
+
+		if (CameraComponent::main)
+		{
+			Vector3 camPos = CameraComponent::main->gameObject->transform.GetPosition();
+			focusPoint = { camPos.x, camPos.y, camPos.z };
+		}
 #endif
 
 		// Position shadow camera along light direction, away from focus point
