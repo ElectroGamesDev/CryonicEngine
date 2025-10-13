@@ -11,13 +11,10 @@ void Ocean::Awake()
 	// Create or get water material
 	if (!waterMaterial)
 	{
-		//if (waterMaterial && ownMaterial)
-		//	delete waterMaterial;
-
 		waterMaterial = new Material("WaterDefault");
 		ownMaterial = true;
 
-		waterMaterial->SetAlbedoColor({ 13, 3, 77, 255 }); // Todo: Make this color exposed
+		waterMaterial->SetAlbedoColor({ 13, 3, 77, 255 }); // Base dark blue, overridden by shader
 
 		std::pair<unsigned int, int*> waterShaderPair = ShaderManager::GetShader(ShaderManager::Shaders::Water);
 		waterMaterial->SetShader({ waterShaderPair.first, waterShaderPair.second });
@@ -57,6 +54,9 @@ void Ocean::Render(bool renderShadows)
 	if (!modelSet || renderShadows)
 		return;
 
+	// Enable alpha blending for transparency (see below water)
+	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA_PREMULTIPLY);  // Use raylib's SetBlendMode for transparency to see below
+
 	// Set custom shader uniforms
 	RaylibWrapper::Shader shader = waterMaterial->GetRaylibMaterial()->shader;
 	float timeVal = RaylibWrapper::GetTime();
@@ -93,13 +93,61 @@ void Ocean::Render(bool renderShadows)
 	int locDir2 = RaylibWrapper::GetShaderLocation(shader, "waveDir2");
 	RaylibWrapper::SetShaderValue(shader, locDir2, dir2Arr, RaylibWrapper::SHADER_UNIFORM_VEC2);
 
+	// Wave params for wave 3
+	int locAmp3 = RaylibWrapper::GetShaderLocation(shader, "waveAmp3");
+	RaylibWrapper::SetShaderValue(shader, locAmp3, &waveAmp3, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locLambda3 = RaylibWrapper::GetShaderLocation(shader, "waveLambda3");
+	RaylibWrapper::SetShaderValue(shader, locLambda3, &waveLambda3, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locSpeed3 = RaylibWrapper::GetShaderLocation(shader, "waveSpeed3");
+	RaylibWrapper::SetShaderValue(shader, locSpeed3, &waveSpeed3, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	float dir3Arr[2] = { waveDir3.x, waveDir3.y };
+	int locDir3 = RaylibWrapper::GetShaderLocation(shader, "waveDir3");
+	RaylibWrapper::SetShaderValue(shader, locDir3, dir3Arr, RaylibWrapper::SHADER_UNIFORM_VEC2);
+
+	// Wave params for wave 4
+	int locAmp4 = RaylibWrapper::GetShaderLocation(shader, "waveAmp4");
+	RaylibWrapper::SetShaderValue(shader, locAmp4, &waveAmp4, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locLambda4 = RaylibWrapper::GetShaderLocation(shader, "waveLambda4");
+	RaylibWrapper::SetShaderValue(shader, locLambda4, &waveLambda4, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locSpeed4 = RaylibWrapper::GetShaderLocation(shader, "waveSpeed4");
+	RaylibWrapper::SetShaderValue(shader, locSpeed4, &waveSpeed4, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	float dir4Arr[2] = { waveDir4.x, waveDir4.y };
+	int locDir4 = RaylibWrapper::GetShaderLocation(shader, "waveDir4");
+	RaylibWrapper::SetShaderValue(shader, locDir4, dir4Arr, RaylibWrapper::SHADER_UNIFORM_VEC2);
+
+	// Steepness
+	int locSteepness = RaylibWrapper::GetShaderLocation(shader, "steepness");
+	RaylibWrapper::SetShaderValue(shader, locSteepness, &steepness, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
 	int locWaterColor = RaylibWrapper::GetShaderLocation(shader, "waterColor");
 	RaylibWrapper::SetShaderValue(shader, locWaterColor, &waterColor, RaylibWrapper::SHADER_UNIFORM_VEC4);
 
-	// Todo: Is this needed if we set the albedo color in the material?
+	// Foam and transparency
+	int locFoam = RaylibWrapper::GetShaderLocation(shader, "foamThreshold");
+	RaylibWrapper::SetShaderValue(shader, locFoam, &foamThreshold, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locTransparency = RaylibWrapper::GetShaderLocation(shader, "waterTransparency");
+	RaylibWrapper::SetShaderValue(shader, locTransparency, &waterTransparency, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	// Ripples:
+	int locRippleScale = RaylibWrapper::GetShaderLocation(shader, "rippleScale");
+	if (locRippleScale != -1)
+		RaylibWrapper::SetShaderValue(shader, locRippleScale, &rippleScale, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	int locRippleAmp = RaylibWrapper::GetShaderLocation(shader, "rippleAmp");
+	if (locRippleAmp != -1)
+		RaylibWrapper::SetShaderValue(shader, locRippleAmp, &rippleAmp, RaylibWrapper::SHADER_UNIFORM_FLOAT);
+
+	// Set colDiffuse (tinted version of waterColor for base material - required for shader)
 	Vector4 colDiffuseVal = { waterColor.x * 0.5f, waterColor.y * 0.5f, waterColor.z * 1.2f, 1.0f };
 	int locColDiffuse = RaylibWrapper::GetShaderLocation(shader, "colDiffuse");
-	RaylibWrapper::SetShaderValue(shader, locColDiffuse, &colDiffuseVal, RaylibWrapper::SHADER_UNIFORM_VEC4);
+	if (locColDiffuse != -1) RaylibWrapper::SetShaderValue(shader, locColDiffuse, &colDiffuseVal, RaylibWrapper::SHADER_UNIFORM_VEC4);
 
 	// Render using MeshRenderer logic, but without shadows
 	Vector3 position = gameObject->transform.GetPosition();
@@ -123,6 +171,9 @@ void Ocean::Render(bool renderShadows)
 		1, 1, 1,
 		rotation.x, rotation.y, rotation.z, rotation.w,
 		255, 255, 255, 255);
+
+	// Reset blend mode after drawing
+	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA);
 }
 
 #if defined(EDITOR)
@@ -145,12 +196,23 @@ void Ocean::EditorUpdate()
 	waveLambda2 = exposedVariables[1][7][2].get<float>();
 	waveSpeed2 = exposedVariables[1][8][2].get<float>();
 	waveDir2 = { exposedVariables[1][9][2][0].get<float>(), exposedVariables[1][9][2][1].get<float>() };
-	planeSize = exposedVariables[1][10][2].get<float>();
-	planeRes = exposedVariables[1][11][2].get<int>();
-	waterColor = { exposedVariables[1][12][2][0].get<float>(),
-				  exposedVariables[1][12][2][1].get<float>(),
-				  exposedVariables[1][12][2][2].get<float>(),
-				  exposedVariables[1][12][2][3].get<float>() };
+	waveAmp3 = exposedVariables[1][10][2].get<float>();
+	waveLambda3 = exposedVariables[1][11][2].get<float>();
+	waveSpeed3 = exposedVariables[1][12][2].get<float>();
+	waveDir3 = { exposedVariables[1][13][2][0].get<float>(), exposedVariables[1][13][2][1].get<float>() };
+	waveAmp4 = exposedVariables[1][14][2].get<float>();
+	waveLambda4 = exposedVariables[1][15][2].get<float>();
+	waveSpeed4 = exposedVariables[1][16][2].get<float>();
+	waveDir4 = { exposedVariables[1][17][2][0].get<float>(), exposedVariables[1][17][2][1].get<float>() };
+	steepness = exposedVariables[1][18][2].get<float>();
+	planeSize = exposedVariables[1][19][2].get<float>();
+	planeRes = exposedVariables[1][20][2].get<int>();
+	waterColor = { exposedVariables[1][21][2][0].get<float>(),
+				   exposedVariables[1][21][2][1].get<float>(),
+				   exposedVariables[1][21][2][2].get<float>(),
+				   exposedVariables[1][21][2][3].get<float>() };
+	foamThreshold = exposedVariables[1][22][2].get<float>();
+	waterTransparency = exposedVariables[1][23][2].get<float>();
 
 	// Material handling
 	if (exposedVariables[1][0][2] == "nullptr")
@@ -178,10 +240,10 @@ void Ocean::EditorUpdate()
 	}
 
 	// If variables changed, regenerate mesh if in editor
-	if (modelSet && (exposedVariables[1][10][2] != planeSize || exposedVariables[1][11][2] != planeRes))
+	if (modelSet && (exposedVariables[1][19][2] != planeSize || exposedVariables[1][20][2] != planeRes))
 	{
-		planeSize = exposedVariables[1][10][2].get<float>();
-		planeRes = exposedVariables[1][11][2].get<int>();
+		planeSize = exposedVariables[1][19][2].get<float>();
+		planeRes = exposedVariables[1][20][2].get<int>();
 
 		// Regenerate mesh
 		Start(); // It would be best to have a function dedicated to mesh generation
