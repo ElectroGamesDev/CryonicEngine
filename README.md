@@ -72,7 +72,7 @@ Cryonic Engine is open for contributions. Feel free to fork the repository, make
 
 
 ## License Summary
-[Click here for the full license]([https://github.com/CryonicEngine/CryonicEngine/blob/main/LICENSE.md](https://github.com/ElectroGamesDev/Cryonic-Engine/blob/master/LICENSE))
+[Click here for the full license](https://github.com/ElectroGamesDev/CryonicEngine/blob/master/LICENSE)
 
 ### Key Points
 
