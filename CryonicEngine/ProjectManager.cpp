@@ -1954,6 +1954,8 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
                                 tempCpp << (*variables)[1].get<std::string>() + " = {" + std::to_string((*variables)[2][0].get<float>()) + "f," + std::to_string((*variables)[2][1].get<float>()) + "f};\n";
                             else if ((*variables)[0] == "Vector3")
                                 tempCpp << (*variables)[1].get<std::string>() + " = {" + std::to_string((*variables)[2][0].get<float>()) + "f," + std::to_string((*variables)[2][1].get<float>()) + "f," + std::to_string((*variables)[2][2].get<float>()) + "f};\n";
+							else if ((*variables)[0] == "Vector4")
+								tempCpp << (*variables)[1].get<std::string>() + " = {" + std::to_string((*variables)[2][0].get<float>()) + "f," + std::to_string((*variables)[2][1].get<float>()) + "f," + std::to_string((*variables)[2][2].get<float>()) + "f," + std::to_string((*variables)[2][3].get<float>()) + "f};\n";
                             else if ((*variables).size() > 4 && (*variables)[4].contains("Extensions"))
                             {
                                 if ((*variables)[0].get<std::string>() == "string")

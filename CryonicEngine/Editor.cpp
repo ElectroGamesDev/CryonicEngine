@@ -5008,6 +5008,42 @@ void Editor::RenderProperties()
                                 ImGui::InputFloat(("##Z" + name).c_str(), &z, 0, 0, "%.10g");
                                 (*it)[2][2] = z;
                             }
+							else if ((*it)[0] == "Vector4")
+							{
+								width = (ImGui::GetWindowWidth() - (98 + ImGui::CalcTextSize(name.c_str()).x)) / 3;
+								//ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
+								ImGui::SameLine();
+								ImGui::Text("X");
+								ImGui::SameLine();
+								float x = (*it)[2][0].get<float>();
+								ImGui::SetNextItemWidth(width);
+								ImGui::InputFloat(("##X" + name).c_str(), &x, 0, 0, "%.10g");
+								(*it)[2][0] = x;
+
+								ImGui::SameLine();
+								ImGui::Text("Y");
+								ImGui::SameLine();
+								float y = (*it)[2][1].get<float>();
+								ImGui::SetNextItemWidth(width);
+								ImGui::InputFloat(("##Y" + name).c_str(), &y, 0, 0, "%.10g");
+								(*it)[2][1] = y;
+
+								ImGui::SameLine();
+								ImGui::Text("Z");
+								ImGui::SameLine();
+								float z = (*it)[2][2].get<float>();
+								ImGui::SetNextItemWidth(width);
+								ImGui::InputFloat(("##Z" + name).c_str(), &z, 0, 0, "%.10g");
+								(*it)[2][2] = z;
+
+								ImGui::SameLine();
+								ImGui::Text("W");
+								ImGui::SameLine();
+								float w = (*it)[2][2].get<float>();
+								ImGui::SetNextItemWidth(width);
+								ImGui::InputFloat(("##Z" + name).c_str(), &w, 0, 0, "%.10g");
+								(*it)[2][3] = w;
+							}
 							else if ((*it).size() > 4 && (*it)[4].contains("Extensions")) // This must go above the "string" check since an extension can use strings
 							{
 								static std::string openSelector = ""; // Stores the variable name currently opened in the file selector
