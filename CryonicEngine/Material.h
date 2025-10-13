@@ -281,6 +281,12 @@ public:
      */
     float GetEmission() const { return emission; }
 
+    void SetShader(RaylibWrapper::Shader shader)
+    {
+        raylibMaterial.shader.id = shader.id;
+        raylibMaterial.shader.locs = shader.locs;
+    }
+
     // Todo: Move this function to a texture utility class
     /**
      * @brief Generates a checkerbaord texture.
