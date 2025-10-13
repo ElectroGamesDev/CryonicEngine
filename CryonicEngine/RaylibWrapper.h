@@ -687,6 +687,18 @@ namespace RaylibWrapper
         MATERIAL_MAP_BRDF               // Brdf material
     } MaterialMapIndex;
 
+    // Color blending modes (pre-defined)
+    typedef enum {
+        RL_BLEND_ALPHA = 0,                 // Blend textures considering alpha (default)
+        RL_BLEND_ADDITIVE,                  // Blend textures adding colors
+        RL_BLEND_MULTIPLIED,                // Blend textures multiplying colors
+        RL_BLEND_ADD_COLORS,                // Blend textures adding colors (alternative)
+        RL_BLEND_SUBTRACT_COLORS,           // Blend textures subtracting colors (alternative)
+        RL_BLEND_ALPHA_PREMULTIPLY,         // Blend premultiplied textures considering alpha
+        RL_BLEND_CUSTOM,                    // Blend textures using custom src/dst factors (use rlSetBlendFactors())
+        RL_BLEND_CUSTOM_SEPARATE            // Blend textures using custom src/dst factors (use rlSetBlendFactorsSeparate())
+    } rlBlendMode;
+
     void InitWindow(int width, int height, const char* title);
     bool WindowShouldClose();
     void CloseWindow();
@@ -1014,6 +1026,7 @@ namespace RaylibWrapper
     void rlEnd();
     void rlVertex3f(float x, float y, float z);
     void rlDrawRenderBatchActive();
+    void rlSetBlendMode(int mode);
 
     // raymath functions
     Matrix MatrixOrtho(double left, double right, double bottom, double top, double nearPlane, double farPlane);
