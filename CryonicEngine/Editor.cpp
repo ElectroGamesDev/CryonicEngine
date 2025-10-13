@@ -1504,7 +1504,7 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                     }}}
                 };
 
-                if (extension == ".png")  // Todo: Add jpg support. Will need to modify config.h and rebuild raylib
+                if (extension == ".png" || extension == ".jpeg" || extension == ".jpg" || extension == ".psd")
                 {
                     if (auto it = cachedTextures.find(entry.path()); it != cachedTextures.end())
                         it->second.second = RaylibWrapper::GetTime();
