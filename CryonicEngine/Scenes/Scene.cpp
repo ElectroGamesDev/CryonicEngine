@@ -168,17 +168,17 @@ GameObject* Scene::SpawnGameObject(std::string path, Vector3 position, Quaternio
         component->SetModelPath(newPath);
 
         if (component->GetModelPath().string() == "Cube")
-            component->SetModel(Cube, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Cube, component->GetModelPath().string(), ShaderManager::LitStandard);
         else if (component->GetModelPath().string() == "Plane")
-            component->SetModel(Plane, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Plane, component->GetModelPath().string(), ShaderManager::LitStandard);
         else if (component->GetModelPath().string() == "Sphere")
-            component->SetModel(Sphere, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Sphere, component->GetModelPath().string(), ShaderManager::LitStandard);
         else if (component->GetModelPath().string() == "Cylinder")
-            component->SetModel(Cylinder, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Cylinder, component->GetModelPath().string(), ShaderManager::LitStandard);
         else if (component->GetModelPath().string() == "Cone")
-            component->SetModel(Cone, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Cone, component->GetModelPath().string(), ShaderManager::LitStandard);
         else
-            component->SetModel(Custom, component->GetModelPath().string(), ShaderManager::LitStandard);
+            component->SetModel(ModelType::Custom, component->GetModelPath().string(), ShaderManager::LitStandard);
     }
 
     return gameObject;
