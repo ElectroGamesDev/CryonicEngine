@@ -25,7 +25,7 @@ ProjectData ProjectManager::projectData;
 
 void ProjectManager::CopyApiFiles(std::filesystem::path source, std::filesystem::path destination)
 {
-    std::vector<std::string> filesToCopy = { "CryonicAPI", "CryonicCore", "Scenes", "ConsoleLogger", "FontManager", "Font", "Sprite", "GameObject", "Components", "ShaderManager", "MenuManager", "RenderableTexture", "InputSystem", "CollisionListener2D", "Event", "EventSystem", "Animation", "AnimationGraph", "AnimationImporter", "AnimationBlending", "MotionMatchingSystem", "AudioClip", "Tilemap", "Material", "Physics2DDebugDraw", "ShadowManager", "RaylibInputWrapper", "Wrappers", "RaylibCameraWrapper", "RaylibDrawWrapper", "RaylibLightWrapper", "RaylibModelWrapper", "RaylibShaderWrapper", "RaylibWrapper"};
+    std::vector<std::string> filesToCopy = { "CryonicAPI", "CryonicCore", "Scenes", "ConsoleLogger", "FontManager", "Font", "Sprite", "GameObject", "Components", "ShaderManager", "MenuManager", "RenderableTexture", "InputSystem", "CollisionListener2D", "Event", "EventSystem", "Animation", "AnimationGraph", "AnimationBlending", "MotionMatchingSystem", "AudioClip", "Tilemap", "Material", "Physics2DDebugDraw", "ShadowManager", "RaylibInputWrapper", "Wrappers", "RaylibCameraWrapper", "RaylibDrawWrapper", "RaylibLightWrapper", "RaylibModelWrapper", "RaylibShaderWrapper", "RaylibWrapper"};
     
     if (projectData.is3D)
     {
@@ -1957,7 +1957,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 									if ((*variables)[2].get<std::string>() == "nullptr" || (*variables)[2].get<std::string>() == "Default")
 										tempCpp << (*variables)[1].get<std::string>() + " = \"\";\n";
                                     else
-                                        tempCpp << (*variables)[1].get<std::string>() + " = \"" + (*variables)[2].dump() + "\"; \n";
+                                        tempCpp << (*variables)[1].get<std::string>() + " = " + (*variables)[2].dump() + "; \n";
                                 }
                                 else if ((*variables)[2].get<std::string>() == "nullptr" || (*variables)[2].get<std::string>() == "Default")
                                     tempCpp << (*variables)[1].get<std::string>() + " = nullptr;\n";
