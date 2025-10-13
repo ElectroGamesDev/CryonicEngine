@@ -599,7 +599,7 @@ void Terrain::InitializeMaterial()
 		checkerboardTextureLoaded = true;
 	}
 
-	terrainMaterial = new Material("null");
+	terrainMaterial = new Material("DefaultTerrain");
 	terrainMaterial->GetRaylibMaterial()->maps[RaylibWrapper::MATERIAL_MAP_ALBEDO].color = { 255, 255, 255, 255 };
 	terrainMaterial->GetRaylibMaterial()->maps[RaylibWrapper::MATERIAL_MAP_ALBEDO].texture = checkerboardTexture;
 	terrainMaterial->GetRaylibMaterial()->shader.id = terrainShader.first;
