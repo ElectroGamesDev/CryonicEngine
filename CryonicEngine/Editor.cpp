@@ -1490,6 +1490,7 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                     {".mod", {"SoundIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},
                     {".ttf", {"FontIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},
                     {".otf", {"FontIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},
+					{".hdr", {"HDRIIcon", Other, []() {}}},
                     {".gltf", {"CubeIcon", ModelFile, []() {}}},
                     {".glb", {"CubeIcon", ModelFile, []() {}}},
                     {".obj", {"CubeIcon", ModelFile, []() {}}},
