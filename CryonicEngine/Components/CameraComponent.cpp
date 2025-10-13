@@ -6,7 +6,6 @@
 #include "../Editor.h"
 #endif
 #include "../ShadowManager.h"
-#include "Skybox.h"
 
 CameraComponent* CameraComponent::main = nullptr;
 
@@ -39,9 +38,6 @@ CameraComponent::CameraComponent(GameObject* obj, int id) : Component(obj, id)
 
 	// Todo: Near Plane
 	// Todo: Far Planer
-
-	// Todo: Use Events instead. Make sure to have an event for Destroyed() too
-	Skybox::AddCamera(this);
 }
 
 void CameraComponent::Start()
@@ -69,8 +65,6 @@ void CameraComponent::Destroy()
 {
 	if (main == this)
 		main = nullptr;
-
-	Skybox::RemoveCamera(this);
 }
 
 #if defined(EDITOR)

@@ -14,6 +14,14 @@ std::vector<Skybox*> Skybox::skyboxes;
 
 void Skybox::Awake()
 {
+	// Todo: Use Events instead. Make sure to have an event for when they are destroyed too
+	for (GameObject* go : SceneManager::GetActiveScene()->GetGameObjects())
+	{
+		CameraComponent* camera = go->GetComponent<CameraComponent>();
+		if (camera)
+			cameras.push_back(camera);
+	}
+
 	// Make sure the skybox is only rendered in 3D projects
 #if defined(EDITOR)
 	if (!ProjectManager::projectData.is3D)
@@ -83,6 +91,12 @@ void Skybox::RenderSkybox()
 #else
 	for (CameraComponent* camera : cameras)
 	{
+		if (!camera)
+		{
+			RemoveCamera(camera);
+			continue;
+		}
+
 		if (camera && camera->IsActive() && camera->GetGameObject()->IsGlobalActive())
 		{
 			Vector3 camPos = camera->GetGameObject()->transform.GetPosition();
