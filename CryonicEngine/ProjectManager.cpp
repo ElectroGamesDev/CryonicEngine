@@ -122,6 +122,10 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
         std::filesystem::create_directory(projectData.path / "Assets" / "Materials");
         std::filesystem::create_directory(projectData.path / "Assets" / "Textures");
         std::filesystem::create_directory(projectData.path / "Assets" / "Animations");
+		std::filesystem::create_directory(projectData.path / "Assets" / "Skyboxes");
+
+		// Todo: This path will not work if the user is not in visual studio
+		std::filesystem::copy_file(std::filesystem::path(__FILE__).parent_path() / "resources" / "misc" / ("DefaultSkybox.hdr"), projectData.path / "Assets" / "Skyboxes" / "DefaultSkybox.hdr");
         break;
     case Blank2D:
         std::filesystem::create_directory(projectData.path / "Assets" / "Sprites");

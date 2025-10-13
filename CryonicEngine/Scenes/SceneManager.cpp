@@ -301,17 +301,17 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
                 setExposedVariables(component, componentData);
 
                 if (component.GetModelPath().string() == "Cube")
-                    component.SetModel(Cube, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Cube, component.GetModelPath().string(), ShaderManager::LitStandard);
                 else if (component.GetModelPath().string() == "Plane")
-                    component.SetModel(Plane, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Plane, component.GetModelPath().string(), ShaderManager::LitStandard);
                 else if (component.GetModelPath().string() == "Sphere")
-                    component.SetModel(Sphere, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Sphere, component.GetModelPath().string(), ShaderManager::LitStandard);
                 else if (component.GetModelPath().string() == "Cylinder")
-                    component.SetModel(Cylinder, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Cylinder, component.GetModelPath().string(), ShaderManager::LitStandard);
                 else if (component.GetModelPath().string() == "Cone")
-                    component.SetModel(Cone, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Cone, component.GetModelPath().string(), ShaderManager::LitStandard);
                 else
-                    component.SetModel(Custom, component.GetModelPath().string(), ShaderManager::LitStandard);
+                    component.SetModel(ModelType::Custom, component.GetModelPath().string(), ShaderManager::LitStandard);
             }
             else if (componentData["name"] == "SpriteRenderer")
             {
@@ -518,6 +518,47 @@ void SceneManager::CreateScene(std::filesystem::path path)
     scene.SetPath(path);
 
 #if defined(EDITOR)
+	// Skybox
+	if (ProjectManager::projectData.is3D)
+	{
+		GameObject* skyboxObject = scene.AddGameObject();
+		skyboxObject->SetName("Skybox");
+		Skybox* skybox = skyboxObject->AddComponent<Skybox>();
+        skybox->gameObject = skyboxObject;
+
+        if (std::filesystem::exists(ProjectManager::projectData.path / "Assets" / "Skyboxes/DefaultSkybox.hdr"))
+            skybox->exposedVariables[1][2][2] = "Skyboxes/DefaultSkybox.hdr";
+		else // Try searching for another .hdr file
+        {
+            bool foundHdrFile = false;
+			try {
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(ProjectManager::projectData.path / "Assets"))
+                {
+					if (std::filesystem::is_regular_file(entry) && entry.path().extension() == ".hdr") // Todo: When .exr is supported, I will need to add that here too
+                    {
+                        std::string hdrPath = std::filesystem::relative(entry.path(), ProjectManager::projectData.path / "Assets").string();
+						for (char& c : hdrPath) // Reformatted the path for unix.
+						{
+							if (c == '\\')
+								c = '/';
+						}
+
+                        skybox->exposedVariables[1][2][2] = hdrPath;
+                        foundHdrFile = true;
+                        break;
+					}
+				}
+			}
+            catch (const std::filesystem::filesystem_error& e) {
+                ConsoleLogger::ErrorLog("An error occured when searching for a .hdr file for the skybox. Error: " + std::string(e.what()));
+            }
+
+            if (!foundHdrFile)
+				ConsoleLogger::ErrorLog("No .hdr file found in Assets folder. Please add a .hdr file to use for the skybox.");
+        }
+	}
+
+    // Camera
     GameObject* cameraObject = scene.AddGameObject();
     if (ProjectManager::projectData.is3D)
     {
@@ -533,6 +574,7 @@ void SceneManager::CreateScene(std::filesystem::path path)
     cameraObject->SetName("Camera");
     CameraComponent* camera = cameraObject->AddComponent<CameraComponent>();
     camera->gameObject = cameraObject;
+
 #endif
 
     if (!std::filesystem::exists(path.parent_path()))

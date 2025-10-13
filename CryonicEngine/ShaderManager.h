@@ -10,7 +10,9 @@ public:
 	{
 		None,
 		LitStandard,
-		Terrain
+		Terrain,
+		Cubemap,
+		Skybox
 	};
 
 	static void Init();

@@ -6,6 +6,7 @@
 #include "Components/CameraComponent.h"
 #include "Components/SpriteRenderer.h"
 #include "Components/Lighting.h"
+#include "Components/Skybox.h"
 #include "AudioClip.h"
 #include "ShaderManager.h"
 #include "RaylibModelWrapper.h"
@@ -453,13 +454,17 @@ void MainLoop()
 	ImGui::Begin("##Game", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
 	// Call components Update()
+
+	// Skyboxes must be rendered first
+	Skybox::RenderSkyboxes();
+
 	GameObject::markForDeletion = true;
 	auto& gameObjects = SceneManager::GetActiveScene()->GetGameObjects();
 	for (size_t i = 0; i < gameObjects.size(); ++i)
 	{
 		GameObject* gameObject = gameObjects[i];
 
-		if (!gameObject->IsActive())
+		if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
 			continue;
 
 		for (Component* component : gameObject->GetComponents())

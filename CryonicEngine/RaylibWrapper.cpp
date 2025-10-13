@@ -369,7 +369,7 @@ namespace RaylibWrapper {
         ::rlPushMatrix();
 
         // get the camera view matrix
-        ::Matrix mat = ::MatrixInvert(MatrixLookAt({ camera.position.x, camera.position.y, camera.position.z }, { camera.target.x, camera.target.y, camera.target.z }, { camera.up.x, camera.up.y, camera.up.z }));
+        ::Matrix mat = ::MatrixInvert(::MatrixLookAt({ camera.position.x, camera.position.y, camera.position.z }, { camera.target.x, camera.target.y, camera.target.z }, { camera.up.x, camera.up.y, camera.up.z }));
         // peel off just the rotation
         ::Quaternion quat = ::QuaternionFromMatrix(mat);
         mat = ::QuaternionToMatrix(quat);
@@ -1529,6 +1529,19 @@ namespace RaylibWrapper {
     Matrix rlGetMatrixProjection() {
         ::Matrix matrix = ::rlGetMatrixProjection();
         return { matrix.m0, matrix.m1, matrix.m2, matrix.m3, matrix.m4, matrix.m5, matrix.m6, matrix.m7, matrix.m8, matrix.m9, matrix.m10, matrix.m11, matrix.m12, matrix.m13, matrix.m14, matrix.m15 };
+    }
+
+    // NOTE: Fovy angle must be provided in radians
+    Matrix MatrixPerspective(double fovY, double aspect, double nearPlane, double farPlane)
+    {
+		::Matrix matrix = ::MatrixPerspective(fovY, aspect, nearPlane, farPlane);
+		return { matrix.m0, matrix.m1, matrix.m2, matrix.m3, matrix.m4, matrix.m5, matrix.m6, matrix.m7, matrix.m8, matrix.m9, matrix.m10, matrix.m11, matrix.m12, matrix.m13, matrix.m14, matrix.m15 };
+    }
+
+    Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up)
+    {
+        ::Matrix matrix = ::MatrixLookAt({ eye.x, eye.y, eye.z }, { target.x, target.y, target.z }, { up.x, up.y, up.z });
+		return { matrix.m0, matrix.m1, matrix.m2, matrix.m3, matrix.m4, matrix.m5, matrix.m6, matrix.m7, matrix.m8, matrix.m9, matrix.m10, matrix.m11, matrix.m12, matrix.m13, matrix.m14, matrix.m15 };
     }
 
     void rlSetUniform(int locIndex, const void* value, int uniformType, int count) {

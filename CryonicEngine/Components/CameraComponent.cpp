@@ -6,11 +6,13 @@
 #include "../Editor.h"
 #endif
 #include "../ShadowManager.h"
+#include "Skybox.h"
 
 CameraComponent* CameraComponent::main = nullptr;
 
 CameraComponent::CameraComponent(GameObject* obj, int id) : Component(obj, id)
 {
+	// Todo: Move move some this code to Awake(), and also make use of EditorUpdate()
 	name = "CameraComponent";
 	iconUnicode = "\xef\x80\xb0";
 	runInEditor = true;
@@ -37,6 +39,9 @@ CameraComponent::CameraComponent(GameObject* obj, int id) : Component(obj, id)
 
 	// Todo: Near Plane
 	// Todo: Far Planer
+
+	// Todo: Use Events instead. Make sure to have an event for Destroyed() too
+	Skybox::AddCamera(this);
 }
 
 void CameraComponent::Start()
@@ -60,10 +65,12 @@ void CameraComponent::Update()
     //camera.target = Vector3Add(gameObject->transform.GetPosition(), Vector3RotateByQuaternion({0,0,1}, gameObject->transform.GetRotation()));
 }
 
-void CameraComponent::Destroy() // TOdo: This doesn't run in the edtitor
+void CameraComponent::Destroy()
 {
 	if (main == this)
 		main = nullptr;
+
+	Skybox::RemoveCamera(this);
 }
 
 #if defined(EDITOR)

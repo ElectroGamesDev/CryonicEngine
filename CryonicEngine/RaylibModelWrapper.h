@@ -5,14 +5,15 @@
 
 class Model;
 
-enum ModelType
+enum class ModelType
 {
 	Custom,
 	Cube,
 	Sphere,
 	Plane,
 	Cylinder,
-	Cone
+	Cone,
+	Skybox
 };
 
 class RaylibModel
@@ -52,6 +53,7 @@ private:
 	std::pair<Model, int>* model = nullptr;
 	bool primitiveModel = false;
 	bool terrainModel = false;
+	bool skyboxModel = false;
 	std::filesystem::path path;
 	// This was removed because it added overhead for something that has an easier solution. It will only need to be re-added if GetMaterial() is needed
 	//static std::unordered_map<Model, std::vector<RaylibWrapper::Material>> rWrapperMaterials; // Model can not be used as a key. A pointer could be used though.

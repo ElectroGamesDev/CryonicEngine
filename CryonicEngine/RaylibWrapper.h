@@ -988,6 +988,9 @@ namespace RaylibWrapper
     void rlSetMatrixProjection(Matrix matrix);
     Matrix rlGetMatrixModelview();
     Matrix rlGetMatrixProjection();
+    // NOTE: Fovy angle must be provided in radians
+    Matrix MatrixPerspective(double fovY, double aspect, double nearPlane, double farPlane);
+    Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up);
     void rlSetUniform(int locIndex, const void* value, int uniformType, int count);
     unsigned int rlLoadFramebuffer();
     void rlUnloadFramebuffer(unsigned int id);

@@ -18,7 +18,7 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
     // Todo: Don't create new meshes for primitives
     switch (type)
     {
-    case Custom:
+    case ModelType::Custom:
         if (!std::filesystem::exists(projectPath / path))
         {
             // Todo: Send user error
@@ -36,71 +36,75 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
             model = &models[path];
         }
         break;
-    case Cube:
-        if (auto it = primitiveModels.find(Cube); it != primitiveModels.end())
+    case ModelType::Cube:
+        if (auto it = primitiveModels.find(ModelType::Cube); it != primitiveModels.end())
         {
             model = &(it->second);
             model->second++;
         }
         else
         {
-            primitiveModels[Cube] = std::make_pair(LoadModelFromMesh(GenMeshCube(1, 1, 1)), 1);
-            model = &primitiveModels[Cube];
+            primitiveModels[ModelType::Cube] = std::make_pair(LoadModelFromMesh(GenMeshCube(1, 1, 1)), 1);
+            model = &primitiveModels[ModelType::Cube];
         }
         primitiveModel = true;
         break;
-    case Sphere:
-        if (auto it = primitiveModels.find(Sphere); it != primitiveModels.end())
+    case ModelType::Sphere:
+        if (auto it = primitiveModels.find(ModelType::Sphere); it != primitiveModels.end())
         {
             model = &(it->second);
             model->second++;
         }
         else
         {
-            primitiveModels[Sphere] = std::make_pair(LoadModelFromMesh(GenMeshSphere(0.5f, 32, 32)), 1);
-            model = &primitiveModels[Sphere];
+            primitiveModels[ModelType::Sphere] = std::make_pair(LoadModelFromMesh(GenMeshSphere(0.5f, 32, 32)), 1);
+            model = &primitiveModels[ModelType::Sphere];
         }
         primitiveModel = true;
         break;
-    case Plane:
-        if (auto it = primitiveModels.find(Plane); it != primitiveModels.end())
+    case ModelType::Plane:
+        if (auto it = primitiveModels.find(ModelType::Plane); it != primitiveModels.end())
         {
             model = &(it->second);
             model->second++;
         }
         else
         {
-            primitiveModels[Plane] = std::make_pair(LoadModelFromMesh(GenMeshPlane(1, 1, 1, 1)), 1);
-            model = &primitiveModels[Plane];
+            primitiveModels[ModelType::Plane] = std::make_pair(LoadModelFromMesh(GenMeshPlane(1, 1, 1, 1)), 1);
+            model = &primitiveModels[ModelType::Plane];
         }
         primitiveModel = true;
         break;
-    case Cylinder:
-        if (auto it = primitiveModels.find(Cylinder); it != primitiveModels.end())
+    case ModelType::Cylinder:
+        if (auto it = primitiveModels.find(ModelType::Cylinder); it != primitiveModels.end())
         {
             model = &(it->second);
             model->second++;
         }
         else
         {
-            primitiveModels[Cylinder] = std::make_pair(LoadModelFromMesh(GenMeshCylinder(0.5f, 2, 32)), 1);
-            model = &primitiveModels[Cylinder];
+            primitiveModels[ModelType::Cylinder] = std::make_pair(LoadModelFromMesh(GenMeshCylinder(0.5f, 2, 32)), 1);
+            model = &primitiveModels[ModelType::Cylinder];
         }
         primitiveModel = true;
         break;
-    case Cone:
-        if (auto it = primitiveModels.find(Cone); it != primitiveModels.end())
+    case ModelType::Cone:
+        if (auto it = primitiveModels.find(ModelType::Cone); it != primitiveModels.end())
         {
             model = &(it->second);
             model->second++;
         }
         else
         {
-            primitiveModels[Cone] = std::make_pair(LoadModelFromMesh(GenMeshCone(0.5f, 1, 32)), 1);
-            model = &primitiveModels[Cone];
+            primitiveModels[ModelType::Cone] = std::make_pair(LoadModelFromMesh(GenMeshCone(0.5f, 1, 32)), 1);
+            model = &primitiveModels[ModelType::Cone];
         }
         primitiveModel = true;
         break;
+	case ModelType::Skybox:
+        model = new std::pair<Model, int>(LoadModelFromMesh(GenMeshCube(1, 1, 1)), 1);
+		skyboxModel = true;
+		break;
     default:
         return false;
     }
@@ -112,11 +116,22 @@ bool RaylibModel::Create(ModelType type, std::filesystem::path path, ShaderManag
         for (size_t i = 0; i < model->first.materialCount; ++i)
             model->first.materials[i].shader = { materialPreviewShadowShader.first, materialPreviewShadowShader.second };
     }
-    else if (shader != ShaderManager::None)
+    else if (shader == ShaderManager::LitStandard)
     {
         for (size_t i = 0; i < model->first.materialCount; ++i)
             //model->first.materials[i].shader = RaylibShader::shaders[modelShader].shader;
             model->first.materials[i].shader = { shadowShader.first, shadowShader.second };
+    }
+	else if (shader == ShaderManager::Skybox)
+	{
+		std::pair<unsigned int, int*> skyShader = ShaderManager::GetShader(ShaderManager::Skybox);
+		for (size_t i = 0; i < model->first.materialCount; ++i)
+			model->first.materials[i].shader = { skyShader.first, skyShader.second };
+	}
+    else // Default to the lit shader
+    {
+		for (size_t i = 0; i < model->first.materialCount; ++i)
+			model->first.materials[i].shader = { shadowShader.first, shadowShader.second };
     }
 
     for (int i = 0; i < model->first.materialCount; i++)
@@ -323,10 +338,13 @@ void RaylibModel::Unload()
                 it = models.erase(it);
                 break;
             }
-            else 
+            else
                 ++it;
         }
     }
+    else
+        delete model; // Todo: Should it delete the model for primitive and custom too, not just terrain and skybox?
+
     model = nullptr;
 
     // Only delete the maps for embedded materials. I don't think I need to delete the maps for non-embedded materials since they use the same pointers as the mats paramter. If there are issues, then deep copy the maps.

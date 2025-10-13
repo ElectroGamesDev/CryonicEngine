@@ -206,7 +206,7 @@ public:
         {
 #ifdef EDITOR
             eulerRotation = rotation;
-            NormalizeEuler(eulerRotation);
+            NormalizeEuler(eulerRotation); // Todo: Should this run when not in the editor too?
 #endif
             for (GameObject* child : gameObject->childGameObjects)
                 child->transform.SetRotationEuler(child->transform.GetLocalRotationEuler() + rotation);

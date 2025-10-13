@@ -56,6 +56,37 @@ void ShaderManager::Init()
 	}
 #endif
 
+	// Cubemap
+#if defined (EDITOR)
+	// Todo: This won't work for PC's other than mine
+	RaylibShader::shaders[ShaderManager::Cubemap].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/cubemap.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/cubemap.fs").string().c_str());
+#else
+	if (exeParent.empty())
+	{
+		RaylibShader::shaders[ShaderManager::Cubemap].Load("Resources/shaders/glsl330/cubemap.vs", "Resources/shaders/glsl330/cubemap.fs");
+	}
+	else
+	{
+		RaylibShader::shaders[ShaderManager::Cubemap].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/cubemap.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/cubemap.fs").string().c_str());
+	}
+#endif
+
+	// Skybox
+#if defined (EDITOR)
+	// Todo: This won't work for PC's other than mine
+	RaylibShader::shaders[ShaderManager::Skybox].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/skybox.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/skybox.fs").string().c_str());
+#else
+	if (exeParent.empty())
+	{
+		RaylibShader::shaders[ShaderManager::Skybox].Load("Resources/shaders/glsl330/skybox.vs", "Resources/shaders/glsl330/skybox.fs");
+	}
+	else
+	{
+		RaylibShader::shaders[ShaderManager::Skybox].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/skybox.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/skybox.fs").string().c_str());
+	}
+#endif
+
+
     //std::string currentDirectory = GetWorkingDirectory();
     //std::string relativePath = "resources/shaders/glsl330/lighting.vs";
 

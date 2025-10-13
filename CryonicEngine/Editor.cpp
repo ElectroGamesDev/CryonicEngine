@@ -182,7 +182,7 @@ RaylibWrapper::RenderTexture2D* Editor::CreateModelPreview(std::filesystem::path
     // Load the 3D model
 
     RaylibModel model;
-    model.Create(Custom, modelPath.string().c_str(), ShaderManager::LitStandard, ProjectManager::projectData.path);
+    model.Create(ModelType::Custom, modelPath.string().c_str(), ShaderManager::LitStandard, ProjectManager::projectData.path);
 
     // Set up camera
     RaylibWrapper::Camera modelCamera = {
@@ -1122,6 +1122,9 @@ void Editor::UpdateViewport()
 
     deltaTime = RaylibWrapper::GetFrameTime();
 
+	// Skyboxes must be rendered first
+	Skybox::RenderSkyboxes();
+
     for (GameObject* gameObject : SceneManager::GetActiveScene()->GetGameObjects())
     {
         if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
@@ -1144,7 +1147,6 @@ void Editor::UpdateViewport()
     for (RenderableTexture* texture : RenderableTexture::textures) // Renders Sprites and Tilemaps
         if (texture)
             texture->Render();
-
 
 	// Terrain tools
 	if (currentTerrainTool != TerrainTool::None && selectedTerrain)
@@ -3609,6 +3611,8 @@ void Editor::RenderScriptCreateWin()
                 ImGui::End();
                 return;
             }
+
+            // Todo: This path will not work if the user is not in visual studio
             std::filesystem::path miscPath = std::filesystem::path(__FILE__).parent_path() / "resources" / "misc";
             std::string presetType = ProjectManager::projectData.is3D ? "3D" : "2D";
             std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".h"), fileExplorerPath / (name + ".h"));
@@ -4610,13 +4614,21 @@ void Editor::RenderCameraView()
 
     deltaTime = RaylibWrapper::GetFrameTime();
 
+	// Skyboxes must be rendered first
+	Skybox::RenderSkyboxes();
+
     for (GameObject* gameObject : SceneManager::GetActiveScene()->GetGameObjects()) // Todo: This is different from the main editor camera. Check if this needs to be updated.
     {
-        if (!gameObject->IsActive()) continue;
+        if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
+            return;
+
         for (Component* component : gameObject->GetComponents())
         {
             if (component->IsActive() && component->runInEditor)
+            {
                 component->Update();
+                component->Render();
+            }
         }
     }
 
@@ -5560,19 +5572,19 @@ void Editor::RenderHierarchy()
             };
 
             static const std::vector<ObjectItem> menuObjects = {
-                {"Create Empty", "GameObject", 1, Custom},
-                {"Create Cube", "Cube", 3, Cube},
-                {"Create Cylinder", "Cylinder", 3, Cylinder},
-                {"Create Sphere", "Sphere", 3, Sphere},
-                {"Create Plane", "Plane", 3, Plane},
-                {"Create Cone", "Cone", 3, Cone},
-				{"Create Terrain", "Terrain", 3, Custom},
-                {"Create Light", "Light", 3, Custom},
-				{"Create Skybox", "Skybox", 3, Custom},
-                {"Create Square", "Square", 2, Custom},
-                {"Create Circle", "Circle", 2, Custom},
-                {"Create Tilemap", "Tilemap", 2, Custom},
-                {"Create Camera", "Camera", 1, Custom}
+                {"Create Empty", "GameObject", 1, ModelType::Custom},
+                {"Create Cube", "Cube", 3, ModelType::Cube},
+                {"Create Cylinder", "Cylinder", 3, ModelType::Cylinder},
+                {"Create Sphere", "Sphere", 3, ModelType::Sphere},
+                {"Create Plane", "Plane", 3, ModelType::Plane},
+                {"Create Cone", "Cone", 3, ModelType::Cone},
+				{"Create Terrain", "Terrain", 3, ModelType::Custom},
+                {"Create Light", "Light", 3, ModelType::Custom},
+				{"Create Skybox", "Skybox", 3, ModelType::Custom},
+                {"Create Square", "Square", 2, ModelType::Custom},
+                {"Create Circle", "Circle", 2, ModelType::Custom},
+                {"Create Tilemap", "Tilemap", 2, ModelType::Custom},
+                {"Create Camera", "Camera", 1, ModelType::Custom}
             };
 
             static const std::vector<GuiObjectItem> menuGUIObjects = {
@@ -5581,7 +5593,7 @@ void Editor::RenderHierarchy()
                 {"Create Button", "Button"}
             };
 
-            ObjectItem objectToCreate = {"", "", 0, Custom};
+            ObjectItem objectToCreate = {"", "", 0, ModelType::Custom};
             
             for (const ObjectItem& item : menuObjects)
             {
@@ -5669,14 +5681,14 @@ void Editor::RenderHierarchy()
                         meshRenderer.SetModel(objectToCreate.model, objectToCreate.name, ShaderManager::LitStandard);
 
                         Collider3D& collider = gameObject->AddComponentInternal<Collider3D>();
-                        if (objectToCreate.model == Cube)
+                        if (objectToCreate.model == ModelType::Cube)
                             collider.SetShapeInternal("Box");
-                        else if (objectToCreate.model == Cylinder)
+                        else if (objectToCreate.model == ModelType::Cylinder)
                         {
                             collider.SetShapeInternal(objectToCreate.name);
                             collider.SetOffset({0, 1, 0});
                         }
-                        else if (objectToCreate.model == Cone)
+                        else if (objectToCreate.model == ModelType::Cone)
                         {
                             collider.SetShapeInternal(objectToCreate.name);
                             collider.SetOffset({ 0, 0.5f , 0 });
