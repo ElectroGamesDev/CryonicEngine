@@ -135,7 +135,7 @@ void Ocean::Render(bool renderShadows)
 	int locTransparency = RaylibWrapper::GetShaderLocation(shader, "waterTransparency");
 	RaylibWrapper::SetShaderValue(shader, locTransparency, &waterTransparency, RaylibWrapper::SHADER_UNIFORM_FLOAT);
 
-	// Ripples:
+	// Ripples
 	int locRippleScale = RaylibWrapper::GetShaderLocation(shader, "rippleScale");
 	if (locRippleScale != -1)
 		RaylibWrapper::SetShaderValue(shader, locRippleScale, &rippleScale, RaylibWrapper::SHADER_UNIFORM_FLOAT);
