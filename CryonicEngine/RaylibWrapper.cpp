@@ -1696,6 +1696,12 @@ namespace RaylibWrapper {
         return result;
     }
 
+    Matrix MatrixInvert(Matrix matrix)
+    {
+        ::Matrix rlMatrix = ::MatrixInvert({ matrix.m0, matrix.m1, matrix.m2, matrix.m3, matrix.m4, matrix.m5, matrix.m6, matrix.m7, matrix.m8, matrix.m9, matrix.m10, matrix.m11, matrix.m12, matrix.m13, matrix.m14, matrix.m15 });
+        return { rlMatrix.m0, rlMatrix.m1, rlMatrix.m2, rlMatrix.m3, rlMatrix.m4, rlMatrix.m5, rlMatrix.m6, rlMatrix.m7, rlMatrix.m8, rlMatrix.m9, rlMatrix.m10, rlMatrix.m11, rlMatrix.m12, rlMatrix.m13, rlMatrix.m14, rlMatrix.m15 };
+    }
+
     // Models
     Model LoadModelFromMesh(Mesh mesh) { // This is unfinished as there is a lot needed to convert everything
         ::Model model;
