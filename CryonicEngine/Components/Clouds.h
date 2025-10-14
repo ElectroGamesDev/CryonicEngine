@@ -172,10 +172,6 @@ private:
 	float ambientLight = 0.2f;
 	bool highQuality = true;
 
-	Material* cloudMaterial = nullptr;
-	bool ownMaterial = false;
-	RaylibModel raylibModel;
-	bool modelSet = false;
 	bool editorSetup = false;
 	CameraComponent* mainCamera = nullptr;
 	float startTime = 0.0f;

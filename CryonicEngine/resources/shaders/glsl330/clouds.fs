@@ -23,8 +23,14 @@ uniform float sunIntensity;
 uniform float ambientLight;
 uniform bool highQuality;
 
+// --- DEBUG toggles ----------------------------------------------------------
+#define DEBUG_SHOW_RAYDIR   0   // renders normalized ray direction as color
+#define DEBUG_SHOW_DENSITY  1   // renders single-sample density at slab midpoint
+// ---------------------------------------------------------------------------
+
 // Constants
 const float PI = 3.14159265359;
+const float EPS = 1e-6;
 const float EARTH_RADIUS = 6360e3;  // Approximate
 const float ATMOSPHERE_HEIGHT = 100e3;
 
@@ -168,6 +174,10 @@ float sampleDensity(vec3 pos, float heightFrac) {
     densityVal *= hFalloff * 0.5 + 0.5;
     float threshold = 1.0 - coverage;
     densityVal = max(0.0, (densityVal - threshold) / (1.0 - threshold)) * density;
+    
+    // Boost the density for visibility
+    densityVal *= 2.0; // Todo: May need to remove this
+    
     return clamp(densityVal, 0.0, 1.0);
 }
 
@@ -185,68 +195,138 @@ float transmittance(float dist, float density) {
 
 // Ray-sphere intersection for atmosphere (optional, but for cloud slab use AABB)
 vec2 rayBoxIntersect(vec3 ro, vec3 rd, vec3 boxMin, vec3 boxMax) {
-    vec3 invRd = 1.0 / rd;
+    vec3 invRd = vec3( (abs(rd.x) < EPS) ? 1e30 : 1.0/rd.x,
+                       (abs(rd.y) < EPS) ? 1e30 : 1.0/rd.y,
+                       (abs(rd.z) < EPS) ? 1e30 : 1.0/rd.z );
     vec3 tmin = (boxMin - ro) * invRd;
     vec3 tmax = (boxMax - ro) * invRd;
     vec3 realMin = min(tmin, tmax);
     vec3 realMax = max(tmin, tmax);
     float tNear = max(max(realMin.x, realMin.y), realMin.z);
-    float tFar = min(min(realMax.x, realMax.y), realMax.z);
+    float tFar  = min(min(realMax.x, realMax.y), realMax.z);
     return vec2(tNear, tFar);
 }
 
-// Reconstruct world position from NDC (for ray start/end, but since full sky, start from cam)
+// Ray direction: reconstruct a world position on the near plane, subtract cameraPos
 vec3 getRayDir(vec2 uv) {
-    vec4 clip = vec4(uv * 2.0 - 1.0, -1.0, 1.0);
-    vec4 view = invViewProj * clip;
-    return normalize(view.xyz / view.w);
+    // Convert UV [0,1] to NDC [-1,1]
+    vec2 ndc = uv * 2.0 - 1.0;
+    
+    // Create two points: one on near plane, one on far plane
+    vec4 nearPoint = invViewProj * vec4(ndc, -1.0, 1.0);
+    vec4 farPoint = invViewProj * vec4(ndc, 1.0, 1.0);
+    
+    // Perspective divide
+    nearPoint /= nearPoint.w;
+    farPoint /= farPoint.w;
+    
+    // Ray direction is from near to far (already in world space)
+    return normalize(farPoint.xyz - nearPoint.xyz);
 }
 
 void main() {
-    float CLOUD_MIN_HEIGHT = cloudHeight - cloudThickness / 2.0;
-    float CLOUD_MAX_HEIGHT = cloudHeight + cloudThickness / 2.0;
-
+    // debug quick-visualizations
     vec2 uv = fragTexCoord;
+
     vec3 rayDir = getRayDir(uv);
+    #if DEBUG_SHOW_RAYDIR
+        finalColor = vec4(abs(rayDir), 1.0); // see which way rays point
+        return;
+    #endif
+
+    // cloud slab bounds in world units
+    float CLOUD_MIN_HEIGHT = cloudHeight - cloudThickness * 0.5;
+    float CLOUD_MAX_HEIGHT = cloudHeight + cloudThickness * 0.5;
+
     vec3 rayOrigin = cameraPos;
 
+    // huge slab horizontally; clip vertically by cloud band
     vec3 slabMin = vec3(-1e6, CLOUD_MIN_HEIGHT, -1e6);
-    vec3 slabMax = vec3(1e6, CLOUD_MAX_HEIGHT, 1e6);
-    vec2 tHit = rayBoxIntersect(rayOrigin, rayDir, slabMin, slabMax);
+    vec3 slabMax = vec3( 1e6, CLOUD_MAX_HEIGHT,  1e6);
 
-    if (tHit.x > tHit.y || tHit.y < 0.0) {
-        finalColor = vec4(0.0);
-        return;
-    }
+	vec2 tHit = rayBoxIntersect(rayOrigin, rayDir, slabMin, slabMax);
 
+	// Fix: If camera is inside the slab, start from 0
+	if (tHit.x < 0.0 && tHit.y > 0.0) {
+		tHit.x = 0.0;  // Start raymarching from camera position
+	}
+
+	// Miss -> early out (transparent)
+	if (tHit.x > tHit.y || tHit.y < 0.0) {
+		finalColor = vec4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+    // clamp safe steps
+    int steps = max(1, raymarchSteps);
     float tStart = max(tHit.x, 0.0);
     float tEnd = tHit.y;
-    float stepSize = (tEnd - tStart) / float(raymarchSteps);
+    float totalLen = max(1e-6, tEnd - tStart);
+    float stepSize = totalLen / float(steps);
     if (highQuality) stepSize /= 1.5;
 
+    // normalize sun direction here
     vec3 lightDir = normalize(-sunDir);
-    float cosTheta = dot(rayDir, lightDir);
+    vec3 sunCol = sunColor * sunIntensity;
 
+    // debug density at midpoint
+    #if DEBUG_SHOW_DENSITY
+        float midT = tStart + 0.5 * totalLen;
+        vec3 midPos = rayOrigin + rayDir * midT;
+        float hF = (midPos.y - CLOUD_MIN_HEIGHT) / cloudThickness;
+        float d = sampleDensity(midPos, hF);
+        finalColor = vec4(vec3(d), 1.0);
+        return;
+    #endif
+
+    // Integration state
+    float accumDensity = 0.0;
     vec3 transmittance = vec3(1.0);
     vec3 scatteredLight = vec3(0.0);
-    float totalDensity = 0.0;
 
-    for (int i = 0; i < raymarchSteps; i++) {
-        float t = tStart + stepSize * (float(i) + 0.5);
+    // Main raymarch
+    for (int i = 0; i < steps; ++i) {
+        float t = tStart + (float(i) + 0.5) * stepSize;
         vec3 pos = rayOrigin + rayDir * t;
         float heightFrac = (pos.y - CLOUD_MIN_HEIGHT) / cloudThickness;
-        float dens = sampleDensity(pos, heightFrac);
-        if (dens < 0.001) continue;
-        transmittance *= exp(-stepSize * dens * absorption);
-        float phase = heneyGreenstein(rayDir, lightDir, phaseG);
-        vec3 lightContrib = sunColor * sunIntensity * phase * max(0.0, cosTheta) * dens * stepSize * scattering;
-        vec3 totalLight = lightContrib + ambientLight * vec3(0.4, 0.6, 1.0);
-        scatteredLight += dens * totalLight * transmittance;
-        totalDensity += dens * stepSize;
-        if (totalDensity > 2.0) break;
+
+        // sample density; clamp to avoid huge values
+        float dens = clamp(sampleDensity(pos, heightFrac), 0.0, 1.0);
+
+        if (dens > 1e-4) {
+            // attenuation for this segment
+            float atten = exp(-stepSize * dens * absorption);
+            transmittance *= atten;
+
+            // single-scatter approx
+            float phase = heneyGreenstein(rayDir, lightDir, phaseG);
+            float cosTheta = max(0.0, dot(rayDir, lightDir));
+            vec3 lightContrib = sunCol * (phase * cosTheta) * (dens * stepSize) * scattering;
+
+            // clamp per-sample to avoid spikes
+            lightContrib = min(lightContrib, vec3(10.0));
+
+            vec3 ambient = ambientLight * vec3(0.4, 0.6, 1.0);
+            vec3 totalLight = lightContrib + ambient;
+
+            scatteredLight += totalLight * transmittance;
+            accumDensity += dens * stepSize;
+
+            // cheap early-out if fully opaque
+            if (accumDensity > 4.0) {
+                accumDensity = 4.0;
+                break;
+            }
+        }
     }
 
-    vec3 cloudColor = scatteredLight + vec3(0.8) * ambientLight * (1.0 - transmittance);
-    cloudColor = pow(cloudColor, vec3(1.0 / 2.2));
-    finalColor = vec4(cloudColor, 1.0);
+    // Compose final color: simple tonemap + alpha
+    vec3 raw = scatteredLight + vec3(0.8) * ambientLight * (1.0 - transmittance);
+    // clamp extremes then reinhard tonemap
+    raw = min(raw, vec3(100.0));
+    vec3 tone = raw / (raw + vec3(1.0));
+    tone = pow(tone, vec3(1.0 / 2.2)); // gamma
+
+    float cloudAlpha = clamp(accumDensity * 0.5, 0.0, 1.0); // tune multiplier
+    finalColor = vec4(tone, cloudAlpha);
 }

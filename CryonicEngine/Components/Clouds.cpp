@@ -12,23 +12,6 @@ std::vector<Clouds*> Clouds::clouds;
 
 void Clouds::Awake()
 {
-	if (!cloudMaterial)
-	{
-		cloudMaterial = new Material("CloudDefault");
-		ownMaterial = true;
-
-		// Set base color to white/translucent for clouds
-		cloudMaterial->SetAlbedoColor({ 255, 255, 255, 128 });
-
-		std::pair<unsigned int, int*> cloudShaderPair = ShaderManager::GetShader(ShaderManager::Shaders::Clouds);
-		if (cloudShaderPair.first == 0)
-		{
-			delete cloudMaterial;
-			cloudMaterial = nullptr;
-			return;
-		}
-		cloudMaterial->SetShader({ cloudShaderPair.first, cloudShaderPair.second });
-	}
 	startTime = RaylibWrapper::GetTime();
 
 	if (doOnce) // This should be removed once the code stops calling Awake() to create new materials
@@ -40,9 +23,6 @@ void Clouds::Awake()
 
 void Clouds::Start()
 {
-	// Create a full-screen quad for post-processing the clouds
-	modelSet = raylibModel.Create(ModelType::Plane, "Clouds", ShaderManager::Shaders::Clouds, "", { 2.0f, 2.0f });  // Todo: Test with the last parameter empty. This sets the length and width to 2
-	raylibModel.SetMaterials({ cloudMaterial->GetRaylibMaterial() });
 }
 
 void Clouds::Update()
@@ -59,7 +39,7 @@ void Clouds::RenderClouds()
 
 void Clouds::RenderCloud()
 {
-	if (!modelSet || !gameObject->IsActive() || !gameObject->IsGlobalActive() || !IsActive())
+	if (!gameObject->IsActive() || !gameObject->IsGlobalActive() || !IsActive())
 		return;
 
 	// Todo: We will likely need to render for each active camera
@@ -116,7 +96,8 @@ void Clouds::RenderCloud()
 		return;
 #endif
 
-	RaylibWrapper::Shader shader = cloudMaterial->GetRaylibMaterial()->shader;
+	std::pair<unsigned int, int*> cloudShaderPair = ShaderManager::GetShader(ShaderManager::Shaders::Clouds); // Todo: Stop getting each frame, this is just for testing
+	RaylibWrapper::Shader shader = { cloudShaderPair.first, cloudShaderPair.second };
 	float timeVal = RaylibWrapper::GetTime() - startTime;
 
 	// Time uniform
@@ -154,7 +135,8 @@ void Clouds::RenderCloud()
 	RaylibWrapper::SetShaderValue(shader, locPhaseG, &phaseG, RaylibWrapper::SHADER_UNIFORM_FLOAT);
 
 	// Sun
-	float sunDirArr[3] = { sunDir.x, sunDir.y, sunDir.z };
+	RaylibWrapper::Vector3 sunDirN = RaylibWrapper::Vector3Normalize({ sunDir.x, sunDir.y, sunDir.z }); // whatever your engine uses
+	float sunDirArr[3] = { sunDirN.x, sunDirN.y, sunDirN.z };
 	int locSunDir = RaylibWrapper::GetShaderLocation(shader, "sunDir");
 	RaylibWrapper::SetShaderValue(shader, locSunDir, sunDirArr, RaylibWrapper::SHADER_UNIFORM_VEC3);
 
@@ -174,7 +156,8 @@ void Clouds::RenderCloud()
 	RaylibWrapper::SetShaderValue(shader, locCamPos, camPosArr, RaylibWrapper::SHADER_UNIFORM_VEC3);
 
 	// Inv view proj for ray dir computation
-	RaylibWrapper::Matrix invViewProj = RaylibWrapper::MatrixMultiply(RaylibWrapper::MatrixInvert(proj), RaylibWrapper::MatrixInvert(view));
+	RaylibWrapper::Matrix viewProj = RaylibWrapper::MatrixMultiply(proj, view);
+	RaylibWrapper::Matrix invViewProj = RaylibWrapper::MatrixInvert(viewProj);
 	int locInvVP = RaylibWrapper::GetShaderLocation(shader, "invViewProj");
 	RaylibWrapper::SetShaderValueMatrix(shader, locInvVP, invViewProj);
 
@@ -183,11 +166,37 @@ void Clouds::RenderCloud()
 	int highQualityInt = highQuality ? 1 : 0;  // Convert bool to int
 	RaylibWrapper::SetShaderValue(shader, locHQ, &highQualityInt, RaylibWrapper::SHADER_UNIFORM_INT);
 
-	// Draw full-screen quad in NDC (ortho projection for screen-space rendering)
-	raylibModel.DrawModelWrapper(0, 0, 0, 1, 1, -1, 0.707f, 0.0f, 0.0f, 0.707f, 255, 255, 255, 255, true, true, true);
+	// Does this need to be set? 
+	//RaylibWrapper::Matrix mvp = RaylibWrapper::MatrixMultiply(modelViewMatrix, projectionMatrix);
+	//int locMVP = RaylibWrapper::GetShaderLocation(shader, "mvp");
+	//RaylibWrapper::SetShaderValueMatrix(shader, locMVP, mvp);
 
-	// Reset blend... Is this needed?
+	//RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA);
+	RaylibWrapper::BeginShaderMode({ cloudShaderPair.first, cloudShaderPair.second });
+
+	rlPushMatrix();
+	rlLoadIdentity();
+	rlOrtho(-1, 1, -1, 1, 0, 1);
+
+	rlBegin(RL_QUADS);
+	rlTexCoord2f(0, 0); rlVertex3f(-1, 1, 0);
+	rlTexCoord2f(0, 1); rlVertex3f(-1, -1, 0);
+	rlTexCoord2f(1, 1); rlVertex3f(1, -1, 0);
+	rlTexCoord2f(1, 0); rlVertex3f(1, 1, 0);
+	rlEnd();
+
+	rlPopMatrix();
+	rlSetTexture(0);
+
+	RaylibWrapper::EndShaderMode();
+
+	// Reset blend
 	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA);
+
+	printf("Camera Y: %f, Cloud range: %f to %f\n",
+		cameraPos.y,
+		cloudHeight - cloudThickness * 0.5f,
+		cloudHeight + cloudThickness * 0.5f);
 }
 
 #if defined(EDITOR)
@@ -218,7 +227,7 @@ void Clouds::EditorUpdate()
 	highQuality = exposedVariables[1][14][2].get<bool>();
 
 	// Regenerate mode
-	if (modelSet && exposedVariables[1][6][2] != raymarchSteps)
+	if (exposedVariables[1][6][2] != raymarchSteps)
 	{
 		raymarchSteps = exposedVariables[1][6][2].get<int>();
 		Start(); // Todo: Move the model regeneration to a separate function
@@ -228,12 +237,6 @@ void Clouds::EditorUpdate()
 
 void Clouds::Destroy()
 {
-	if (modelSet)
-		raylibModel.DeleteInstance();
-
-	if (ownMaterial)
-		delete cloudMaterial;
-
 	auto it = std::find(clouds.begin(), clouds.end(), this);
 	if (it != clouds.end())
 		clouds.erase(it);
