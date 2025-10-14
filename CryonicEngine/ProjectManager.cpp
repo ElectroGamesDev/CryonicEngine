@@ -1970,7 +1970,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
                                 else
                                     tempCpp << (*variables)[1].get<std::string>() + " = new " + (*variables)[0].get<std::string>() + "(" + (*variables)[2].dump() + ");\n";
                             }
-                            else if ((*variables).size() > 4) // Todo: This is a horrible solution for checking if its an enum
+                            else if ((*variables).size() > 4 && (*variables)[4].is_array()) // Todo: This is a horrible solution for checking if its an enum
                             {
                                 std::string value = (*variables)[2].dump();
                                 value = value.substr(1);
