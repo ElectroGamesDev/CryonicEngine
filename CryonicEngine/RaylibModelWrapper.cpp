@@ -373,7 +373,7 @@ void RaylibModel::DeleteInstance()
         Unload();
 }
 
-void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA)
+void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA, bool loadIdentity, bool ortho)
 {
     if (model == nullptr || model->first.meshCount < 1)
     {
@@ -383,6 +383,12 @@ void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float siz
     }
 
     rlPushMatrix();
+
+    if (loadIdentity)
+        rlLoadIdentity();
+
+    if (ortho)
+        rlOrtho(-1, 1, -1, 1, 0, 1); // I'm not sure if these parameters will work with everything, but its used for clouds. If not, it might be best to derive from this class, and make a custom DrawModelWrapper()
 
     // build up the transform
     Matrix transform = MatrixTranslate(posX, posY, posZ);
