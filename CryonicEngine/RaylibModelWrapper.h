@@ -28,7 +28,7 @@ public:
 		RaylibWrapper::Material* material);
 	void Unload();
 	void DeleteInstance();
-	void DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA, bool loadIdentity = false, bool ortho = false);
+	void DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA, bool loadIdentity = false, bool ortho = false, bool ndc = false);
 	void SetMaterialMap(int materialIndex, int mapIndex, RaylibWrapper::Texture2D texture, RaylibWrapper::Color color, float intesity);
 	void SetMaterials(std::vector<RaylibWrapper::Material*> mats);
 	void SetEmbeddedMaterials();

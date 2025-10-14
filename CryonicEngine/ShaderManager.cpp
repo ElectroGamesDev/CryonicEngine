@@ -101,6 +101,17 @@ void ShaderManager::Init()
 	}
 #endif
 
+	// Clouds
+#if defined (EDITOR)
+	// Todo: This won't work for PC's other than mine
+	RaylibShader::shaders[ShaderManager::Clouds].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/clouds.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/clouds.fs").string().c_str());
+#else
+	if (exeParent.empty())
+		RaylibShader::shaders[ShaderManager::Clouds].Load("Resources/shaders/glsl330/clouds.vs", "Resources/shaders/glsl330/clouds.fs");
+	else
+		RaylibShader::shaders[ShaderManager::Clouds].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/clouds.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/clouds.fs").string().c_str());
+#endif
+
 
     //std::string currentDirectory = GetWorkingDirectory();
     //std::string relativePath = "resources/shaders/glsl330/lighting.vs";

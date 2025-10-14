@@ -179,6 +179,7 @@
     <ClCompile Include="Components\Button.cpp" />
     <ClCompile Include="Components\CameraComponent.cpp" />
     <ClCompile Include="Components\CanvasRenderer.cpp" />
+    <ClCompile Include="Components\Clouds.cpp" />
     <ClCompile Include="Components\Collider2D.cpp" />
     <ClCompile Include="Components\Collider3D.cpp" />
     <ClCompile Include="Components\Component.cpp" />
@@ -268,6 +269,7 @@
     <ClInclude Include="Components\Button.h" />
     <ClInclude Include="Components\CameraComponent.h" />
     <ClInclude Include="Components\CanvasRenderer.h" />
+    <ClInclude Include="Components\Clouds.h" />
     <ClInclude Include="Components\Collider2D.h" />
     <ClInclude Include="Components\Collider3D.h" />
     <ClInclude Include="Components\Component.h" />

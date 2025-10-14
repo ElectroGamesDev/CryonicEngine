@@ -7,6 +7,8 @@
 #include "Components/SpriteRenderer.h"
 #include "Components/Lighting.h"
 #include "Components/Skybox.h"
+#include "Components/Clouds.h"
+#include "Components/Ocean.h"
 #include "AudioClip.h"
 #include "ShaderManager.h"
 #include "RaylibModelWrapper.h"
@@ -500,6 +502,12 @@ void MainLoop()
 	for (RenderableTexture* texture : RenderableTexture::textures) // Renders Sprites and Tilemaps
 		if (texture)
 			texture->Render();
+
+	// Clouds must be rendered after opaque geometry, but before transparent ones
+	Clouds::RenderClouds();
+
+	// Water must be rendered last
+	Ocean::RenderOceans();
 
 	ImGui::End();
 

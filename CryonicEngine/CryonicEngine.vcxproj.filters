@@ -282,6 +282,9 @@
     <ClCompile Include="Components\Ocean.cpp">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Components\Clouds.cpp">
+      <Filter>Source Files\Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FontManager.h">
@@ -555,6 +558,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Components\Ocean.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Clouds.h">
       <Filter>Header Files\Components</Filter>
     </ClInclude>
   </ItemGroup>

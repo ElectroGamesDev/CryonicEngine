@@ -373,7 +373,7 @@ void RaylibModel::DeleteInstance()
         Unload();
 }
 
-void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA, bool loadIdentity, bool ortho)
+void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float sizeX, float sizeY, float sizeZ, float rotationX, float rotationY, float rotationZ, float rotationW, unsigned char colorR, unsigned char colorG, unsigned char colorB, unsigned char colorA, bool loadIdentity, bool ortho, bool ndc)
 {
     if (model == nullptr || model->first.meshCount < 1)
     {
@@ -396,6 +396,15 @@ void RaylibModel::DrawModelWrapper(float posX, float posY, float posZ, float siz
     transform = MatrixMultiply(QuaternionToMatrix({rotationX, rotationY, rotationZ, rotationW}), transform);
 
     transform = MatrixMultiply(MatrixScale(sizeX, sizeY, sizeZ), transform);
+
+    if (ndc)
+    {
+		// Add NDC transformation: Scale and translate to map world space to NDC
+        // Assuming the plane is generated in a unit size, scale it to fit -1 to 1
+		Matrix ndcTransform = MatrixScale(2.0f, 2.0f, 1.0f);  // Scale to cover -1 to 1 in X and Z
+		ndcTransform = MatrixMultiply(MatrixTranslate(-1.0f, 0.0f, -1.0f), ndcTransform);  // Translate to NDC origin
+		transform = MatrixMultiply(ndcTransform, transform);  // Apply NDC transform
+    }
 
     // apply the transform
     rlMultMatrixf(MatrixToFloat(transform));

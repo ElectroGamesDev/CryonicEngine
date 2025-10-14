@@ -13,7 +13,8 @@ public:
 		Terrain,
 		Cubemap,
 		Skybox,
-		Water
+		Water,
+		Clouds
 	};
 
 	static void Init();
