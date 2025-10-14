@@ -35,6 +35,7 @@
 #include "Components/Terrain.h"
 #include "Components/Skybox.h"
 #include "Components/Ocean.h"
+#include "Components/Clouds.h"
 #include "IconManager.h"
 #include "ShaderManager.h"
 #include "ShadowManager.h"
@@ -1148,6 +1149,12 @@ void Editor::UpdateViewport()
     for (RenderableTexture* texture : RenderableTexture::textures) // Renders Sprites and Tilemaps
         if (texture)
             texture->Render();
+
+	// Clouds must be rendered after opaque geometry, but before transparent ones
+    Clouds::RenderClouds();
+
+	// Water must be rendered last
+	Ocean::RenderOceans();
 
 	// Terrain tools
 	if (currentTerrainTool != TerrainTool::None && selectedTerrain)
@@ -4638,6 +4645,12 @@ void Editor::RenderCameraView()
         if (texture)
             texture->Render();
 
+	// Clouds must be rendered after opaque geometry, but before transparent ones
+	Clouds::RenderClouds();
+
+	// Water must be rendered last
+	Ocean::RenderOceans();
+
     RaylibWrapper::EndMode3D();
     RaylibWrapper::EndTextureMode();
 
@@ -5619,6 +5632,7 @@ void Editor::RenderHierarchy()
 				{"Create Terrain", "Terrain", 3, ModelType::Custom},
                 {"Create Light", "Light", 3, ModelType::Custom},
 				{"Create Skybox", "Skybox", 3, ModelType::Custom},
+				{"Create Clouds", "Clouds", 3, ModelType::Custom},
 				{"Create Ocean", "Ocean", 3, ModelType::Custom},
                 {"Create Square", "Square", 2, ModelType::Custom},
                 {"Create Circle", "Circle", 2, ModelType::Custom},
@@ -5714,6 +5728,10 @@ void Editor::RenderHierarchy()
 				else if (objectToCreate.name == "Ocean")
 				{
 					gameObject->AddComponentInternal<Ocean>();
+				}
+				else if (objectToCreate.name == "Clouds")
+				{
+					gameObject->AddComponentInternal<Clouds>();
 				}
                 else if (objectToCreate.name != "GameObject" && guiObjectToCreate.name == "")
                 {

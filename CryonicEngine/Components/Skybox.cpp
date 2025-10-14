@@ -1,6 +1,7 @@
 #include "Skybox.h"
 #include "rlgl.h"
 #include "../RaylibWrapper.h"
+#include "../Scenes/SceneManager.h"
 #include <algorithm>
 #if defined(EDITOR)
 #include "../ProjectManager.h"

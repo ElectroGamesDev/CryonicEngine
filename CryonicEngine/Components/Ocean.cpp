@@ -6,6 +6,8 @@
 #include "../Game.h"
 #endif
 
+std::vector<Ocean*> Ocean::oceans;
+
 void Ocean::Awake()
 {
 	// Create or get water material
@@ -18,6 +20,12 @@ void Ocean::Awake()
 
 		std::pair<unsigned int, int*> waterShaderPair = ShaderManager::GetShader(ShaderManager::Shaders::Water);
 		waterMaterial->SetShader({ waterShaderPair.first, waterShaderPair.second });
+	}
+
+	if (doOnce) // This should be removed once the code stops calling Awake() to create new materials
+	{
+		oceans.push_back(this);
+		doOnce = false;
 	}
 }
 
@@ -42,16 +50,22 @@ void Ocean::Update()
 		if (!mainCamera)
 			pos = { gameObject->transform.GetPosition().x, gameObject->transform.GetPosition().y, gameObject->transform.GetPosition().z };
 		else
-			pos = { mainCamera->GetGameObject()->GetPosition().x, gameObject->transform.GetPosition().y, mainCamera->GetGameObject()->GetPosition().z };
+			pos = { mainCamera->GetGameObject()->transform.GetPosition().y, gameObject->transform.GetPosition().y, mainCamera->GetGameObject()->transform.GetPosition().z };
 #endif
 
 		gameObject->transform.SetPosition(pos);
 	}
 }
 
-void Ocean::Render(bool renderShadows)
+void Ocean::RenderOceans()
 {
-	if (!modelSet || renderShadows)
+	for (Ocean* ocean : oceans)
+		ocean->RenderOcean();
+}
+
+void Ocean::RenderOcean()
+{
+	if (!modelSet || !gameObject->IsActive() || !gameObject->IsGlobalActive() || !IsActive())
 		return;
 
 	// Enable alpha blending for transparency (see below water)
@@ -258,4 +272,8 @@ void Ocean::Destroy()
 
 	if (waterMaterial && waterMaterial->GetPath() == "WaterDefault")
 		delete waterMaterial;
+
+	auto it = std::find(oceans.begin(), oceans.end(), this);
+	if (it != oceans.end())
+		oceans.erase(it);
 }

@@ -217,7 +217,6 @@ exposedVariables = nlohmann::json::parse(variables);
 	void Awake() override;
 	void Start() override;
 	void Update() override;
-	void Render(bool renderShadows) override;
 #if defined(EDITOR)
 	void EditorUpdate() override;
 #endif
@@ -230,8 +229,11 @@ exposedVariables = nlohmann::json::parse(variables);
 	bool IsInfinite() const { return infiniteOcean; }
 	void SetInfinite(bool inf) { infiniteOcean = inf; }
 
+	static void RenderOceans();
+	void RenderOcean();
+
 private:
-	// Wave parameters (4 octaves for multi-detail)
+	// Wave parameters
 	float waveAmp1 = 2.0f, waveLambda1 = 15.0f, waveSpeed1 = 1.0f;
 	Vector2 waveDir1 = { 1.0f, 0.6f };
 	float waveAmp2 = 1.0f, waveLambda2 = 8.0f, waveSpeed2 = 1.2f;
@@ -256,4 +258,7 @@ private:
 	bool modelSet = false;
 	bool editorSetup = false;
 	CameraComponent* mainCamera = nullptr;
+    bool doOnce = true;
+
+	static std::vector<Ocean*> oceans;
 };
