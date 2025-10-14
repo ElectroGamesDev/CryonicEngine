@@ -192,11 +192,6 @@ void Clouds::RenderCloud()
 
 	// Reset blend
 	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA);
-
-	printf("Camera Y: %f, Cloud range: %f to %f\n",
-		cameraPos.y,
-		cloudHeight - cloudThickness * 0.5f,
-		cloudHeight + cloudThickness * 0.5f);
 }
 
 #if defined(EDITOR)
