@@ -31,10 +31,10 @@ public:
 
         bool fileExists;
 #ifdef EDITOR
-        fileExists = std::filesystem::exists(ProjectManager::projectData.path / "/Assets/" / path);
+        fileExists = std::filesystem::exists(ProjectManager::projectData.path / "Assets" / path);
 #else
 		if (exeParent.empty())
-            fileExists = std::filesystem::exists("Resources/Assets" / path);
+            fileExists = std::filesystem::exists(std::filesystem::path("Resources" + std::string("/Assets/") + path));
 		else
             fileExists = std::filesystem::exists(std::filesystem::path(exeParent) / "Resources" / "Assets" / path);
 #endif
