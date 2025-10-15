@@ -77,15 +77,8 @@ Cryonic Engine is open for contributions. Feel free to fork the repository, make
 ### Key Points
 
 - **Usage:** You can use, modify, and distribute the Engine, Modifications, or Derived Engines for any purpose, including commercial projects.  
-- **Sublicensing:** Allowed only under the same license terms.  
-
----
-
-### Splash Screen
-
-- **Every Product must display the Cryonic Engine Splash Screen for at startup.**  
-- Removal is only allowed with a **paid plan** that removes the slash screen. Unauthorized removal is a breach.
-
+- **Sublicensing:** Allowed only under the same license terms.
+  
 ---
 
 ### Royalties
