@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Editor\Source\Core\CryonicEngine.h" />
+    <ClInclude Include="Editor\Source\Core\Editor.h" />
+    <ClInclude Include="Editor\Source\Core\ProjectManager.h" />
+    <ClInclude Include="Editor\Source\Systems\FileWatcher\FileWatcher.h" />
+    <ClInclude Include="Editor\Source\Systems\RuntimeComm\AsyncPBODisplay.h" />
+    <ClInclude Include="Editor\Source\Systems\VisualScripting\EventSheetSystem.h" />
+    <ClInclude Include="Editor\Source\Tools\Scripting\ScriptHeaderGenerator.h" />
+    <ClInclude Include="Editor\Source\Utilities\Utilities.h" />
+    <ClInclude Include="Editor\Source\Windows\AssetManager.h" />
+    <ClInclude Include="Editor\Source\Windows\CanvasEditor.h" />
+    <ClInclude Include="Editor\Source\Windows\EditorWindow.h" />
+    <ClInclude Include="Editor\Source\Windows\EventSheetEditor.h" />
+    <ClInclude Include="Editor\Source\Windows\PrefabEditor.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\IconsFontAwesome6.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imconfig.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imgui.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\ImGuiNotify.hpp" />
+    <ClInclude Include="Editor\ThirdParty\imgui\ImGuiPopup.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imgui_impl_raylib.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imgui_internal.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imstb_textedit.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\rlImGui.h" />
+    <ClInclude Include="Editor\ThirdParty\imgui\rlImGuiColors.h" />
+    <ClInclude Include="Editor\ThirdParty\imnodes\imnodes.h" />
+    <ClInclude Include="Editor\ThirdParty\imnodes\imnodes_internal.h" />
+    <ClInclude Include="Engine\Source\Components\Animation\AnimationPlayer.h" />
+    <ClInclude Include="Engine\Source\Components\Audio\AudioPlayer.h" />
+    <ClInclude Include="Engine\Source\Components\Component.h" />
+    <ClInclude Include="Engine\Source\Components\Misc\CameraComponent.h" />
+    <ClInclude Include="Engine\Source\Components\Misc\Spline.h" />
+    <ClInclude Include="Engine\Source\Components\Physics\Collider2D.h" />
+    <ClInclude Include="Engine\Source\Components\Physics\Collider3D.h" />
+    <ClInclude Include="Engine\Source\Components\Physics\Rigidbody2D.h" />
+    <ClInclude Include="Engine\Source\Components\Physics\Rigidbody3D.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\Clouds.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\Lighting.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\MeshRenderer.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\Ocean.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\Skybox.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\SpriteRenderer.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\Terrain.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\TilemapRenderer.h" />
+    <ClInclude Include="Engine\Source\Components\Scripting\ScriptComponent.h" />
+    <ClInclude Include="Engine\Source\Components\Scripting\ScriptLoader.h" />
+    <ClInclude Include="Engine\Source\Components\UI\Button.h" />
+    <ClInclude Include="Engine\Source\Components\UI\CanvasRenderer.h" />
+    <ClInclude Include="Engine\Source\Components\UI\Image.h" />
+    <ClInclude Include="Engine\Source\Components\UI\Label.h" />
+    <ClInclude Include="Engine\Source\Core\CryonicAPI.h" />
+    <ClInclude Include="Engine\Source\Core\CryonicCore.h" />
+    <ClInclude Include="Engine\Source\Core\GameObject.h" />
+    <ClInclude Include="Engine\Source\Core\MainThreadQueue.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibCameraWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibDrawWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibInputWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibLightWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibModelWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibShaderWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibWrapper.h" />
+    <ClInclude Include="Engine\Source\Resources\Animation.h" />
+    <ClInclude Include="Engine\Source\Resources\AnimationGraph.h" />
+    <ClInclude Include="Engine\Source\Resources\AudioClip.h" />
+    <ClInclude Include="Engine\Source\Resources\Font.h" />
+    <ClInclude Include="Engine\Source\Resources\Material.h" />
+    <ClInclude Include="Engine\Source\Resources\Prefab.h" />
+    <ClInclude Include="Engine\Source\Resources\Sprite.h" />
+    <ClInclude Include="Engine\Source\Resources\Tilemap.h" />
+    <ClInclude Include="Engine\Source\Systems\Animation\AnimationBlending.h" />
+    <ClInclude Include="Engine\Source\Systems\Animation\AnimationImporter.h" />
+    <ClInclude Include="Engine\Source\Systems\Animation\MotionMatchingSystem.h" />
+    <ClInclude Include="Engine\Source\Systems\Events\Event.h" />
+    <ClInclude Include="Engine\Source\Systems\Events\EventSystem.h" />
+    <ClInclude Include="Engine\Source\Systems\Input\InputSystem.h" />
+    <ClInclude Include="Engine\Source\Systems\Physics\CollisionListener2D.h" />
+    <ClInclude Include="Engine\Source\Systems\Physics\CollisionListener3D.h" />
+    <ClInclude Include="Engine\Source\Systems\Physics\Physics2DDebugDraw.h" />
+    <ClInclude Include="Engine\Source\Systems\Physics\Physics3DDebugDraw.h" />
+    <ClInclude Include="Engine\Source\Systems\Rendering\RenderableTexture.h" />
+    <ClInclude Include="Engine\Source\Systems\Rendering\ShaderManager.h" />
+    <ClInclude Include="Engine\Source\Systems\Rendering\ShadowManager.h" />
+    <ClInclude Include="Engine\Source\Systems\Scene\Scene.h" />
+    <ClInclude Include="Engine\Source\Systems\Scene\SceneManager.h" />
+    <ClInclude Include="Engine\Source\Systems\UI\MenuManager.h" />
+    <ClInclude Include="Engine\Source\Utilities\ConsoleLogger.h" />
+    <ClInclude Include="Engine\Source\Utilities\FontManager.h" />
+    <ClInclude Include="Engine\Source\Utilities\IconManager.h" />
+    <ClInclude Include="Engine\ThirdParty\Misc\json.hpp" />
+    <ClInclude Include="Engine\ThirdParty\Misc\tiny_gltf.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Editor\Source\Core\CryonicEngine.cpp" />
+    <ClCompile Include="Editor\Source\Core\Editor.cpp" />
+    <ClCompile Include="Editor\Source\Core\ProjectManager.cpp" />
+    <ClCompile Include="Editor\Source\Systems\FileWatcher\FileWatcher.cpp" />
+    <ClCompile Include="Editor\Source\Systems\RuntimeComm\AsyncPBODisplay.cpp" />
+    <ClCompile Include="Editor\Source\Tools\Scripting\ScriptHeaderGenerator.cpp" />
+    <ClCompile Include="Editor\Source\Utilities\Utilities.cpp" />
+    <ClCompile Include="Editor\Source\Windows\AssetManager.cpp" />
+    <ClCompile Include="Editor\Source\Windows\CanvasEditor.cpp" />
+    <ClCompile Include="Editor\Source\Windows\EditorWindow.cpp" />
+    <ClCompile Include="Editor\Source\Windows\EventSheetEditor.cpp" />
+    <ClCompile Include="Editor\Source\Windows\PrefabEditor.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\ImGuiPopup.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imgui\rlImGui.cpp" />
+    <ClCompile Include="Editor\ThirdParty\imnodes\imnodes.cpp" />
+    <ClCompile Include="Engine\Source\Components\Animation\AnimationPlayer.cpp" />
+    <ClCompile Include="Engine\Source\Components\Audio\AudioPlayer.cpp" />
+    <ClCompile Include="Engine\Source\Components\Component.cpp" />
+    <ClCompile Include="Engine\Source\Components\Misc\CameraComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\Misc\Spline.cpp" />
+    <ClCompile Include="Engine\Source\Components\Physics\Collider2D.cpp" />
+    <ClCompile Include="Engine\Source\Components\Physics\Collider3D.cpp" />
+    <ClCompile Include="Engine\Source\Components\Physics\Rigidbody2D.cpp" />
+    <ClCompile Include="Engine\Source\Components\Physics\Rigidbody3D.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\Clouds.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\Lighting.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\MeshRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\Ocean.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\Skybox.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\SpriteRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\Terrain.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\TilemapRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Components\Scripting\ScriptComponent.cpp" />
+    <ClCompile Include="Engine\Source\Components\Scripting\ScriptLoader.cpp" />
+    <ClCompile Include="Engine\Source\Components\UI\Button.cpp" />
+    <ClCompile Include="Engine\Source\Components\UI\CanvasRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Components\UI\Image.cpp" />
+    <ClCompile Include="Engine\Source\Components\UI\Label.cpp" />
+    <ClCompile Include="Engine\Source\Core\CryonicCore.cpp" />
+    <ClCompile Include="Engine\Source\Core\GameObject.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibCameraWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibDrawWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibInputWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibLightWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibModelWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibShaderWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Resources\AnimationGraph.cpp" />
+    <ClCompile Include="Engine\Source\Resources\AudioClip.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Material.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Prefab.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Sprite.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Tilemap.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Animation\AnimationBlending.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Animation\AnimationImporter.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Animation\MotionMatchingSystem.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Events\Event.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Events\EventSystem.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Input\InputSystem.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Physics\CollisionListener2D.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Physics\CollisionListener3D.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Physics\Physics2DDebugDraw.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Physics\Physics3DDebugDraw.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Rendering\RenderableTexture.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Rendering\ShaderManager.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Rendering\ShadowManager.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Scene\Scene.cpp" />
+    <ClCompile Include="Engine\Source\Systems\Scene\SceneManager.cpp" />
+    <ClCompile Include="Engine\Source\Systems\UI\MenuManager.cpp" />
+    <ClCompile Include="Engine\Source\Utilities\ConsoleLogger.cpp" />
+    <ClCompile Include="Engine\Source\Utilities\FontManager.cpp" />
+    <ClCompile Include="Engine\Source\Utilities\IconManager.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{afac4e43-6291-42dc-81d4-107e63867fee}</ProjectGuid>
+    <RootNamespace>CryonicEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IncludePath>$(SolutionDir)Engine\Source;$(SolutionDir)Editor\Source;$(SolutionDir)Engine;$(SolutionDir)Editor;$(SolutionDir)Editor\ThirdParty;$(SolutionDir)Engine\ThirdParty\Misc;$(SolutionDir)Editor\ThirdParty\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Editor\ThirdParty\raylib\lib;$(SolutionDir)Editor\ThirdParty\box2d\lib;$(SolutionDir)Editor\ThirdParty\curl\lib;$(SolutionDir)Editor\ThirdParty\efsw\lib;$(SolutionDir)Editor\ThirdParty\openssl\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IncludePath>$(SolutionDir)Engine\Source;$(SolutionDir)Editor\Source;$(SolutionDir)Engine;$(SolutionDir)Editor;$(SolutionDir)Editor\ThirdParty;$(SolutionDir)Engine\ThirdParty\Misc;$(SolutionDir)Editor\ThirdParty\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Editor\ThirdParty\raylib\lib;$(SolutionDir)Editor\ThirdParty\box2d\lib;$(SolutionDir)Editor\ThirdParty\curl\lib;$(SolutionDir)Editor\ThirdParty\efsw\lib;$(SolutionDir)Editor\ThirdParty\openssl\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IncludePath>$(SolutionDir)Engine\Source;$(SolutionDir)Editor\Source;$(SolutionDir)Engine;$(SolutionDir)Editor;$(SolutionDir)Editor\ThirdParty;$(SolutionDir)Engine\ThirdParty\Misc;$(SolutionDir)Editor\ThirdParty\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Editor\ThirdParty\raylib\lib;$(SolutionDir)Editor\ThirdParty\box2d\lib;$(SolutionDir)Editor\ThirdParty\curl\lib;$(SolutionDir)Editor\ThirdParty\efsw\lib;$(SolutionDir)Editor\ThirdParty\openssl\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IncludePath>$(SolutionDir)Engine\Source;$(SolutionDir)Editor\Source;$(SolutionDir)Engine;$(SolutionDir)Editor;$(SolutionDir)Editor\ThirdParty;$(SolutionDir)Engine\ThirdParty\Misc;$(SolutionDir)Editor\ThirdParty\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Editor\ThirdParty\raylib\lib;$(SolutionDir)Editor\ThirdParty\box2d\lib;$(SolutionDir)Editor\ThirdParty\curl\lib;$(SolutionDir)Editor\ThirdParty\efsw\lib;$(SolutionDir)Editor\ThirdParty\openssl\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>CURL_STATICLIB;WINDOWS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);EDITOR;PLATFORM_DESKTOP;PLATFORM_DESKTOP;WINDOWS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\raylib;$(SolutionDir)libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib-d.lib;winmm.lib;box2d.lib;ws2_32.lib;wldap32.lib;Normaliz.lib;Crypt32.lib;libcrypto.lib;libssl.lib;libcurl.lib;efsw-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>CURL_STATICLIB;WINDOWS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);EDITOR;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\raylib;$(SolutionDir)libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib-d.lib;winmm.lib;box2d.lib;ws2_32.lib;wldap32.lib;Normaliz.lib;Crypt32.lib;libcrypto.lib;libssl.lib;libcurl.lib;efsw.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>CURL_STATICLIB;WINDOWS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);EDITOR;PLATFORM_DESKTOP;PLATFORM_DESKTOP;WINDOWS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\raylib;$(SolutionDir)libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib-d.lib;winmm.lib;box2d.lib;ws2_32.lib;wldap32.lib;Normaliz.lib;Crypt32.lib;libcrypto.lib;libssl.lib;libcurl.lib;efsw-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>CURL_STATICLIB;WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);EDITOR;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\raylib;$(SolutionDir)libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib-d.lib;winmm.lib;box2d.lib;ws2_32.lib;wldap32.lib;Normaliz.lib;Crypt32.lib;libcrypto.lib;libssl.lib;libcurl.lib;efsw.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
