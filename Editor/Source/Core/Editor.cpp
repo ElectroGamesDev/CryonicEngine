@@ -3622,7 +3622,7 @@ void Editor::RenderScriptCreateWin()
             }
 
             // Todo: This path will not work if the user is not in visual studio
-            std::filesystem::path miscPath = std::filesystem::path(__FILE__).parent_path() / "resources" / "misc";
+            std::filesystem::path miscPath = "resources/misc";
             std::string presetType = ProjectManager::projectData.is3D ? "3D" : "2D";
             std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".h"), fileExplorerPath / (name + ".h"));
             std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".cpp"), fileExplorerPath / (name + ".cpp"));
@@ -6152,7 +6152,7 @@ void Editor::Render()
             //        Utilities::HideFile(ProjectManager::projectData.path / "api");
             //    }
             //    std::filesystem::remove_all(ProjectManager::projectData.path / "api");
-            //    ProjectManager::CopyApiFiles(std::filesystem::path(__FILE__).parent_path(), ProjectManager::projectData.path / "api");
+            //    ProjectManager::CopyApiFiles(std::filesystem::path(__FILE__).parent_path(), ProjectManager::projectData.path / "api"); // Todo: "__FILE__" only works when the engine is compiled on the user's PC
             //}
             ImGui::EndMenu();
         }

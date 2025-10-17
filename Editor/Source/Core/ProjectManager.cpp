@@ -22,32 +22,32 @@ using json = nlohmann::json;
 
 ProjectData ProjectManager::projectData;
 
-void ProjectManager::CopyApiFiles(std::filesystem::path source, std::filesystem::path destination)
+void ProjectManager::CopyApiFiles(std::filesystem::path destination)
 {
-    std::vector<std::string> filesToCopy = { "CryonicAPI", "CryonicCore", "Scenes", "ConsoleLogger", "FontManager", "Font", "Sprite", "GameObject", "Components", "ShaderManager", "MenuManager", "RenderableTexture", "InputSystem", "CollisionListener2D", "Event", "EventSystem", "Animation", "AnimationGraph", "AnimationBlending", "MotionMatchingSystem", "AudioClip", "Tilemap", "Material", "Physics2DDebugDraw", "ShadowManager", "RaylibInputWrapper", "Wrappers", "RaylibCameraWrapper", "RaylibDrawWrapper", "RaylibLightWrapper", "RaylibModelWrapper", "RaylibShaderWrapper", "RaylibWrapper"};
+    //std::vector<std::string> filesToCopy = { "CryonicAPI", "CryonicCore", "Scenes", "ConsoleLogger", "FontManager", "Font", "Sprite", "GameObject", "Components", "ShaderManager", "MenuManager", "RenderableTexture", "InputSystem", "CollisionListener2D", "Event", "EventSystem", "Animation", "AnimationGraph", "AnimationBlending", "MotionMatchingSystem", "AudioClip", "Tilemap", "Material", "Physics2DDebugDraw", "ShadowManager", "RaylibInputWrapper", "Wrappers", "RaylibCameraWrapper", "RaylibDrawWrapper", "RaylibLightWrapper", "RaylibModelWrapper", "RaylibShaderWrapper", "RaylibWrapper"};
     
     if (projectData.is3D)
     {
-        filesToCopy.push_back("CollisionListener3D");
-        filesToCopy.push_back("Physics3DDebugDraw"); // Todo: Remove this
+        //filesToCopy.push_back("CollisionListener3D");
+        //filesToCopy.push_back("Physics3DDebugDraw");
     }
 
     if (!std::filesystem::exists(destination))
         std::filesystem::create_directories(destination);
 
-    for (const auto& file : std::filesystem::directory_iterator(source))
+    for (const auto& file : std::filesystem::directory_iterator("api"))
     {
-        if (std::find(filesToCopy.begin(), filesToCopy.end(), file.path().stem()) != filesToCopy.end())
-        {
-            if (file.is_directory())
-            {
-                if (!std::filesystem::exists(destination / file.path().filename()))
-                    std::filesystem::create_directory(destination / file.path().filename());
-                std::filesystem::copy(file.path(), destination / file.path().filename(), std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive);
-            }
-            else
-                std::filesystem::copy(file.path(), destination);
-        }
+        //if (std::find(filesToCopy.begin(), filesToCopy.end(), file.path().stem()) != filesToCopy.end())
+        //{
+		if (file.is_directory())
+		{
+			if (!std::filesystem::exists(destination / file.path().filename()))
+				std::filesystem::create_directory(destination / file.path().filename());
+			std::filesystem::copy(file.path(), destination / file.path().filename(), std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive);
+		}
+		else
+			std::filesystem::copy(file.path(), destination);
+        //}
     }
 
     // Remove 3D files if its a 2D game
@@ -109,8 +109,7 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
         file.close();
     }
 
-    // Todo: __FILE__ won't work on other computers. I should store
-    CopyApiFiles(std::filesystem::path(__FILE__).parent_path(), projectData.path / "api");
+    CopyApiFiles(projectData.path / "api");
     // Todo: copy internal shaders
 
     switch (projectData.templateData._template)
@@ -123,8 +122,7 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
         std::filesystem::create_directory(projectData.path / "Assets" / "Animations");
 		std::filesystem::create_directory(projectData.path / "Assets" / "Skyboxes");
 
-		// Todo: This path will not work if the user is not in visual studio
-		std::filesystem::copy_file(std::filesystem::path(__FILE__).parent_path() / "resources" / "misc" / ("DefaultSkybox.hdr"), projectData.path / "Assets" / "Skyboxes" / "DefaultSkybox.hdr");
+		std::filesystem::copy_file("resources/misc/DefaultSkybox.hdr", projectData.path / "Assets" / "Skyboxes" / "DefaultSkybox.hdr");
         break;
     case Blank2D:
         std::filesystem::create_directory(projectData.path / "Assets" / "Sprites");
@@ -469,10 +467,8 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
             ImGuiPopup::SetProgress(10);
         }
 
-        // Todo: Using __FILE__ won't work on other computers
-
         // Copying presets
-        std::filesystem::copy(std::filesystem::path(__FILE__).parent_path() / "BuildPresets", buildPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy("BuildPresets", buildPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
         std::filesystem::copy(buildPath / (projectData.is3D ? "3D" : "2D"), buildPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
         std::filesystem::remove_all(buildPath / "3D");
         std::filesystem::remove_all(buildPath / "2D");
@@ -559,7 +555,7 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
             return false;
         }
 
-        //std::filesystem::copy_file(std::filesystem::path(__FILE__).parent_path() / "BuildPresets.zip", buildPath / "BuildPresets.zip");
+        //std::filesystem::copy_file("BuildPresets.zip", buildPath / "BuildPresets.zip");
 
         //ExtractZip((buildPath / "BuildPresets.zip").string().c_str(), buildPath.string().c_str());
 
@@ -602,9 +598,8 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
     }
     std::filesystem::remove_all(projectData.path / "api");
 
-    // Todo: This won't work on other computers and it can only be used in debugging
-    CopyApiFiles(std::filesystem::path(__FILE__).parent_path(), projectData.path / "api");
-    CopyApiFiles(projectData.path / "api", buildPath / "Source");
+    CopyApiFiles(projectData.path / "api");
+    CopyApiFiles(buildPath / "Source");
 
     CopyAssetFiles(buildPath / "Resources" / "Assets");
 
@@ -622,9 +617,8 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
 
     // Copies resource files
     try {
-        // Todo: Using __FILE__ won't work on other computers
-        // Todo: Copy the default GUI font too.
-        std::filesystem::copy(std::filesystem::path(__FILE__).parent_path() / "resources" / "shaders", buildPath / "Resources" / "shaders", std::filesystem::copy_options::recursive);
+        // Todo: Copy the default GUI font too. Will also need to initialize it in the the FontManager
+        std::filesystem::copy("resources/shaders", buildPath / "Resources" / "shaders", std::filesystem::copy_options::recursive);
     }
     catch (const std::exception& e) {
         ConsoleLogger::ErrorLog("Build - Failed to copy resource files: " + (std::string)e.what());

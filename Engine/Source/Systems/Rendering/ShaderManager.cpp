@@ -28,23 +28,21 @@ void ShaderManager::Init()
 
     // Todo: Replace glsl330 to GLSL_VERSION. I will need to define the platform though
 #if defined (EDITOR)
-    // Todo: This won't work for PC's other than mine
-    RaylibShader::shaders[ShaderManager::LitStandard].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/lighting.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/lighting.fs").string().c_str());
+    RaylibShader::shaders[ShaderManager::LitStandard].Load("resources/Shaders/glsl330/lighting.vs", "resources/Shaders/glsl330/lighting.fs");
 #else
     if (exeParent.empty())
     {
-        RaylibShader::shaders[ShaderManager::LitStandard].Load("Resources/shaders/glsl330/lighting.vs", "Resources/shaders/glsl330/lighting.fs");
+        RaylibShader::shaders[ShaderManager::LitStandard].Load("resources/Shaders/glsl330/lighting.vs", "resources/Shaders/glsl330/lighting.fs");
     }
     else
     {
-        RaylibShader::shaders[ShaderManager::LitStandard].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/lighting.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/lighting.fs").string().c_str());
+        RaylibShader::shaders[ShaderManager::LitStandard].Load((std::filesystem::path(exeParent) / "resources/Shaders/glsl330/lighting.vs").string().c_str(), (std::filesystem::path(exeParent) / "resources/Shaders/glsl330/lighting.fs").string().c_str());
     }
 #endif
 
     // Terrain
 #if defined (EDITOR)
-    // Todo: This won't work for PC's other than mine
-	RaylibShader::shaders[ShaderManager::Terrain].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/terrain.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/terrain.fs").string().c_str());
+	RaylibShader::shaders[ShaderManager::Terrain].Load("Resources/shaders/glsl330/terrain.vs", "resources/shaders/glsl330/terrain.fs");
 #else
 	if (exeParent.empty())
 	{
@@ -58,8 +56,7 @@ void ShaderManager::Init()
 
 	// Cubemap
 #if defined (EDITOR)
-	// Todo: This won't work for PC's other than mine
-	RaylibShader::shaders[ShaderManager::Cubemap].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/cubemap.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/cubemap.fs").string().c_str());
+	RaylibShader::shaders[ShaderManager::Cubemap].Load("Resources/shaders/glsl330/cubemap.vs", "resources/shaders/glsl330/cubemap.fs");
 #else
 	if (exeParent.empty())
 	{
@@ -73,8 +70,7 @@ void ShaderManager::Init()
 
 	// Skybox
 #if defined (EDITOR)
-	// Todo: This won't work for PC's other than mine
-	RaylibShader::shaders[ShaderManager::Skybox].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/skybox.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/skybox.fs").string().c_str());
+	RaylibShader::shaders[ShaderManager::Skybox].Load("Resources/shaders/glsl330/skybox.vs", "resources/shaders/glsl330/skybox.fs");
 #else
 	if (exeParent.empty())
 	{
@@ -88,8 +84,7 @@ void ShaderManager::Init()
 
 	// Water
 #if defined (EDITOR)
-	// Todo: This won't work for PC's other than mine
-	RaylibShader::shaders[ShaderManager::Water].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/water.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/water.fs").string().c_str());
+	RaylibShader::shaders[ShaderManager::Water].Load("Resources/shaders/glsl330/water.vs", "resources/shaders/glsl330/water.fs");
 #else
 	if (exeParent.empty())
 	{
@@ -103,8 +98,7 @@ void ShaderManager::Init()
 
 	// Clouds
 #if defined (EDITOR)
-	// Todo: This won't work for PC's other than mine
-	RaylibShader::shaders[ShaderManager::Clouds].Load((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/clouds.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/clouds.fs").string().c_str());
+	RaylibShader::shaders[ShaderManager::Clouds].Load("Resources/shaders/glsl330/clouds.vs", "resources/shaders/glsl330/clouds.fs");
 #else
 	if (exeParent.empty())
 		RaylibShader::shaders[ShaderManager::Clouds].Load("Resources/shaders/glsl330/clouds.vs", "Resources/shaders/glsl330/clouds.fs");

@@ -187,17 +187,16 @@ void ShadowManager::SetCamera() // Todo: Set the correct position and target. ta
 void ShadowManager::LoadShaders()
 {
 #if defined (EDITOR)
-    // Todo: This won't work for PC's other than mine
-    shader = RaylibWrapper::LoadShader((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/shadowmap.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/shadowmap.fs").string().c_str());
+    shader = RaylibWrapper::LoadShader("resources/Shaders/glsl330/shadowmap.vs", "resources/Shaders/glsl330/shadowmap.fs");
 
-    materialPreviewShader = RaylibWrapper::LoadShader((std::filesystem::path(__FILE__).parent_path() / "Resources/shaders/glsl330/shadowmap.vs").string().c_str(), (std::filesystem::path(__FILE__).parent_path() / "resources/shaders/glsl330/shadowmap.fs").string().c_str());
+    materialPreviewShader = RaylibWrapper::LoadShader("resources/Shaders/glsl330/shadowmap.vs", "resources/Shaders/glsl330/shadowmap.fs");
     RaylibModel::SetMaterialPreviewShader(shader.id, shader.locs);
 #else
     //shader = RaylibWrapper::LoadShader((path + ".vs").c_str(), (path + ".fs").c_str());
     if (exeParent.empty())
-        shader = RaylibWrapper::LoadShader("Resources/shaders/glsl330/shadowmap.vs", "Resources/shaders/glsl330/shadowmap.fs");
+        shader = RaylibWrapper::LoadShader("resources/Shaders/glsl330/shadowmap.vs", "Resources/shaders/glsl330/shadowmap.fs");
     else
-        shader = RaylibWrapper::LoadShader((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/shadowmap.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/shadowmap.fs").string().c_str());
+        shader = RaylibWrapper::LoadShader((std::filesystem::path(exeParent) / "resources/Shaders/glsl330/shadowmap.vs").string().c_str(), (std::filesystem::path(exeParent) / "resources/Shaders/glsl330/shadowmap.fs").string().c_str());
 #endif
 
     RaylibModel::SetShadowShader(shader.id, shader.locs);
