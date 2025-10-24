@@ -18,6 +18,9 @@ void Clouds::Awake()
 	{
 		clouds.push_back(this);
 		doOnce = false;
+
+		int width = RaylibWrapper::GetScreenWidth();
+		int height = RaylibWrapper::GetScreenHeight();
 	}
 }
 
@@ -44,7 +47,8 @@ void Clouds::RenderCloud()
 
 	// Todo: We will likely need to render for each active camera
 
-	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ADDITIVE);  // Additive for cloud glow/scattering
+	RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ALPHA);
+	//RaylibWrapper::rlSetBlendMode(RaylibWrapper::RL_BLEND_ADDITIVE);  // Additive for cloud glow/scattering
 
 	// Get camera data
 	Vector3 cameraPos;
@@ -156,7 +160,7 @@ void Clouds::RenderCloud()
 	RaylibWrapper::SetShaderValue(shader, locCamPos, camPosArr, RaylibWrapper::SHADER_UNIFORM_VEC3);
 
 	// Inv view proj for ray dir computation
-	RaylibWrapper::Matrix viewProj = RaylibWrapper::MatrixMultiply(proj, view);
+	RaylibWrapper::Matrix viewProj = RaylibWrapper::MatrixMultiply(view, proj);
 	RaylibWrapper::Matrix invViewProj = RaylibWrapper::MatrixInvert(viewProj);
 	int locInvVP = RaylibWrapper::GetShaderLocation(shader, "invViewProj");
 	RaylibWrapper::SetShaderValueMatrix(shader, locInvVP, invViewProj);
@@ -176,7 +180,7 @@ void Clouds::RenderCloud()
 
 	rlPushMatrix();
 	rlLoadIdentity();
-	rlOrtho(-1, 1, -1, 1, 0, 1);
+	//rlOrtho(-1, 1, -1, 1, 0, 1);
 
 	rlBegin(RL_QUADS);
 	rlTexCoord2f(0, 0); rlVertex3f(-1, 1, 0);
