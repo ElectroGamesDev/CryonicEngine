@@ -1,0 +1,249 @@
+#version 440
+layout(local_size_x = 8, local_size_y = 8) in;
+
+// I/O images
+layout(rgba32f, binding = 0) uniform writeonly image2D cloudResult;   // half-res output
+layout(binding = 1) uniform sampler2D prevFrame;
+layout(binding = 2) uniform sampler3D noiseVolume;
+
+// Uniforms
+uniform bool firstFrame;
+uniform mat4 invViewProj;
+uniform mat4 prevViewProj;
+uniform vec3 cameraPos;
+uniform float time;
+uniform float coverage;
+uniform float density;
+uniform int lightSteps;
+uniform float lightMarchSize;
+uniform vec2 wind;
+uniform float cloudHeight;
+uniform float cloudThickness;
+uniform int   raymarchSteps;      // base steps (will be multiplied)
+uniform float absorption;
+uniform float scattering;
+uniform float phaseG;
+uniform vec3  sunDir;
+uniform vec3  sunColor;
+uniform float sunIntensity;
+uniform float ambientLight;
+uniform bool  highQuality;
+
+uniform vec2  renderRes;          // full-screen resolution
+uniform vec2  halfRes;            // renderRes/2
+
+// Constants
+const float PI = 3.14159265359;
+const float EPS = 1e-6;
+const float VOL_SIZE = 64.0;      // same as noise shader
+const float WORLD_EXTENT = 8000.0;
+
+// Shared memory
+shared vec3 sharedLight[64]; // for soft multi-scatter
+shared vec3 avgLight;
+
+// Noise lookup
+vec2 sampleNoise(vec3 world){
+    vec3 uvw = (world + WORLD_EXTENT*0.5) / WORLD_EXTENT; // [0,1]
+    uvw = uvw * (VOL_SIZE/ (VOL_SIZE+1.0)) + 0.5/(VOL_SIZE+1.0); // avoid edge
+    return texture(noiseVolume, uvw).rg;  // Use texture() for filtering
+}
+
+// Blue-noise jitter (procedural, no texture)
+float blueNoise(vec2 p){
+    p = fract(p*vec2(0.1031,0.0973));
+    p += dot(p,p.yx+33.33);
+    return fract((p.x+p.y)*p.x);
+}
+
+// HG phase
+float henyeyGreenstein(vec3 view, vec3 light, float g){
+    float mu = dot(view,light);
+    float g2 = g*g;
+    return (1.0-g2)/(4.0*PI*pow(max(1e-4,1.0+g2-2.0*g*mu),1.5));
+}
+
+// Box intersection
+vec2 rayBox(vec3 ro, vec3 rd, vec3 bmin, vec3 bmax){
+    vec3 inv = 1.0/rd;
+    vec3 t0 = (bmin-ro)*inv;
+    vec3 t1 = (bmax-ro)*inv;
+    vec3 tmin = min(t0,t1);
+    vec3 tmax = max(t0,t1);
+    float near = max(max(tmin.x,tmin.y),tmin.z);
+    float far  = min(min(tmax.x,tmax.y),tmax.z);
+    return vec2(near,far);
+}
+
+// Ray direction from NDC
+vec3 getRayDir(vec2 uv){
+    vec2 ndc = uv*2.0 - 1.0;
+    ndc.y = -ndc.y;
+    vec4 near = invViewProj * vec4(ndc,-1.0,1.0);
+    vec4 far  = invViewProj * vec4(ndc, 1.0,1.0);
+    near /= near.w; far /= far.w;
+    return normalize(far.xyz-near.xyz);
+}
+
+// Main
+void main(){
+    ivec2 outPos = ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(outPos, ivec2(halfRes)))) return;
+
+    // UV in half-res space (0..1)
+    vec2 uvHalf = (vec2(outPos)+0.5)/halfRes;
+
+    // Full-res UV for reprojection
+	vec2 fullPixel = vec2(outPos) * 2.0 + vec2(0.5);
+    vec2 uvFull = fullPixel / renderRes;
+    vec3 rayDir = getRayDir(uvFull);
+    vec3 ro = cameraPos;
+
+    // Cloud slab
+    float minH = cloudHeight - cloudThickness*0.5;
+    float maxH = cloudHeight + cloudThickness*0.5;
+    vec3 boxMin = vec3(-1e6, minH, -1e6);
+    vec3 boxMax = vec3( 1e6, maxH,  1e6);
+    vec2 tHit = rayBox(ro, rayDir, boxMin, boxMax);
+    tHit.x = max(tHit.x,0.0);
+    if(tHit.x >= tHit.y) { imageStore(cloudResult,outPos,vec4(0.0)); return; }
+
+    // Adaptive stepping
+    int baseSteps = raymarchSteps;
+    if(highQuality) baseSteps = int(float(baseSteps)*1.5);
+    float tStart = tHit.x;
+    float tEnd   = tHit.y;
+    float total  = max(tEnd-tStart,1e-6);
+    float step   = total / float(baseSteps);
+
+    // Per-pixel blue-noise jitter
+    vec2 screenPix = vec2(outPos)*2.0 + vec2(0.5); // approx full-res pixel
+    float jitter = blueNoise(screenPix);
+
+    // Light prep
+    vec3 L = normalize(-sunDir);
+    vec3 sunCol = sunColor * sunIntensity;
+
+    // Integration vars
+    float transmittance = 1.0;
+    vec3  scattered     = vec3(0.0);
+    float accumDensity  = 0.0;
+
+    uint localIdx = gl_LocalInvocationIndex;
+
+	for(int i=0; i<baseSteps; ++i){
+		float t = tStart + (float(i)+jitter)*step;
+		if(t >= tEnd) break;
+
+		vec3 pos = ro + rayDir*t;
+		float hFrac = (pos.y-minH)/cloudThickness;
+
+		// Sample cached noise
+		vec2 nd = sampleNoise(pos); // r=FBM, g=Worley (inverted)
+		float base = nd.x;
+		float detail = nd.y;
+		float dens = base * (0.6 + detail * 0.4);
+
+		// vertical fall-off
+		float hFall = smoothstep(0.0,0.15,hFrac)*(1.0-smoothstep(0.8,1.0,hFrac));
+		dens *= hFall;
+
+		// coverage / density
+		float thresh = 1.0 - coverage;
+		dens = max(0.0, (dens-thresh)/(1.0-thresh)) * density;
+		dens = clamp(dens,0.0,1.0);
+
+		if(dens > 1e-4){
+			// Light with self-shadowing
+			float phase = henyeyGreenstein(rayDir, L, phaseG);
+			float cosTh = max(0.0, dot(rayDir,L));
+
+			// Light march for shadow
+			float lightDensity = 0.0;
+			vec3 lightPos = pos + L * (lightMarchSize * (blueNoise(screenPix + 37.37) * 0.5 + 0.5));  // Jitter to avoid banding
+			for(int j=0; j<lightSteps; ++j){
+				float hFracL = (lightPos.y - minH) / cloudThickness;
+				if(hFracL < 0.0 || hFracL > 1.0) break;  // Exit slab
+
+				vec2 ndL = sampleNoise(lightPos);
+				float baseL = ndL.x;
+				float detailL = ndL.y;
+				float densL = baseL * (0.6 + detailL * 0.4);
+
+				float hFallL = smoothstep(0.0,0.15,hFracL)*(1.0-smoothstep(0.8,1.0,hFracL));
+				densL *= hFallL;
+
+				float thresh = 1.0 - coverage;
+				densL = max(0.0, (densL-thresh)/(1.0-thresh)) * density;
+				densL = clamp(densL, 0.0, 1.0);
+
+				lightDensity += densL * lightMarchSize;
+				lightPos += L * lightMarchSize;
+			}
+			float beer = exp(-lightDensity * absorption);
+
+			vec3 lightContrib = sunCol * phase * cosTh * beer * dens * scattering;
+
+			vec3 ambient = ambientLight * vec3(0.4,0.6,1.0);
+			vec3 total = lightContrib + ambient;
+
+			// Accumulate with transmittance
+			scattered += total * transmittance;
+			transmittance *= exp(-dens*absorption*step);
+			accumDensity += dens*step;
+
+			// Early out
+			if(transmittance < 0.01 || accumDensity > 4.0) break;
+		}
+	}
+
+    // Soft multi-scatter via shared memory
+	sharedLight[localIdx] = scattered * transmittance;
+	memoryBarrierShared(); barrier();
+
+	if (localIdx == 0) {
+		vec3 avg = vec3(0.0);
+		for (uint k = 0; k < 64; ++k) avg += sharedLight[k];
+		avg /= 64.0;
+		avgLight = avg;
+	}
+	memoryBarrierShared(); barrier();
+	scattered += avgLight * 0.12;
+
+    // Final tone-map & alpha
+    vec3 raw = scattered + vec3(0.8)*ambientLight*(1.0-transmittance);
+    raw = raw/(raw+1.0);
+    raw = pow(raw, vec3(1.0/2.2));
+
+    float alpha = 1.0 - exp(-accumDensity*0.6);
+
+    // Temporal reprojection
+	vec2 ndc = uvFull * 2.0 - 1.0;
+	ndc.y = -ndc.y;
+	vec4 clip = vec4(ndc, 1.0, 1.0);  // Far plane (z=1 in NDC)
+	vec4 world = invViewProj * clip;
+	world /= world.w;
+	vec4 prevClip = prevViewProj * world;
+	prevClip /= prevClip.w;
+	vec2 prevUV = prevClip.xy * 0.5 + 0.5 + (0.5 / renderRes); // prevClip.xy * 0.5 + 0.5;
+	prevUV.y = 1.0 - prevUV.y;  // Flip if your textures are inverted
+	//prevUV = clamp(prevUV, vec2(0.001), vec2(0.999));
+	
+	vec4 curr = vec4(raw, alpha);
+	vec4 outCol;
+
+	if (firstFrame) {
+		outCol = curr;  // First frame: use 100% current data
+	} else {
+		vec4 prev;
+		if (any(lessThan(prevUV, vec2(0.0))) || any(greaterThan(prevUV, vec2(1.0)))) {
+			prev = vec4(0.0);
+			outCol = curr;  // Out of bounds: use current data
+		} else {
+			prev = texture(prevFrame, prevUV);
+			outCol = mix(prev, curr, 0.03);
+		}
+	}
+
+	imageStore(cloudResult, outPos, outCol);
+}
