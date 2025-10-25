@@ -17,8 +17,15 @@ public:
 		Clouds
 	};
 
+	enum ComputeShaders
+	{
+		CloudsRaymarch,
+		CloudsNoise
+	};
+
 	static void Init();
 	static void Cleanup();
 	static void UpdateShaders(float cameraPosX, float cameraPosY, float cameraPosZ);
 	static std::pair<unsigned int, int*> GetShader(Shaders shader); // id, locs
+	static unsigned int GetComputeShader(ComputeShaders shader);
 };

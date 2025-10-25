@@ -498,6 +498,9 @@
     <ClInclude Include="Editor\ThirdParty\imnodes\imnodes_internal.h">
       <Filter>Source Files\Editor\ThirdParty\imnodes</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Raylib\RaylibComputeShader.h">
+      <Filter>Header Files\Engine\Source\Raylib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Components\Component.cpp">
@@ -730,6 +733,9 @@
     </ClCompile>
     <ClCompile Include="Editor\ThirdParty\imnodes\imnodes.cpp">
       <Filter>Source Files\Editor\ThirdParty\imnodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Raylib\RaylibComputeShader.cpp">
+      <Filter>Source Files\Engine\Source\Raylib</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

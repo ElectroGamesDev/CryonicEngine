@@ -74,6 +74,7 @@
     <ClInclude Include="Engine\Source\Core\GameObject.h" />
     <ClInclude Include="Engine\Source\Core\MainThreadQueue.h" />
     <ClInclude Include="Engine\Source\Raylib\RaylibCameraWrapper.h" />
+    <ClInclude Include="Engine\Source\Raylib\RaylibComputeShader.h" />
     <ClInclude Include="Engine\Source\Raylib\RaylibDrawWrapper.h" />
     <ClInclude Include="Engine\Source\Raylib\RaylibInputWrapper.h" />
     <ClInclude Include="Engine\Source\Raylib\RaylibLightWrapper.h" />
@@ -157,6 +158,7 @@
     <ClCompile Include="Engine\Source\Core\CryonicCore.cpp" />
     <ClCompile Include="Engine\Source\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Source\Raylib\RaylibCameraWrapper.cpp" />
+    <ClCompile Include="Engine\Source\Raylib\RaylibComputeShader.cpp" />
     <ClCompile Include="Engine\Source\Raylib\RaylibDrawWrapper.cpp" />
     <ClCompile Include="Engine\Source\Raylib\RaylibInputWrapper.cpp" />
     <ClCompile Include="Engine\Source\Raylib\RaylibLightWrapper.cpp" />

@@ -2,6 +2,7 @@
 //#include "Components/CameraComponent.h"
 #include <filesystem>
 #include "Raylib/RaylibShaderWrapper.h"
+#include "Raylib/RaylibComputeShader.h"
 #include "Raylib/RaylibWrapper.h"
 #ifndef EDITOR
 #include "Game.h"
@@ -16,105 +17,71 @@
 void ShaderManager::Cleanup()
 {
     for (auto it = RaylibShader::shaders.begin(); it != RaylibShader::shaders.end(); ++it)
-    {
         it->second.Unload();
-    }
+
     RaylibShader::shaders.clear();
+
+	for (auto it = RaylibComputeShader::shaders.begin(); it != RaylibComputeShader::shaders.end(); ++it)
+		it->second.Unload();
+
+	RaylibComputeShader::shaders.clear();
 }
 
 void ShaderManager::Init()
 {
-    //shaders[ShaderManager::LitStandard] = LoadShader(("resources/shaders/glsl" + std::to_string(GLSL_VERSION) + "/lighting.vs").c_str(), ("resources/shaders/glsl" + std::to_string(GLSL_VERSION) + "/lighting.fs").c_str());
-
-    // Todo: Replace glsl330 to GLSL_VERSION. I will need to define the platform though
-#if defined (EDITOR)
-    RaylibShader::shaders[ShaderManager::LitStandard].Load("resources/Shaders/glsl330/lighting.vs", "resources/Shaders/glsl330/lighting.fs");
+	auto loadShader = [&](ShaderManager::Shaders type, const std::string& vs, const std::string& fs)
+		{
+#if defined(EDITOR)
+			RaylibShader::shaders[type].Load(vs.c_str(), fs.c_str());
 #else
-    if (exeParent.empty())
-    {
-        RaylibShader::shaders[ShaderManager::LitStandard].Load("resources/Shaders/glsl330/lighting.vs", "resources/Shaders/glsl330/lighting.fs");
-    }
-    else
-    {
-        RaylibShader::shaders[ShaderManager::LitStandard].Load((std::filesystem::path(exeParent) / "resources/Shaders/glsl330/lighting.vs").string().c_str(), (std::filesystem::path(exeParent) / "resources/Shaders/glsl330/lighting.fs").string().c_str());
-    }
+			std::filesystem::path basePath = exeParent.empty() ? "" : std::filesystem::path(exeParent);
+			RaylibShader::shaders[type].Load(
+				(basePath / vs).string().c_str(),
+				(basePath / fs).string().c_str()
+			);
 #endif
+		};
 
-    // Terrain
-#if defined (EDITOR)
-	RaylibShader::shaders[ShaderManager::Terrain].Load("Resources/shaders/glsl330/terrain.vs", "resources/shaders/glsl330/terrain.fs");
+	auto loadComputeShader = [&](ShaderManager::ComputeShaders type, const std::string& comp)
+		{
+#if defined(EDITOR)
+			RaylibComputeShader::shaders[type].Load(comp.c_str());
 #else
-	if (exeParent.empty())
-	{
-		RaylibShader::shaders[ShaderManager::Terrain].Load("Resources/shaders/glsl330/terrain.vs", "Resources/shaders/glsl330/terrain.fs");
-	}
-	else
-	{
-		RaylibShader::shaders[ShaderManager::Terrain].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/terrain.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/terrain.fs").string().c_str());
-	}
+			std::filesystem::path basePath = exeParent.empty() ? "" : std::filesystem::path(exeParent);
+			RaylibComputeShader::shaders[type].Load((basePath / comp).string().c_str());
 #endif
+		};
 
-	// Cubemap
-#if defined (EDITOR)
-	RaylibShader::shaders[ShaderManager::Cubemap].Load("Resources/shaders/glsl330/cubemap.vs", "resources/shaders/glsl330/cubemap.fs");
-#else
-	if (exeParent.empty())
-	{
-		RaylibShader::shaders[ShaderManager::Cubemap].Load("Resources/shaders/glsl330/cubemap.vs", "Resources/shaders/glsl330/cubemap.fs");
-	}
-	else
-	{
-		RaylibShader::shaders[ShaderManager::Cubemap].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/cubemap.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/cubemap.fs").string().c_str());
-	}
-#endif
+	// Shader Loading
 
-	// Skybox
-#if defined (EDITOR)
-	RaylibShader::shaders[ShaderManager::Skybox].Load("Resources/shaders/glsl330/skybox.vs", "resources/shaders/glsl330/skybox.fs");
-#else
-	if (exeParent.empty())
-	{
-		RaylibShader::shaders[ShaderManager::Skybox].Load("Resources/shaders/glsl330/skybox.vs", "Resources/shaders/glsl330/skybox.fs");
-	}
-	else
-	{
-		RaylibShader::shaders[ShaderManager::Skybox].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/skybox.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/skybox.fs").string().c_str());
-	}
-#endif
+	loadShader(ShaderManager::LitStandard,
+		"resources/Shaders/glsl330/lighting.vs",
+		"resources/Shaders/glsl330/lighting.fs");
 
-	// Water
-#if defined (EDITOR)
-	RaylibShader::shaders[ShaderManager::Water].Load("Resources/shaders/glsl330/water.vs", "resources/shaders/glsl330/water.fs");
-#else
-	if (exeParent.empty())
-	{
-		RaylibShader::shaders[ShaderManager::Water].Load("Resources/shaders/glsl330/water.vs", "Resources/shaders/glsl330/water.fs");
-	}
-	else
-	{
-		RaylibShader::shaders[ShaderManager::Water].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/water.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/water.fs").string().c_str());
-	}
-#endif
+	loadShader(ShaderManager::Terrain,
+		"Resources/shaders/glsl330/terrain.vs",
+		"Resources/shaders/glsl330/terrain.fs");
 
-	// Clouds
-#if defined (EDITOR)
-	RaylibShader::shaders[ShaderManager::Clouds].Load("Resources/shaders/glsl330/clouds.vs", "resources/shaders/glsl330/clouds.fs");
-#else
-	if (exeParent.empty())
-		RaylibShader::shaders[ShaderManager::Clouds].Load("Resources/shaders/glsl330/clouds.vs", "Resources/shaders/glsl330/clouds.fs");
-	else
-		RaylibShader::shaders[ShaderManager::Clouds].Load((std::filesystem::path(exeParent) / "Resources/shaders/glsl330/clouds.vs").string().c_str(), (std::filesystem::path(exeParent) / "Resources/shaders/glsl330/clouds.fs").string().c_str());
-#endif
+	loadShader(ShaderManager::Cubemap,
+		"Resources/shaders/glsl330/cubemap.vs",
+		"Resources/shaders/glsl330/cubemap.fs");
 
+	loadShader(ShaderManager::Skybox,
+		"Resources/shaders/glsl330/skybox.vs",
+		"Resources/shaders/glsl330/skybox.fs");
 
-    //std::string currentDirectory = GetWorkingDirectory();
-    //std::string relativePath = "resources/shaders/glsl330/lighting.vs";
+	loadShader(ShaderManager::Water,
+		"Resources/shaders/glsl330/water.vs",
+		"Resources/shaders/glsl330/water.fs");
 
-    //// Combine the current directory and relative path
-    //std::string fullPath = currentDirectory + "/" + relativePath;
+	loadShader(ShaderManager::Clouds,
+		"Resources/shaders/glsl440/clouds.vs",
+		"Resources/shaders/glsl440/clouds.fs");
 
-    //// Output the full path
-    //ConsoleLogger::InfoLog("Full path: " + fullPath);
+	// Compute Shaders
+
+	loadComputeShader(ShaderManager::CloudsRaymarch, "Resources/shaders/glsl440/clouds_raymarch.comp");
+	loadComputeShader(ShaderManager::CloudsNoise, "Resources/shaders/glsl440/clouds_noise.comp");
 }
 
 void ShaderManager::UpdateShaders(float cameraPosX, float cameraPosY, float cameraPosZ)
@@ -126,4 +93,9 @@ void ShaderManager::UpdateShaders(float cameraPosX, float cameraPosY, float came
 std::pair<unsigned int, int*> ShaderManager::GetShader(Shaders shader)
 {
     return RaylibShader::shaders[shader].GetShader();
+}
+
+unsigned int ShaderManager::GetComputeShader(ComputeShaders shader)
+{
+	return RaylibComputeShader::shaders[shader].GetShader();
 }
