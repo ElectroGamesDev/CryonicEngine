@@ -465,7 +465,7 @@ void EventSheetEditor::RenderParameterInput(EventSheetSystem::Param& param, int 
 		ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - ImGui::CalcTextSize((param.name + ":").c_str()).x - 30);
 
 		char inputBuffer[256] = "";
-		strncpy_s(inputBuffer, std::any_cast<std::string>(param.value).c_str(), sizeof(inputBuffer) - 1);
+		strncpy_s(inputBuffer, sizeof(inputBuffer), std::any_cast<std::string>(param.value).c_str(), _TRUNCATE);
 		if (ImGui::InputText(id.c_str(), inputBuffer, sizeof(inputBuffer)))
 			param.value = std::string(inputBuffer);
 	}
