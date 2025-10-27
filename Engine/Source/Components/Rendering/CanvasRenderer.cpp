@@ -192,26 +192,34 @@ void CanvasRenderer::LoadCanvas()
 					if (type == "RectTransform")
 					{
 						RectTransform& rt = go->AddComponentInternal<RectTransform>(compId);
-						rt.active = active;
+						rt.SetActive(active);
+#if defined (EDITOR)
 						rt.exposedVariables = exposed;
+#endif
 					}
 					else if (type == "Label")
 					{
 						Label& label = go->AddComponentInternal<Label>(compId);
-						label.active = active;
+						label.SetActive(active);
+#if defined (EDITOR)
 						label.exposedVariables = exposed;
+#endif
 					}
 					else if (type == "Button")
 					{
 						Button& button = go->AddComponentInternal<Button>(compId);
-						button.active = active;
+						button.SetActive(active);
+#if defined (EDITOR)
 						button.exposedVariables = exposed;
+#endif
 					}
 					else if (type == "Image")
 					{
 						Image& image = go->AddComponentInternal<Image>(compId);
-						image.active = active;
+						image.SetActive(active);
+#if defined (EDITOR)
 						image.exposedVariables = exposed;
+#endif
 					}
 				}
 			}
