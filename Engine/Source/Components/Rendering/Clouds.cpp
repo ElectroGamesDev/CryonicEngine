@@ -6,9 +6,8 @@
 #include "Game.h"
 #endif
 #include <cmath>
-#include "Thirdparty/raylib/include/rlgl.h"
-
-#include "Thirdparty/raylib/include/external/glad.h"
+#include "ThirdParty/raylib/include/rlgl.h"
+#include "ThirdParty/raylib/include/external/glad.h"
 
 std::vector<Clouds*> Clouds::clouds;
 
