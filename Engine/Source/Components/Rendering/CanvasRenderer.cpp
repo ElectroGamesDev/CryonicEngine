@@ -143,8 +143,6 @@ void CanvasRenderer::SetCanvas(Canvas* canvas)
 	if (!canvas)
 		return;
 
-	ConsoleLogger::ErrorLog("called");
-
 	// Subscribe to the onDataChange so it's up-to-date
 	onDataChangeEventId = canvas->onDataChangeEvent.Subscribe([this, canvas]() {
 		LoadCanvas();
