@@ -4,7 +4,9 @@
 #include <fstream>
 #include <thread>
 #include <random>
+#if defined(EDITOR)
 #include "Core/ProjectManager.h"
+#endif
 
 std::unordered_map<std::string, AnimationImporter::ModelAnimationCache> AnimationImporter::cache;
 std::filesystem::path AnimationImporter::cacheFilePath;

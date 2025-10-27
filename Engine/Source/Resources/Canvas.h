@@ -8,10 +8,10 @@
 #include "Systems/Events/Event.h"
 #if defined (EDITOR)
 #include "Core/ProjectManager.h"
+#include "Systems/FileWatcher/FileWatcher.h"
 #else
 #include "Game.h"
 #endif
-#include <Systems/FileWatcher/FileWatcher.h>
 
 class Canvas
 {
@@ -24,7 +24,7 @@ public:
                 c = '/';
         }
 
-#ifdef EDITOR
+#if defined(EDITOR)
 		FileWatcher::AddFileMoveCallback(path, [this](const std::string& oldPath, const std::string& newPath) {
             OnFileMoved(oldPath, newPath);
 		});
@@ -36,7 +36,8 @@ public:
 
         LoadData(path);
     }
-
+    
+#if defined(EDITOR)
     void OnFileMoved(const std::string& oldPath, const std::string& newPath)
     {
 		FileWatcher::RemoveFileMoveCallback(oldPath);
@@ -52,6 +53,7 @@ public:
 
 		this->LoadData(newPath);
     }
+#endif
 
     void LoadData(std::string relativepath)
     {

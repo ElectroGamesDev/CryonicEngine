@@ -86,6 +86,7 @@ public:
         ResetData();
     }
 
+#if defined (EDITOR)
     void OnFileMoved(const std::string oldPath, const std::string newPath)
     {
         FileWatcher::RemoveFileMoveCallback(path);
@@ -105,6 +106,7 @@ public:
 
         // Todo: Update all components using this material (or the components should find the new path themself. Maybe in FileWatcher for 10-15 seconds I could have a recentlyMoved vector which they can search though)
     }
+#endif
 
     void OnFileModified() // Todo: I shouldn't be resetting all the data just for changing something in the file. It causes unnecessary overhead.
     {
