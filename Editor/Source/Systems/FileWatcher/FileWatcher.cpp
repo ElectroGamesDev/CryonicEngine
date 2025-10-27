@@ -15,6 +15,7 @@ namespace FileWatcher
     static std::shared_mutex deletedFilesMutex; // Needed for so deletedFiles is thread safe and wont crash from race conditions
     static std::mutex texturesMutex;
 
+	// Todo: Use the Event class instead
     static std::unordered_map<std::string, std::function<void()>> modifyCallbacks;
     static std::unordered_map<std::string, std::function<void(const std::string oldPath, const std::string newPath)>> moveCallbacks;
     static std::unordered_map<std::string, std::function<void()>> deleteCallbacks;

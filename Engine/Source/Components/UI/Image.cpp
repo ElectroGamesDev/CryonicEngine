@@ -9,6 +9,8 @@
 
 void Image::Awake()
 {
+	rectTransform = gameObject->GetComponent<RectTransform>();
+
 #if defined(EDITOR)
     sprite = new Sprite(exposedVariables[1][0][2].get<std::string>()); // Todo: Handle if the path no longer exists
 #endif
@@ -17,7 +19,12 @@ void Image::Awake()
 
 void Image::RenderGui()
 {
-    Vector2 position = CameraComponent::main->GetWorldToScreen(gameObject->transform.GetPosition());
+    Vector2 position;
+
+	if (rectTransform)
+        position = rectTransform->GetPivotPosition();
+	else
+        position = CameraComponent::main->GetWorldToScreen(gameObject->transform.GetPosition());
 
 #if defined(EDITOR)
     // Divding positions by Raylib window size then multiply it by Viewport window size

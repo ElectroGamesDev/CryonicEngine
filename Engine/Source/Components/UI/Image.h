@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Components/Component.h"
+#include "UIElement.h"
 #include "Core/CryonicCore.h"
 #include "Resources/Sprite.h"
+#include "RectTransform.h"
 
-class Image : public Component
+class Image : public UIElement
 {
 public:
-    Image(GameObject* obj, int id) : Component(obj, id)
+    Image(GameObject* obj, int id) : UIElement(obj, id)
 	{
 		runInEditor = true;
 		name = "Image";
@@ -58,4 +59,5 @@ private:
     Sprite* sprite = nullptr;
 	Color color = { 255, 255, 255, 255 };
     bool setup = false;
+	RectTransform* rectTransform;
 };

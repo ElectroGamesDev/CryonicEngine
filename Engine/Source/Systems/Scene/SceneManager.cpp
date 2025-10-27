@@ -31,7 +31,8 @@
 #include "Components/UI/Label.h"
 #include "Components/UI/Image.h"
 #include "Components/UI/Button.h"
-#include "Components/UI/CanvasRenderer.h"
+#include "Components/Rendering/CanvasRenderer.h"
+#include "Components/UI/RectTransform.h"
 
 #if defined(EDITOR)
 #include "Core/ProjectManager.h"
@@ -339,89 +340,112 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
 				Terrain& component = gameObject->AddComponentInternal<Terrain>(componentData["id"]);
 				setExposedVariables(component, componentData);
                 component.LoadTerrainData(componentData["data"]);
+                component.SetActive(componentData["active"]);
 			}
             else if (componentData["name"] == "CameraComponent")
             {
                 CameraComponent& component = gameObject->AddComponentInternal<CameraComponent>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Lighting")
             {
                 Lighting& component = gameObject->AddComponentInternal<Lighting>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Collider2D")
             {
                 Collider2D& component = gameObject->AddComponentInternal<Collider2D>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
 			else if (componentData["name"] == "Skybox")
 			{
 				Skybox& component = gameObject->AddComponentInternal<Skybox>(componentData["id"]);
 				setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
 			}
 			else if (componentData["name"] == "Clouds")
 			{
                 Clouds& component = gameObject->AddComponentInternal<Clouds>(componentData["id"]);
 				setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
 			}
 			else if (componentData["name"] == "Ocean")
 			{
                 Ocean& component = gameObject->AddComponentInternal<Ocean>(componentData["id"]);
 				setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
 			}
             else if (componentData["name"] == "Rigidbody2D")
             {
                 Rigidbody2D& component = gameObject->AddComponentInternal<Rigidbody2D>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
 #if defined(IS3D) || defined(EDITOR)
             else if (componentData["name"] == "Collider3D")
             {
                 Collider3D& component = gameObject->AddComponentInternal<Collider3D>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Rigidbody3D")
             {
                 Rigidbody3D& component = gameObject->AddComponentInternal<Rigidbody3D>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
 #endif
             else if (componentData["name"] == "AnimationPlayer")
             {
                 AnimationPlayer& component = gameObject->AddComponentInternal<AnimationPlayer>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "AudioPlayer")
             {
                 AudioPlayer& component = gameObject->AddComponentInternal<AudioPlayer>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "TilemapRenderer")
             {
                 TilemapRenderer& component = gameObject->AddComponentInternal<TilemapRenderer>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Label")
             {
                 Label& component = gameObject->AddComponentInternal<Label>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Image")
             {
                 Image& component = gameObject->AddComponentInternal<Image>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "Button")
             {
                 Button& component = gameObject->AddComponentInternal<Button>(componentData["id"]);
                 setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
             }
             else if (componentData["name"] == "CanvasRenderer")
             {
                 CanvasRenderer& component = gameObject->AddComponentInternal<CanvasRenderer>(componentData["id"]);
                 setExposedVariables(component, componentData);
-            }
+                component.SetActive(componentData["active"]);
+			}
+			else if (componentData["name"] == "RectTransform")
+			{
+                RectTransform& component = gameObject->AddComponentInternal<RectTransform>(componentData["id"]);
+				setExposedVariables(component, componentData);
+                component.SetActive(componentData["active"]);
+			}
 
             // Todo: make Component of type Component so then I can set the Component variables like SetActive, id, expoedVariables, etc only once and not in each if statement
         }
@@ -496,6 +520,7 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
         {
             if (!component->IsActive())
                 continue;
+
             component->Start();
             component->startCalled = true;
         }

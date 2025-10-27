@@ -64,7 +64,7 @@ void Scene::RemoveGameObject(GameObject* gameObject)
         RemoveGameObject(child);
 
     for (Component* component : gameObject->GetComponents())
-        gameObject->RemoveComponent(component);
+        gameObject->RemoveComponent(component); // Todo: Add a RemoveComponents() which will be faster than this
 
     if (gameObject->GetParent() != nullptr)
         gameObject->SetParent(nullptr);

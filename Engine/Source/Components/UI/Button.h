@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Components/Component.h"
+#include "UIElement.h"
 #include "Core/CryonicCore.h"
 #include "Utilities/FontManager.h"
 #include "Resources/Sprite.h"
 #include "Resources/Font.h"
+#include "RectTransform.h"
 
-class Button : public Component
+class Button : public UIElement
 {
 public:
-    Button(GameObject* obj, int id) : Component(obj, id)
+    Button(GameObject* obj, int id) : UIElement(obj, id)
 	{
 		runInEditor = true;
 		name = "Button";
@@ -153,4 +154,5 @@ private:
     bool hovered = false;
     std::vector<std::function<void()>> clickCallbacks;
     bool setup = false;
+	RectTransform* rectTransform;
 };

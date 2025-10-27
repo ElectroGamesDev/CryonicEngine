@@ -14,6 +14,7 @@
 
 namespace FontManager
 {
+	static std::string defaultFontPath = "Fonts/Roboto-Black.ttf";
 	static ImFont* defaultFont;
 	static std::vector<std::pair<std::string, int>> unloadedFonts;
 	static std::unordered_map<std::string, std::unordered_map<int, ImFont*>> fonts;
@@ -73,6 +74,11 @@ namespace FontManager
 	{
 		for (auto& size : sizes)
 			LoadFont(font, size, false);
+	}
+
+	std::string GetDefaultFontPath()
+	{
+		return defaultFontPath;
 	}
 
 	ImFont* GetFont(std::string font, int size, bool checkIfExists)

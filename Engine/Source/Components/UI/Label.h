@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Components/Component.h"
+#include "UIElement.h"
 #include "Core/CryonicCore.h"
 #include "Resources/Font.h"
 #include "Utilities/FontManager.h"
+#include "RectTransform.h"
 
-class Label : public Component
+class Label : public UIElement
 {
 public:
-	Label(GameObject* obj, int id) : Component(obj, id)
+	Label(GameObject* obj, int id) : UIElement(obj, id)
 	{
 		runInEditor = true;
 		name = "Label";
@@ -77,4 +78,5 @@ private:
     Font* font = nullptr;
     int fontSize = 16;
     bool setup = false;
+    RectTransform* rectTransform;
 };

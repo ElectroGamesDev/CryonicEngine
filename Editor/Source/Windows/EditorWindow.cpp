@@ -25,6 +25,7 @@ void EditorWindow::Init(std::string name, std::string id, bool useIdForName, std
 		fullWindowName = iconString + name + "##" + id;
 
 	windowColor = backgroundColor;
+	windowOpen = true;
 
 	//ImGui::DockBuilderDockWindow((fullWindowName).c_str(), ImGui::GetID("DockSpace"));
 }

@@ -285,9 +285,6 @@
     <ClInclude Include="Engine\Source\Components\UI\Button.h">
       <Filter>Header Files\Engine\Source\Components\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Source\Components\UI\CanvasRenderer.h">
-      <Filter>Header Files\Engine\Source\Components\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Source\Components\UI\Image.h">
       <Filter>Header Files\Engine\Source\Components\UI</Filter>
     </ClInclude>
@@ -501,6 +498,18 @@
     <ClInclude Include="Engine\Source\Raylib\RaylibComputeShader.h">
       <Filter>Header Files\Engine\Source\Raylib</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Resources\Canvas.h">
+      <Filter>Header Files\Engine\Source\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Components\Rendering\CanvasRenderer.h">
+      <Filter>Header Files\Engine\Source\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Components\UI\UIElement.h">
+      <Filter>Header Files\Engine\Source\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Components\UI\RectTransform.h">
+      <Filter>Header Files\Engine\Source\Components\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Components\Component.cpp">
@@ -561,9 +570,6 @@
       <Filter>Source Files\Engine\Source\Components\UI</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Components\UI\Button.cpp">
-      <Filter>Source Files\Engine\Source\Components\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Source\Components\UI\CanvasRenderer.cpp">
       <Filter>Source Files\Engine\Source\Components\UI</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Components\UI\Image.cpp">
@@ -736,6 +742,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Source\Raylib\RaylibComputeShader.cpp">
       <Filter>Source Files\Engine\Source\Raylib</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Components\Rendering\CanvasRenderer.cpp">
+      <Filter>Source Files\Engine\Source\Components\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Components\UI\RectTransform.cpp">
+      <Filter>Source Files\Engine\Source\Components\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Resources\Canvas.cpp">
+      <Filter>Source Files\Engine\Source\Resources</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

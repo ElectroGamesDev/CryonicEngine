@@ -31,7 +31,7 @@
 #include "Components/UI/Label.h"
 #include "Components/UI/Image.h"
 #include "Components/UI/Button.h"
-#include "Components/UI/CanvasRenderer.h"
+#include "Components/Rendering/CanvasRenderer.h"
 #include "Components/Rendering/Terrain.h"
 #include "Components/Rendering/Skybox.h"
 #include "Components/Rendering/Ocean.h"
@@ -794,7 +794,22 @@ void Editor::RenderGameView()
         {
             if (playModeActive)
                 asyncPBODisplay.ConnectToSharedMemory();
+
             rlImGuiImageRenderTextureFit(&cameraRenderTexture, true);
+
+			for (GameObject* gameObject : SceneManager::GetActiveScene()->GetGameObjects())
+			{
+				if (!gameObject->IsActive())
+					continue;
+
+				for (Component* component : gameObject->GetComponents())
+				{
+					if (!component->IsActive())
+						continue;
+
+					component->RenderGui();
+				}
+			}
         }
     }
 
@@ -1736,7 +1751,25 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                 else if (extension == ".canvas")
                 {
                     RaylibWrapper::rlImGuiImageButtonSize(("##" + id).c_str(), IconManager::imageTextures["CanvasIcon"], ImVec2(40, 40));
-                    if (ImGui::IsItemHovered()) handleDrag(Other);
+					if (ImGui::IsItemHovered())
+					{
+						handleDrag(Other);
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						{
+							std::ifstream dataFile(entry.path());
+                            if (dataFile.is_open())
+                            {
+								std::string fileRelativePath = std::filesystem::relative(entry.path(), ProjectManager::projectData.path / "Assets").string();
+                                Canvas* canvas = new Canvas(fileRelativePath); // Todo: This is never being unallocated
+
+                                windows.push_back(new CanvasEditor());
+                                windows.back()->Init("Canvas Editor", fileRelativePath, true, ICON_FA_OBJECT_GROUP, ImVec4(0.10f, 0.11f, 0.12f, 1.00f));
+                                static_cast<CanvasEditor*>(windows.back())->LoadCanvas(canvas);
+                            }
+                            else
+                                ConsoleLogger::ErrorLog("There was an error opening the canvas \"" + entry.path().stem().string() + "\". The file may be corrupted.");
+						}
+					}
                 }
                 else if (auto it = fileTypes.find(extension); it != fileTypes.end())
                 {
@@ -2113,6 +2146,29 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                             // Todo: Handle if it wasn't created
                         }
                     }},
+					{"Create Canvas", [&]() {
+						std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "Canvas", "canvas");
+						if (filePath != "")
+						{
+							std::ofstream file(filePath);
+							if (file.is_open())
+							{
+								nlohmann::json jsonData = {};
+								file << std::setw(4) << jsonData << std::endl;
+							}
+							else
+							{
+								// Todo: Properly handle if the file couldn't be opened. Maybe retry a few times, then popup with a message and delete the file.
+								std::filesystem::remove(filePath);
+							}
+							renamingFile = filePath;
+							strcpy_s(newFileName, sizeof(newFileName), filePath.stem().string().c_str());
+						}
+						else
+						{
+							// Todo: Handle if it wasn't created
+						}
+					}},
 					{"Create Prefab", [&]() {
 						std::filesystem::path filePath = Utilities::CreateUniqueFile(fileExplorerPath, "Prefab", "prefab");
 						if (filePath != "")
@@ -5641,10 +5697,14 @@ void Editor::RenderHierarchy()
             };
 
             static const std::vector<GuiObjectItem> menuGUIObjects = {
-                {"Create Label", "Label"},
-                {"Create Image", "Image"},
-                {"Create Button", "Button"}
+                {"Create Canvas Renderer", "Canvas Renderer"}
             };
+
+			static const std::vector<GuiObjectItem> menuLegacyGUIObjects = {
+				{"Create Label", "Label"},
+				{"Create Image", "Image"},
+				{"Create Button", "Button"}
+			 };
 
             ObjectItem objectToCreate = {"", "", 0, ModelType::Custom};
             
@@ -5671,6 +5731,18 @@ void Editor::RenderHierarchy()
                         hierarchyContextMenuOpen = false;
                         guiObjectToCreate = item;
                     }
+                }
+                if (ImGui::BeginMenu("Legacy"))
+                {
+					for (const GuiObjectItem& item : menuLegacyGUIObjects)
+					{
+						if (ImGui::MenuItem(item.menuName.c_str()))
+						{
+							hierarchyContextMenuOpen = false;
+							guiObjectToCreate = item;
+						}
+					}
+					ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
             }
@@ -5765,6 +5837,8 @@ void Editor::RenderHierarchy()
                         //gameObject->AddComponentInternal<Collider2D>(); // Todo: Set size and type
                     }
                 }
+				else if (guiObjectToCreate.name == "Canvas Renderer")
+					gameObject->AddComponentInternal<CanvasRenderer>();
                 else if (guiObjectToCreate.name == "Label")
                     gameObject->AddComponentInternal<Label>();
                 else if (guiObjectToCreate.name == "Image")
@@ -6004,7 +6078,7 @@ void Editor::Render()
         ImGui::DockBuilderDockWindow((ICON_FA_GAMEPAD + std::string(" Game")).c_str(), dock_main_id);
         ImGui::DockBuilderDockWindow((ICON_FA_PERSON_RUNNING + std::string(" Animation Graph")).c_str(), dock_main_id);
         ImGui::DockBuilderDockWindow((ICON_FA_BOX_ARCHIVE + std::string(" Asset Manager")).c_str(), dock_main_id);
-        ImGui::DockBuilderDockWindow((ICON_FA_BRUSH + std::string(" Canvas Editor")).c_str(), dock_main_id);
+        ImGui::DockBuilderDockWindow((ICON_FA_OBJECT_GROUP + std::string(" Canvas Editor")).c_str(), dock_main_id);
         ImGui::DockBuilderDockWindow((ICON_FA_GEARS + std::string(" Properties")).c_str(), dock_id_right);
         ImGui::DockBuilderDockWindow((ICON_FA_FOLDER_OPEN + std::string(" Content Browser")).c_str(), dock_id_bottom);
         ImGui::DockBuilderDockWindow((ICON_FA_CODE + std::string(" Console")).c_str(), dock_id_bottom);
@@ -6177,7 +6251,6 @@ void Editor::Render()
                 if (window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL)
                     window->DockNode->TabBar->NextSelectedTabId = window->TabId;
             }
-            if (ImGui::MenuItem("Event Sheet Editor", "")) {}
             if (ImGui::MenuItem("Terrain Tools", ""))
             {
 				terrainToolsWinOpen = true;

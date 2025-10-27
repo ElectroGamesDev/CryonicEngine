@@ -131,6 +131,9 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
         break;
     }
 
+	std::filesystem::create_directory(projectData.path / "Assets" / "Fonts");
+	std::filesystem::copy_file("resources/Fonts/Roboto-Black.ttf", projectData.path / "Assets" / "Fonts" / "Roboto-Black.ttf");
+
     SaveProjectData(projectData);
 
     return 0;

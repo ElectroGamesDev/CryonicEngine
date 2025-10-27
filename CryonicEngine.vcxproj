@@ -55,6 +55,7 @@
     <ClInclude Include="Engine\Source\Components\Physics\Collider3D.h" />
     <ClInclude Include="Engine\Source\Components\Physics\Rigidbody2D.h" />
     <ClInclude Include="Engine\Source\Components\Physics\Rigidbody3D.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\CanvasRenderer.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\Clouds.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\Lighting.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\MeshRenderer.h" />
@@ -66,9 +67,10 @@
     <ClInclude Include="Engine\Source\Components\Scripting\ScriptComponent.h" />
     <ClInclude Include="Engine\Source\Components\Scripting\ScriptLoader.h" />
     <ClInclude Include="Engine\Source\Components\UI\Button.h" />
-    <ClInclude Include="Engine\Source\Components\UI\CanvasRenderer.h" />
     <ClInclude Include="Engine\Source\Components\UI\Image.h" />
     <ClInclude Include="Engine\Source\Components\UI\Label.h" />
+    <ClInclude Include="Engine\Source\Components\UI\RectTransform.h" />
+    <ClInclude Include="Engine\Source\Components\UI\UIElement.h" />
     <ClInclude Include="Engine\Source\Core\CryonicAPI.h" />
     <ClInclude Include="Engine\Source\Core\CryonicCore.h" />
     <ClInclude Include="Engine\Source\Core\GameObject.h" />
@@ -84,6 +86,7 @@
     <ClInclude Include="Engine\Source\Resources\Animation.h" />
     <ClInclude Include="Engine\Source\Resources\AnimationGraph.h" />
     <ClInclude Include="Engine\Source\Resources\AudioClip.h" />
+    <ClInclude Include="Engine\Source\Resources\Canvas.h" />
     <ClInclude Include="Engine\Source\Resources\Font.h" />
     <ClInclude Include="Engine\Source\Resources\Material.h" />
     <ClInclude Include="Engine\Source\Resources\Prefab.h" />
@@ -141,6 +144,7 @@
     <ClCompile Include="Engine\Source\Components\Physics\Collider3D.cpp" />
     <ClCompile Include="Engine\Source\Components\Physics\Rigidbody2D.cpp" />
     <ClCompile Include="Engine\Source\Components\Physics\Rigidbody3D.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\CanvasRenderer.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\Clouds.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\Lighting.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\MeshRenderer.cpp" />
@@ -152,9 +156,9 @@
     <ClCompile Include="Engine\Source\Components\Scripting\ScriptComponent.cpp" />
     <ClCompile Include="Engine\Source\Components\Scripting\ScriptLoader.cpp" />
     <ClCompile Include="Engine\Source\Components\UI\Button.cpp" />
-    <ClCompile Include="Engine\Source\Components\UI\CanvasRenderer.cpp" />
     <ClCompile Include="Engine\Source\Components\UI\Image.cpp" />
     <ClCompile Include="Engine\Source\Components\UI\Label.cpp" />
+    <ClCompile Include="Engine\Source\Components\UI\RectTransform.cpp" />
     <ClCompile Include="Engine\Source\Core\CryonicCore.cpp" />
     <ClCompile Include="Engine\Source\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Source\Raylib\RaylibCameraWrapper.cpp" />
@@ -167,6 +171,7 @@
     <ClCompile Include="Engine\Source\Raylib\RaylibWrapper.cpp" />
     <ClCompile Include="Engine\Source\Resources\AnimationGraph.cpp" />
     <ClCompile Include="Engine\Source\Resources\AudioClip.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Canvas.cpp" />
     <ClCompile Include="Engine\Source\Resources\Material.cpp" />
     <ClCompile Include="Engine\Source\Resources\Prefab.cpp" />
     <ClCompile Include="Engine\Source\Resources\Sprite.cpp" />

@@ -1,14 +1,14 @@
 #include "Button.h"
 #include "Raylib/RaylibWrapper.h"
 #include "Components/Misc/CameraComponent.h"
-#if defined (EDITOR)
-#include "Core/Editor.h"
-#else
+#if !defined (EDITOR)
 #include "ThirdParty/imgui/imgui.h"
 #endif
 
 void Button::Awake()
 {
+    	rectTransform = gameObject->GetComponent<RectTransform>();
+
 #if defined(EDITOR)
     image = new Sprite(exposedVariables[1][0][2].get<std::string>()); // Todo: Handle if the path no longer exists
 #endif
@@ -28,7 +28,12 @@ void Button::Awake()
 
 void Button::RenderGui()
 {
-    Vector2 position = CameraComponent::main->GetWorldToScreen(gameObject->transform.GetPosition());
+    Vector2 position;
+
+	if (rectTransform)
+		position = rectTransform->GetPivotPosition();
+	else
+		position = CameraComponent::main->GetWorldToScreen(gameObject->transform.GetPosition());
 
 #if defined(EDITOR)
     // Divding positions by Raylib window size then multiply it by Viewport window size
@@ -121,7 +126,7 @@ void Button::RenderGui()
     hovered = ImGui::IsItemHovered();
 
     // Text
-    if (font && text != "")
+    if (text != "")
     {
         Color color = textColor;
         if (disabled)
@@ -129,7 +134,15 @@ void Button::RenderGui()
 
         ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
         ImGui::SetCursorPos({ textPosition.x - textSize.x / 2, textPosition.y - textSize.y / 2 });
-        ImGui::PushFont(FontManager::GetFont(font->GetPath(), fontSize, false));
+
+		std::string fontPath;
+
+		if (!font || font->GetPath().empty() || font->GetPath() == "nullptr") // Todo: This may crash if the font file is removed/renamed. Checking the path each frame will cause overhead
+			fontPath = FontManager::GetDefaultFontPath();
+		else
+			fontPath = font->GetPath();
+
+		ImGui::PushFont(FontManager::GetFont(fontPath, fontSize, true));
         ImGui::TextColored({ (float)color.r / 255, (float)color.g / 255, (float)color.b / 255, (float)color.a / 255 }, text.c_str());
         ImGui::PopFont();
     }
