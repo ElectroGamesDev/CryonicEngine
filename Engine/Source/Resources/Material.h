@@ -50,11 +50,11 @@ public:
 #ifdef EDITOR
             FileWatcher::AddFileMoveCallback(path, [this](const std::string& oldPath, const std::string& newPath) {
                 this->OnFileMoved(oldPath, newPath);
-                });
+             });
 
             FileWatcher::AddFileModifyCallback(path, [this]() {
                 this->OnFileModified();
-                });
+             });
 #endif
 
             materials[path] = this;
@@ -88,9 +88,15 @@ public:
 
     void OnFileMoved(const std::string oldPath, const std::string newPath)
     {
+        FileWatcher::RemoveFileMoveCallback(path);
+
         path = newPath;
         materials[newPath] = this;
         materials.erase(oldPath);
+
+		FileWatcher::AddFileMoveCallback(path, [this](const std::string& oldPath, const std::string& newPath) {
+			this->OnFileMoved(oldPath, newPath);
+		});
 
         // Todo: Update all components using this material (or the components should find the new path themself. Maybe in FileWatcher for 10-15 seconds I could have a recentlyMoved vector which they can search though)
     }
