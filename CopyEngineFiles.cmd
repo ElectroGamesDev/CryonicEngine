@@ -14,7 +14,8 @@ IF ERRORLEVEL 8 (
     EXIT /B 8
 )
 
-robocopy "%~1Editor\Resources" "%~2resources" /MIR /NFL /NDL /NJH /NJS /NC /NS
+:: Can not use /MIR here so /E is used instead, else it will delete the Engine resources
+robocopy "%~1Editor\Resources" "%~2resources" /E /NFL /NDL /NJH /NJS /NC /NS 
 IF ERRORLEVEL 8 (
     echo ERROR: Failed to copy Editor\Resources to resources
     EXIT /B 8
