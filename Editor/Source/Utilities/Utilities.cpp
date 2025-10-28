@@ -12,7 +12,6 @@
 #include <iomanip>
 #include "ThirdParty/Misc/json.hpp"
 #include <algorithm>
-#define TINYGLTF_IMPLEMENTATION
 #include "ThirdParty/Misc/tiny_gltf.h"
 #include <tlhelp32.h>
 #include "ThirdParty/curl/include/curl.h"
