@@ -1,0 +1,63 @@
+#version 440
+layout (local_size_x = 64) in;
+struct ParticleGPU
+{
+float pos[3];
+float time;
+float vel[3];
+float lifetime;
+float color[4];
+float size;
+float rotation;
+float angularVelocity;
+float frame;
+float frameTime;
+};
+layout(std430, binding=0) buffer ParticlesBuf { ParticleGPU particles[]; };
+layout(std430, binding=1) buffer AliveNew { uint aliveNew[]; };
+layout(std430, binding=3) buffer DeadList { uint dead[]; };
+layout(std430, binding=4) buffer Counters { uint aliveCount; uint newAliveCount; uint deadCount; };
+uniform uint emitCount;
+uniform float time;
+uniform vec3 emitterPos;
+uniform vec3 velMin;
+uniform vec3 velMax;
+uniform float lifeMin;
+uniform float lifeMax;
+uniform float sizeStart;
+uniform float rotationStart;
+uniform float angularVel;
+// etc
+uint hash(uint x) {
+x ^= x >> 16;
+x *= 0x7feb352dU;
+x ^= x >> 15;
+x *= 0x846ca68bU;
+x ^= x >> 16;
+return x;
+}
+float rand(inout uint seed) { return float(hash(seed)) / float(0xffffffffU); }
+void main() {
+uint gid = gl_GlobalInvocationID.x;
+if (gid >= emitCount) return;
+uint seed = gid + uint(time*1000.0);
+uint deadIdx = atomicAdd(deadCount, -1u) - 1u;
+uint pidx = dead[deadIdx];
+ParticleGPU p;
+p.pos[0] = emitterPos.x; p.pos[1] = emitterPos.y; p.pos[2] = emitterPos.z;
+// add random for shape
+p.time = 0.0;
+p.vel[0] = mix(velMin.x, velMax.x, rand(seed)); seed++;
+p.vel[1] = mix(velMin.y, velMax.y, rand(seed)); seed++;
+p.vel[2] = mix(velMin.z, velMax.z, rand(seed)); seed++;
+p.lifetime = mix(lifeMin, lifeMax, rand(seed)); seed++;
+p.color[0] = 1.0; p.color[1] = 1.0; p.color[2] = 1.0; p.color[3] = 1.0; // sample start
+p.size = sizeStart;
+p.rotation = rotationStart;
+p.angularVelocity = angularVel;
+p.frame = 0.0;
+p.frameTime = 0.0;
+particles[pidx] = p;
+uint aliveIdx = atomicAdd(newAliveCount, 1u);
+aliveNew[aliveIdx] = pidx;
+}

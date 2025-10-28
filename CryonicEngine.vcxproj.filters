@@ -510,6 +510,15 @@
     <ClInclude Include="Engine\Source\Components\UI\RectTransform.h">
       <Filter>Header Files\Engine\Source\Components\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Resources\Particles.h">
+      <Filter>Header Files\Engine\Source\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Components\Rendering\ParticleRenderer.h">
+      <Filter>Header Files\Engine\Source\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Source\Windows\ParticleEditor.h">
+      <Filter>Header Files\Editor\Source\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Components\Component.cpp">
@@ -751,6 +760,18 @@
     </ClCompile>
     <ClCompile Include="Engine\Source\Resources\Canvas.cpp">
       <Filter>Source Files\Engine\Source\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\ThirdParty\Misc\tiny_gltf.cpp">
+      <Filter>Header Files\Engine\ThirdParty\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Resources\Particles.cpp">
+      <Filter>Source Files\Engine\Source\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Components\Rendering\ParticleRenderer.cpp">
+      <Filter>Source Files\Engine\Source\Components\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Source\Windows\ParticleEditor.cpp">
+      <Filter>Source Files\Editor\Source\Windows</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -31,6 +31,7 @@
     <ClInclude Include="Editor\Source\Windows\CanvasEditor.h" />
     <ClInclude Include="Editor\Source\Windows\EditorWindow.h" />
     <ClInclude Include="Editor\Source\Windows\EventSheetEditor.h" />
+    <ClInclude Include="Editor\Source\Windows\ParticleEditor.h" />
     <ClInclude Include="Editor\Source\Windows\PrefabEditor.h" />
     <ClInclude Include="Editor\ThirdParty\imgui\IconsFontAwesome6.h" />
     <ClInclude Include="Editor\ThirdParty\imgui\imconfig.h" />
@@ -60,6 +61,7 @@
     <ClInclude Include="Engine\Source\Components\Rendering\Lighting.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\MeshRenderer.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\Ocean.h" />
+    <ClInclude Include="Engine\Source\Components\Rendering\ParticleRenderer.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\Skybox.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\SpriteRenderer.h" />
     <ClInclude Include="Engine\Source\Components\Rendering\Terrain.h" />
@@ -89,6 +91,7 @@
     <ClInclude Include="Engine\Source\Resources\Canvas.h" />
     <ClInclude Include="Engine\Source\Resources\Font.h" />
     <ClInclude Include="Engine\Source\Resources\Material.h" />
+    <ClInclude Include="Engine\Source\Resources\Particles.h" />
     <ClInclude Include="Engine\Source\Resources\Prefab.h" />
     <ClInclude Include="Engine\Source\Resources\Sprite.h" />
     <ClInclude Include="Engine\Source\Resources\Tilemap.h" />
@@ -126,6 +129,7 @@
     <ClCompile Include="Editor\Source\Windows\CanvasEditor.cpp" />
     <ClCompile Include="Editor\Source\Windows\EditorWindow.cpp" />
     <ClCompile Include="Editor\Source\Windows\EventSheetEditor.cpp" />
+    <ClCompile Include="Editor\Source\Windows\ParticleEditor.cpp" />
     <ClCompile Include="Editor\Source\Windows\PrefabEditor.cpp" />
     <ClCompile Include="Editor\ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="Editor\ThirdParty\imgui\ImGuiPopup.cpp" />
@@ -149,6 +153,7 @@
     <ClCompile Include="Engine\Source\Components\Rendering\Lighting.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\MeshRenderer.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\Ocean.cpp" />
+    <ClCompile Include="Engine\Source\Components\Rendering\ParticleRenderer.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\Skybox.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\SpriteRenderer.cpp" />
     <ClCompile Include="Engine\Source\Components\Rendering\Terrain.cpp" />
@@ -173,6 +178,7 @@
     <ClCompile Include="Engine\Source\Resources\AudioClip.cpp" />
     <ClCompile Include="Engine\Source\Resources\Canvas.cpp" />
     <ClCompile Include="Engine\Source\Resources\Material.cpp" />
+    <ClCompile Include="Engine\Source\Resources\Particles.cpp" />
     <ClCompile Include="Engine\Source\Resources\Prefab.cpp" />
     <ClCompile Include="Engine\Source\Resources\Sprite.cpp" />
     <ClCompile Include="Engine\Source\Resources\Tilemap.cpp" />
@@ -195,6 +201,7 @@
     <ClCompile Include="Engine\Source\Utilities\ConsoleLogger.cpp" />
     <ClCompile Include="Engine\Source\Utilities\FontManager.cpp" />
     <ClCompile Include="Engine\Source\Utilities\IconManager.cpp" />
+    <ClCompile Include="Engine\ThirdParty\Misc\tiny_gltf.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
