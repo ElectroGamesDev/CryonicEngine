@@ -25,19 +25,16 @@ else()
 endif()
 
 add_library(raylib STATIC IMPORTED)
-set_target_properties(raylib PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/libraylib-d.a")
+set_target_properties(raylib PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/ThirdParty/raylib/lib/libraylib-d.a")
 
 add_library(box2d STATIC IMPORTED)
-set_target_properties(box2d PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/box2d/libbox2d-d.a")
+set_target_properties(box2d PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/ThirdParty/box2d/lib/libbox2d-d.a")
 
-file(GLOB SOURCE_FILES
-    Source/*.cpp
-    Source/*.h
-    Source/Scenes/*.cpp
-    Source/Scenes/*.h
-    Source/Components/*.cpp
-    Source/Components/*.h
-    Source/box2d/*.h
+file(GLOB_RECURSE SOURCE_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_SOURCE_DIR}/Source/*.cpp
+	${CMAKE_SOURCE_DIR}/Source/*.c
+    ${CMAKE_SOURCE_DIR}/Source/*.h
 )
 
 if ("${PLATFORM}" STREQUAL "WINDOWS")
@@ -58,6 +55,22 @@ if ("${PLATFORM}" STREQUAL "WINDOWS")
 else()
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 endif()
+
+# Add all subdirectories under Source/Components as include directories
+file(GLOB_RECURSE COMPONENT_DIRS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/Source/Components/*)
+
+foreach(dir ${COMPONENT_DIRS})
+    if (IS_DIRECTORY ${dir})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${dir})
+    endif()
+endforeach()
+
+# Base include directories
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/Source
+    ${CMAKE_SOURCE_DIR}/Source/Components
+    ${CMAKE_SOURCE_DIR}/ThirdParty
+)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
     -w
