@@ -3711,7 +3711,7 @@ void Editor::RenderScriptCreateWin()
             }
 
             // Todo: This path will not work if the user is not in visual studio
-            std::filesystem::path miscPath = "resources/misc";
+            std::filesystem::path miscPath = "resources/Scripting";
             std::string presetType = ProjectManager::projectData.is3D ? "3D" : "2D";
             std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".h"), fileExplorerPath / (name + ".h"));
             std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".cpp"), fileExplorerPath / (name + ".cpp"));
