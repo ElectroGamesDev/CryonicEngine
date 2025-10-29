@@ -50,13 +50,19 @@ void ProjectManager::CopyApiFiles(std::filesystem::path destination)
         //}
     }
 
-    // Remove 3D files if its a 2D game
+    // Remove 3D only classes if its a 2D game
     if (!projectData.is3D)
     {
-        std::filesystem::remove(destination / "Components" / "Collider3D.cpp");
-        std::filesystem::remove(destination / "Components" / "Collider3D.h");
-        std::filesystem::remove(destination / "Components" / "Rigidbody3D.cpp");
-        std::filesystem::remove(destination / "Components" / "Rigidbody3D.h");
+        std::filesystem::remove(destination / "Source" / "Components" / "Physics" / "Collider3D.cpp");
+        std::filesystem::remove(destination / "Source" / "Components" / "Physics" / "Collider3D.h");
+        std::filesystem::remove(destination / "Source" / "Components" / "Physics" / "Rigidbody3D.cpp");
+        std::filesystem::remove(destination / "Source" / "Components" / "Physics" / "Rigidbody3D.h");
+
+		std::filesystem::remove(destination / "Source" / "Systems" / "Physics" / "CollisionListener3D.cpp");
+		std::filesystem::remove(destination / "Source" / "Systems" / "Physics" / "CollisionListener3D.h");
+		std::filesystem::remove(destination / "Source" / "Systems" / "Physics" / "Physics3DDebugDraw.cpp");
+		std::filesystem::remove(destination / "Source" / "Systems" / "Physics" / "Physics3DDebugDraw.h");
+
     }
 }
 
@@ -476,6 +482,9 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
         std::filesystem::remove_all(buildPath / "3D");
         std::filesystem::remove_all(buildPath / "2D");
 
+        std::filesystem::remove_all(buildPath / "Source" / "ThirdParty" / "Jolt"); // Removing Jolt because using the precompiled version has issues. CMakeLists regenerates it from GitHub
+        std::filesystem::create_directories(buildPath / "Source" / "ThirdParty" / "Jolt"); // Recreating the directory so CMakeLists can put the new Jolt build in it
+
         std::filesystem::copy(buildPath / platform, buildPath, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
         std::filesystem::remove_all(buildPath / "Windows");
         std::filesystem::remove_all(buildPath / "Web");
@@ -601,8 +610,17 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
     }
     std::filesystem::remove_all(projectData.path / "api");
 
-    CopyApiFiles(projectData.path / "api");
-    CopyApiFiles(buildPath / "Source");
+    CopyApiFiles(projectData.path / "api"); // Todo: I don't think this is needed anymore since we're storing the api files in the game engine path. Will likely need to change this when creating a project too
+    CopyApiFiles(buildPath);
+
+    // Delete "Resources" directory since it's only used for the Editor
+    std::filesystem::remove_all(buildPath / "resources");
+
+    // Move "ThirdParty" directory in to the "Sources" directory
+    //std::filesystem::rename(buildPath / "ThirdParty", buildPath / "Source" / "ThirdParty"); // This does not work since the directory already exists
+	std::filesystem::copy(buildPath / "ThirdParty", buildPath / "Source" / "ThirdParty", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+	std::filesystem::remove_all(buildPath / "ThirdParty");
+
 
     CopyAssetFiles(buildPath / "Resources" / "Assets");
 
@@ -649,7 +667,7 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
         ImGuiPopup::SetProgress(35);
     }
 
-    if (!BuildScripts(projectData.path / "Assets" / "Scripts", buildPath / "Source")) // Todo: This should handle the error messages, not BuildScripts(). BuildScripts() should return an int
+    if (!BuildScripts(projectData.path / "Assets", buildPath / "Source")) // Todo: This should handle the error messages, not BuildScripts(). BuildScripts() should return an int
     {
         try {
             for (const auto& file : std::filesystem::directory_iterator(buildPath))
@@ -930,9 +948,9 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
     // Todo: Make the number of cores configurable.
     if (useNinja)
         //command = "ninja -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() * 1))); // Both this line and the one below seems to offer the same speeds?
-        command = "cmake --build . -- -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() * 1)));
+        command = "cmake --build . -- -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() - 1)));
     else
-        command = "mingw32-make -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() * 1))) + " PLATFORM=PLATFORM_DESKTOP";
+        command = "cmake --build . -- -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() - 1)));
 
     if (!CreateProcessA(NULL, const_cast<LPSTR>(command.c_str()), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
     {
@@ -1012,7 +1030,7 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
             }
 
             if (ConsoleLogger::showDebugMessages)
-                std::cout << buffer;
+                ConsoleLogger::InfoLog("Build - Output: " + line, true);
         }
     }
 
@@ -1759,6 +1777,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
                 {
                     if (scriptComponent->exposedVariables.is_null())
                         continue;
+
                     components[scriptComponent->GetHeaderPath()][scriptComponent->id] = scriptComponent->exposedVariables;
                 }
                 else
@@ -1766,7 +1785,22 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
                     Component* _component = dynamic_cast<Component*>(component);
                     if (_component->exposedVariables.is_null())
                         continue;
-                    components["Components/" + _component->name + ".h"][_component->id] = _component->exposedVariables;
+
+                    // Searches for the component file
+					for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
+					{
+						if (entry.is_regular_file() && entry.path().stem() == _component->name)
+						{
+                            if (entry.path().extension() != ".h" && entry.path().extension() != ".cpp" && entry.path().extension() != ".c")
+                                continue;
+
+							std::string relativePath = std::filesystem::relative(entry.path(), path).string();
+
+                            components[relativePath][_component->id] = _component->exposedVariables;
+                            // Todo: Send an error if it failed to find its
+                            break;
+						}
+					}
                 }
             }
         }
@@ -1774,35 +1808,30 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 
     for (const auto& component : components)
     {
-        if (!std::filesystem::exists(path / component.first.filename()) && !std::filesystem::exists(path / "Components" / component.first.filename())) // Todo: Should probably store whether the component is internal or not instead of doing this
+        std::filesystem::path fullPath = path / component.first;
+
+        if (!std::filesystem::exists(fullPath))
         {
             // Todo: Do something if the file does not exist
-            ConsoleLogger::ErrorLog("Failed to find \"" + (path / component.first.filename()).string() + "\".Error Code 700"); // Todo: Remove this warning, or maybe keep it for developer mode
+            ConsoleLogger::ErrorLog("Failed to find \"" + (fullPath).string() + "\".Error Code 700", false);
             continue;
         }
         // Todo: This assume the .cpp is in the same location as the header. Consider getting the .cpp path from the Component and store it in the components map
-        if (!std::filesystem::exists(path / (component.first.stem().string() + ".cpp")) && !std::filesystem::exists(path / "Components" / (component.first.stem().string() + ".cpp")))
+        if (!std::filesystem::exists(fullPath.parent_path() / (component.first.stem().string() + ".cpp")))
         {
             // Todo: Do something if the file does not exist
-            ConsoleLogger::ErrorLog("Failed to find \"" + (path / (component.first.stem().string() + ".cpp")).string() + "\". Error code 700"); // Todo: Remove this warning, or maybe keep it for developer mode
+            ConsoleLogger::ErrorLog("Failed to find \"" + (fullPath.parent_path() / (component.first.stem().string() + ".cpp")).string() + "\". Error code 700", false);
             continue;
         }
 
         // Todo: This will not work if a function has "{" before class declaration, such as in variables or in a comment
 
-        bool internal = false;
         // Create function in header
-        std::ifstream headerFile(path / component.first.filename());
+        std::ifstream headerFile(fullPath / component.first.filename());
         if (!headerFile.is_open())
         {
-            // Todo: This is a horrible solution for opening internal components
-            headerFile.open(path / "Components" / component.first.filename());
-            if (!headerFile.is_open())
-            {
-                // Todo: Do something if file failed to open
-                continue;
-            }
-            internal = true;
+            continue;
+            // Todo: Add a error log
         }
 
         
@@ -1863,10 +1892,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 
         std::ofstream tempHeader;
         // Todo: Find a better way to check if this is internal, like using full paths instead of file names. Same with tempCpp below
-        if (internal)
-            tempHeader.open(path / "Components" / (component.first.stem().string() + ".temp"));
-        else
-            tempHeader.open(path / (component.first.stem().string() + ".temp"));
+        tempHeader.open(fullPath.parent_path() / (component.first.stem().string() + ".temp"));
 
         // Iterates the lines in reverse to find "};" and add SetExposedVariables() right before it
         for (auto it = lines.rbegin(); it != lines.rend(); ++it)
@@ -1885,36 +1911,22 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 
         tempHeader.close();
 
-        // Todo: Find a better way to check if this is internal, like using full paths instead of file names
-        if (internal)
-        {
-            std::filesystem::remove(path / "Components" / component.first.filename());
-            std::filesystem::rename(path / "Components" / (component.first.stem().string() + ".temp"), path / "Components" / component.first.filename());
-        }
-        else
-        {
-            std::filesystem::remove(path / component.first.filename());
-            std::filesystem::rename(path / (component.first.stem().string() + ".temp"), path / component.first.filename());
-        }
+        std::filesystem::remove(fullPath.parent_path() / component.first.filename());
+        std::filesystem::rename(fullPath.parent_path() / (component.first.stem().string() + ".temp"), fullPath.parent_path() / component.first.filename());
 
         if (!placedFunction)
         {
             // Todo: Failed to find a place to put the SetExposedVariables() function
-            ConsoleLogger::ErrorLog("Failed to find a place to put SetExposedVariables() in " + (path / component.first.filename()).string()); // Todo: Maek this warning for dev mode, and make a better message like failed to set exposed variables for x file
+            ConsoleLogger::ErrorLog("Failed to find a place to put SetExposedVariables() in " + (fullPath.parent_path() / component.first.filename()).string(), false); // Todo: Make a better message like failed to set exposed variables for x file
             continue;
         }
 
         // Create function in CPP
-        std::ifstream cppFile(path / (component.first.stem().string() + ".cpp"));
+        std::ifstream cppFile(fullPath.parent_path() / (component.first.stem().string() + ".cpp"));
         if (!cppFile.is_open())
         {
-            // Todo: This is a horrible solution for opening internal components
-            cppFile.open(path / "Components" / (component.first.stem().string() + ".cpp"));
-            if (!cppFile.is_open())
-            {
-                // Todo: Do something if file failed to open
-                continue;
-            }
+            // Todo: Do something if file failed to open
+            continue;
         }
 
         line = "";
@@ -1922,10 +1934,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
         bool lastLineWasInclude = false;
         //std::ofstream tempCpp(path / (component.first.stem().string() + ".temp"));
         std::ofstream tempCpp;
-        if (internal)
-            tempCpp.open(path / "Components" / (component.first.stem().string() + ".temp"));
-        else
-            tempCpp.open(path / (component.first.stem().string() + ".temp"));
+        tempCpp.open(fullPath.parent_path() / (component.first.stem().string() + ".temp"));
         while (std::getline(cppFile, line))
         {
             if (!placedFunction)
@@ -1997,27 +2006,19 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
         cppFile.close();
         tempCpp.close();
 
-        if (internal)
-        {
-            std::filesystem::remove(path / "Components" / (component.first.stem().string() + ".cpp"));
-            std::filesystem::rename(path / "Components" / (component.first.stem().string() + ".temp"), path / "Components" / (component.first.stem().string() + ".cpp"));
-        }
-        else
-        {
-            std::filesystem::remove(path / (component.first.stem().string() + ".cpp"));
-            std::filesystem::rename(path / (component.first.stem().string() + ".temp"), path / (component.first.stem().string() + ".cpp"));
-        }
+        std::filesystem::remove(fullPath.parent_path() / (component.first.stem().string() + ".cpp"));
+        std::filesystem::rename(fullPath.parent_path() / (component.first.stem().string() + ".temp"), fullPath.parent_path() / (component.first.stem().string() + ".cpp"));
 
         if (!placedFunction)
         {
             // Todo: Failed to find a place to put the SetExposedVariables() function
-            ConsoleLogger::ErrorLog("Failed to find a place to put SetExposedVariables() in " + (path / (component.first.stem().string() + ".cpp")).string()); // Todo: Remove this warning
+            ConsoleLogger::ErrorLog("Failed to find a place to put SetExposedVariables() in " + (fullPath.parent_path() / (component.first.stem().string() + ".cpp")).string(), false);
             continue;
         }
         // Iterate component.first[1]
     }
 
-    //for (const auto& file : std::filesystem::recursive_directory_iterator(path))
+    //for (const auto& file : std::filesystem::recursive_directory_iterator(fullPath))
     //{
     //    if (!std::filesystem::is_directory(file))
     //    {

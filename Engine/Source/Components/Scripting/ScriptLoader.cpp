@@ -26,19 +26,30 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
     std::vector<std::string> scriptNames;
     std::vector<std::filesystem::path> paths;
 
+    std::filesystem::create_directories(buildPath / "Components" / "Custom");
+
     paths.push_back(scriptLoaderPath);
-    for (const auto& entry : std::filesystem::directory_iterator(projectPath))
-    {
-        if (std::filesystem::is_regular_file(entry.path()))
-        {
-            std::filesystem::copy_file(entry, buildPath / entry.path().filename());
+	for (const auto& entry : std::filesystem::recursive_directory_iterator(projectPath))
+	{
+		if (std::filesystem::is_regular_file(entry.path()))
+		{
+            if (entry.path().extension() != ".h" && entry.path().extension() != ".cpp" && entry.path().extension() != ".c")
+                continue;
 
-            if (entry.path().extension() == ".h")
-                scriptNames.push_back(entry.path().stem().string());
+			std::filesystem::path relativePath = std::filesystem::relative(entry.path(), projectPath);
 
-            paths.push_back(buildPath / entry.path().filename());
-        }
-    }
+			std::filesystem::path destPath = buildPath / "Components" / "Custom" / relativePath.parent_path();
+			std::filesystem::create_directories(destPath);
+
+			std::filesystem::copy_file(entry.path(), destPath / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
+
+			if (entry.path().extension() == ".h")
+				scriptNames.push_back(entry.path().stem().string());
+
+			paths.push_back(destPath / entry.path().filename());
+		}
+	}
+
 
     for (const std::filesystem::path path : paths)
     {
@@ -64,7 +75,7 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
             if (insertionPoint != lines.end())
             {
                 for (const std::string name : scriptNames)
-                    lines.insert(lines.begin(), "#include \"../" + name + ".h\"");
+                    lines.insert(lines.begin(), "#include \"" + name + ".h\"");
 
                 insertionPoint = std::find(lines.begin(), lines.end(), "// SetupScriptComponent");
                 auto functionInsertionIndex = std::distance(lines.begin(), insertionPoint) + 1;
@@ -82,15 +93,16 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
         }
         else
         {
-            bool found = false;
-            while (std::getline(fileIn, line)) {
-                if (!found && line.find("CryonicAPI.h") != std::string::npos)
-                {
-                    line = "#include \"CryonicAPI.h\"";;
-                    found = true;
-                }
-                lines.push_back(line);
-            }
+            // Removed because the game engine shouldn't be responsible for this, and there could be issues if people are using a library or something
+            //bool found = false;
+            //while (std::getline(fileIn, line)) {
+            //    if (!found && line.find("CryonicAPI.h") != std::string::npos)
+            //    {
+            //        line = "#include \"CryonicAPI.h\"";;
+            //        found = true;
+            //    }
+            //    lines.push_back(line);
+            //}
         }
 
         fileIn.close();
