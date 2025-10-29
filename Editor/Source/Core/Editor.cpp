@@ -163,6 +163,8 @@ std::vector<RaylibWrapper::RenderTexture2D*> tempRenderTextures;
 float cameraSpeed = 1;
 float oneSecondDelay = 1;
 
+bool gridVisible = true;
+
 RaylibModel materialPreviewMesh;
 bool playModeActive = false;
 Utilities::JobHandle playModeJobHandle;
@@ -442,12 +444,22 @@ void Editor::RenderViewport()
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 0.f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
         const char* tools[] = { "Move", "Rotate", "Scale" };
-        for (int i = 0; i < 3; ++i)
+		int numOfTools = 3;
+        for (int i = 0; i < numOfTools; ++i)
         {
             ImGui::SetCursorPos(ImVec2(5 + i * 22, 27));
             if (RaylibWrapper::rlImGuiImageButtonSize(("##" + std::string(tools[i]) + "Tool").c_str(),
                 IconManager::imageTextures[std::string(tools[i]) + "Tool" + ((toolSelected == static_cast<Tool>(i)) ? "Selected" : "") + "Icon"], { 20, 20 }))
                 toolSelected = static_cast<Tool>(i);
+        }
+
+        // Render grid visibility button
+        if (ProjectManager::projectData.is3D)
+        {
+            ImGui::SetCursorPos(ImVec2(15 + 22 * numOfTools, 27));
+            if (RaylibWrapper::rlImGuiImageButtonSize("##GridVisible",
+                IconManager::imageTextures[std::string("Grid") + (gridVisible ? "Active" : "Unactive") + "Icon"], { 20, 20 }))
+                gridVisible = !gridVisible;
         }
 
         // Render GUI Visibility button
@@ -1134,7 +1146,7 @@ void Editor::UpdateViewport()
     if (RaylibWrapper::IsMouseButtonReleased(RaylibWrapper::MOUSE_BUTTON_LEFT))
         movingObjectY = movingObjectX = movingObjectZ = false;
 
-    if (ProjectManager::projectData.is3D)
+    if (ProjectManager::projectData.is3D && gridVisible)
         RaylibWrapper::DrawGrid(100, 10.0f);
 
     deltaTime = RaylibWrapper::GetFrameTime();
