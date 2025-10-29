@@ -2,7 +2,11 @@
 
 #pragma once
 
+#if defined (EDITOR)
 #include "../../api/CryonicAPI.h"
+#else
+#include "CryonicAPI.h"
+#endif
 
 class ScriptPreset : public Component
 {
