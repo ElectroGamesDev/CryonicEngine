@@ -5702,6 +5702,7 @@ void Editor::RenderHierarchy()
                 std::string menuName;
                 std::string name;
                 int dimension; // 1 = both, 2 = 2D, 3 = 3D
+                bool spawnAtCamera;
                 ModelType model;
             };
 
@@ -5712,21 +5713,21 @@ void Editor::RenderHierarchy()
             };
 
             static const std::vector<ObjectItem> menuObjects = {
-                {"Create Empty", "GameObject", 1, ModelType::Custom},
-                {"Create Cube", "Cube", 3, ModelType::Cube},
-                {"Create Cylinder", "Cylinder", 3, ModelType::Cylinder},
-                {"Create Sphere", "Sphere", 3, ModelType::Sphere},
-                {"Create Plane", "Plane", 3, ModelType::Plane},
-                {"Create Cone", "Cone", 3, ModelType::Cone},
-				{"Create Terrain", "Terrain", 3, ModelType::Custom},
-                {"Create Light", "Light", 3, ModelType::Custom},
-				{"Create Skybox", "Skybox", 3, ModelType::Custom},
-				{"Create Clouds", "Clouds", 3, ModelType::Custom},
-				{"Create Ocean", "Ocean", 3, ModelType::Custom},
-                {"Create Square", "Square", 2, ModelType::Custom},
-                {"Create Circle", "Circle", 2, ModelType::Custom},
-                {"Create Tilemap", "Tilemap", 2, ModelType::Custom},
-                {"Create Camera", "Camera", 1, ModelType::Custom}
+                {"Create Empty", "GameObject", 1, true, ModelType::Custom},
+                {"Create Cube", "Cube", 3, true, ModelType::Cube},
+                {"Create Cylinder", "Cylinder", 3, true, ModelType::Cylinder},
+                {"Create Sphere", "Sphere", 3, true, ModelType::Sphere},
+                {"Create Plane", "Plane", 3, true, ModelType::Plane},
+                {"Create Cone", "Cone", 3, true, ModelType::Cone},
+				{"Create Terrain", "Terrain", 3, false, ModelType::Custom},
+                {"Create Light", "Light", 3, true, ModelType::Custom},
+				{"Create Skybox", "Skybox", 3, false, ModelType::Custom},
+				{"Create Clouds", "Clouds", 3, false, ModelType::Custom},
+				{"Create Ocean", "Ocean", 3, false, ModelType::Custom},
+                {"Create Square", "Square", 2, true, ModelType::Custom},
+                {"Create Circle", "Circle", 2, true, ModelType::Custom},
+                {"Create Tilemap", "Tilemap", 2, true, ModelType::Custom},
+                {"Create Camera", "Camera", 1, true, ModelType::Custom}
             };
 
             static const std::vector<GuiObjectItem> menuGUIObjects = {
@@ -5739,7 +5740,7 @@ void Editor::RenderHierarchy()
 				{"Create Button", "Button"}
 			 };
 
-            ObjectItem objectToCreate = {"", "", 0, ModelType::Custom};
+            ObjectItem objectToCreate = {"", "", 0, false, ModelType::Custom};
             
             for (const ObjectItem& item : menuObjects)
             {
@@ -5803,7 +5804,16 @@ void Editor::RenderHierarchy()
                 hierarchyObjectClicked = true;
 
                 GameObject* gameObject = SceneManager::GetActiveScene()->AddGameObject();
-                gameObject->transform.SetPosition({ 0,0,0 });
+                if (guiObjectToCreate.name.empty() && objectToCreate.spawnAtCamera)
+                {
+					Vector3 spawnPos = ProjectManager::projectData.is3D
+                        ? Vector3{ camera.position.x, camera.position.y, camera.position.z }
+					    : Vector3{ camera.position.x, camera.position.y, 0.0f };
+
+                    gameObject->transform.SetPosition(spawnPos);
+                }
+                else
+                    gameObject->transform.SetPosition({ 0,0,0 });
                 gameObject->transform.SetScale({ 1,1,1 });
                 gameObject->transform.SetRotation(Quaternion::Identity());
                 gameObject->SetName(objectToCreate.name + guiObjectToCreate.name);
