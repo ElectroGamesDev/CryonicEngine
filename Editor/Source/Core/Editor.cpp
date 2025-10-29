@@ -3710,11 +3710,26 @@ void Editor::RenderScriptCreateWin()
                 return;
             }
 
-            // Todo: This path will not work if the user is not in visual studio
             std::filesystem::path miscPath = "resources/Scripting";
             std::string presetType = ProjectManager::projectData.is3D ? "3D" : "2D";
-            std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".h"), fileExplorerPath / (name + ".h"));
-            std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".cpp"), fileExplorerPath / (name + ".cpp"));
+			try
+			{
+				std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".h"), fileExplorerPath / (name + ".h"), std::filesystem::copy_options::overwrite_existing);
+			}
+			catch (const std::filesystem::filesystem_error& e)
+			{
+				ConsoleLogger::ErrorLog("Failed to create script: " + std::string(e.what()));
+			}
+
+			try
+			{
+				std::filesystem::copy_file(miscPath / ("ScriptPreset " + presetType + ".cpp"), fileExplorerPath / (name + ".cpp"), std::filesystem::copy_options::overwrite_existing);
+			}
+			catch (const std::filesystem::filesystem_error& e)
+			{
+				ConsoleLogger::ErrorLog("Failed to create script: " + std::string(e.what()));
+			}
+
 
             // Replace "ScriptPreset" with the script name in the .cpp and .h
             auto ReplaceInFile = [&name](const std::filesystem::path& filePath) {
