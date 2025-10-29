@@ -16,8 +16,6 @@ void SetupScriptComponent(GameObject* gameObject, int id, bool active, std::stri
 
 bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path buildPath)
 {
-    // Todo: Find all scripts in path other than just in the Scripts folder
-
     //std::filesystem::copy_file(std::filesystem::path(__FILE__), buildPath / "Components" / "ScriptLoader.cpp");
     //std::filesystem::copy_file(std::filesystem::path(__FILE__).parent_path() / "ScriptLoader.h", buildPath / "Components" / "ScriptLoader.h");
 
@@ -25,6 +23,8 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
 
     std::vector<std::string> scriptNames;
     std::vector<std::filesystem::path> paths;
+
+    std::filesystem::remove_all(buildPath / "Components" / "Custom"); // Removes the directory, else it will keep deleted scripts
 
     std::filesystem::create_directories(buildPath / "Components" / "Custom");
 
@@ -103,6 +103,11 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
             //    }
             //    lines.push_back(line);
             //}
+
+            // Added this since the lines above have been commented out
+            // Todo: We can likely just return true at the end of the if statement above
+			fileIn.close();
+            continue;
         }
 
         fileIn.close();
