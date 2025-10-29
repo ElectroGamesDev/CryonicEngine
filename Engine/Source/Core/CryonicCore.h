@@ -414,3 +414,5 @@ Vector3 QuaternionToEuler(Quaternion quaternion);
 void NormalizeEuler(Vector3& euler);
 float GetDeltaTime();
 float GetFixedDeltaTime();
+float Clamp(float value, float min, float max);
+float Lerp(float start, float end, float amount);

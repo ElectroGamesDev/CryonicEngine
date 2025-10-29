@@ -82,3 +82,19 @@ float GetFixedDeltaTime()
 {
     return fixedDeltaTime;
 }
+
+float Clamp(float value, float min, float max)
+{
+	float result = (value < min) ? min : value;
+
+	if (result > max) result = max;
+
+	return result;
+}
+
+float Lerp(float start, float end, float amount)
+{
+	float result = start + amount * (end - start);
+
+	return result;
+}
