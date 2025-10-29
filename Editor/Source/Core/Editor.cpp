@@ -1147,7 +1147,28 @@ void Editor::UpdateViewport()
         movingObjectY = movingObjectX = movingObjectZ = false;
 
     if (ProjectManager::projectData.is3D && gridVisible)
-        RaylibWrapper::DrawGrid(100, 10.0f);
+    {
+        // Size
+        float distance = RaylibWrapper::Vector3Distance(camera.position, { 0,0,0 });
+		distance = Clamp(distance, 0.0f, 10000.0f);
+
+		float gridSize = Lerp(100.0f, 5000.0f, distance / 1000.0f);
+		gridSize = Clamp(gridSize, 100.0f, 5000.0f);
+
+        // Spacing
+		float gridSpacing = 10;
+
+		if (camera.position.y > 200.0f)
+            gridSpacing = 100.0f;
+
+		if (camera.position.y > 1000.0f)
+            gridSpacing = 500.0f;
+
+		if (camera.position.y > 2000.0f)
+            gridSpacing = 1000.0f;
+
+		RaylibWrapper::DrawGrid((int)(gridSize / gridSpacing), gridSpacing);
+    }
 
     deltaTime = RaylibWrapper::GetFrameTime();
 
