@@ -105,7 +105,7 @@ bool BuildScripts(std::filesystem::path projectPath, std::filesystem::path build
             //}
 
             // Added this since the lines above have been commented out
-            // Todo: We can likely just return true at the end of the if statement above
+            // Todo: We can likely just remove the for loop and just setup the ScriptLoader.
 			fileIn.close();
             continue;
         }
