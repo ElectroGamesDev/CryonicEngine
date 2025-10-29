@@ -12,6 +12,12 @@
 #include "Components/Rendering/SpriteRenderer.h"
 #include "Components/Rendering/Lighting.h"
 #include "Components/Rendering/Skybox.h"
+#include "Components/Rendering/Clouds.h"
+#include "Components/Rendering/Ocean.h"
+#include "Components/Rendering/ParticleRenderer.h"
+#include "Components/Rendering/Terrain.h"
+#include "Components/Rendering/TilemapRenderer.h"
+#include "Components/Rendering/CanvasRenderer.h"
 
 // Physics
 #include "Components/Physics/Collider2D.h"
@@ -25,7 +31,6 @@
 #include "Components/UI/Label.h"
 #include "Components/UI/Image.h"
 #include "Components/UI/Button.h"
-#include "Components/UI/CanvasRenderer.h"
 
 // Misc
 #include "Components/Component.h"
