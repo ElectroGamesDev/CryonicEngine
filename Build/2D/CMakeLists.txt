@@ -56,8 +56,8 @@ else()
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 endif()
 
-# Add all subdirectories under Source/Components as include directories
-file(GLOB_RECURSE COMPONENT_DIRS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/Source/Components/*)
+# Add all subdirectories Source as include directories
+file(GLOB_RECURSE COMPONENT_DIRS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/*)
 
 foreach(dir ${COMPONENT_DIRS})
     if (IS_DIRECTORY ${dir})
