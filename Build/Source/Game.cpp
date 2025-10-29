@@ -1,22 +1,22 @@
 #include "Game.h"
 #include <iostream>
-#include "ConsoleLogger.h"
-#include "Scenes/SceneManager.h"
+#include "Utilities/ConsoleLogger.h"
+#include "Systems/Scene/SceneManager.h"
 #include "Components/Component.h"
-#include "Components/CameraComponent.h"
-#include "Components/SpriteRenderer.h"
-#include "Components/Lighting.h"
-#include "Components/Skybox.h"
-#include "Components/Clouds.h"
-#include "Components/Ocean.h"
-#include "AudioClip.h"
-#include "ShaderManager.h"
-#include "RaylibModelWrapper.h"
-#include "RaylibWrapper.h"
-#include "RenderableTexture.h"
-#include "ShadowManager.h"
-#include "Material.h"
-#include "MenuManager.h"
+#include "Components/Misc/CameraComponent.h"
+#include "Components/Rendering/SpriteRenderer.h"
+#include "Components/Rendering/Lighting.h"
+#include "Components/Rendering/Skybox.h"
+#include "Components/Rendering/Clouds.h"
+#include "Components/Rendering/Ocean.h"
+#include "Resources/AudioClip.h"
+#include "Systems/Rendering/ShaderManager.h"
+#include "Raylib/RaylibWrapper.h"
+#include "Raylib/RaylibModelWrapper.h"
+#include "Systems/Rendering/RenderableTexture.h"
+#include "Systems/Rendering/ShadowManager.h"
+#include "Resources/Material.h"
+#include "Systems/UI/MenuManager.h"
 #ifdef WINDOWS
 // Prevent Windows from defining conflicting functions
 #define NOGDI
@@ -27,33 +27,33 @@
 #elif WEB
 #include <emscripten/emscripten.h>
 #include <unordered_set>
-#include "InputSystem.h"
+#include "Systems/Input/InputSystem.h"
 #endif
-#include "imgui_internal.h"
-#include "FontManager.h"
+#include "ThirdParty/imgui/imgui_internal.h"
+#include "Utilities/FontManager.h"
 #include <vector>
 
-#include "CollisionListener2D.h"
-#include "Physics2DDebugDraw.h"
+#include "Systems/Physics/CollisionListener2D.h"
+#include "Systems/Physics/Physics2DDebugDraw.h"
 
 #ifdef IS3D
 #define JPH_DEBUG_RENDERER
 #include <thread>
-#include "Jolt/Jolt.h"
-#include "Jolt/Core/Factory.h"
-#include "Jolt/Core/TempAllocator.h"
-#include "Jolt/Core/JobSystemThreadPool.h"
-#include "Jolt/Renderer/DebugRenderer.h"
-#include "Jolt/Physics/Body/BodyManager.h"
-#include "Components/Rigidbody3D.h"
-#include "Physics3DDebugDraw.h"
-#include "CollisionListener3D.h"
+#include <Jolt/Jolt.h>
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Renderer/DebugRenderer.h>
+#include <Jolt/Physics/Body/BodyManager.h>
+#include "Components/Physics/Rigidbody3D.h"
+//#include "Systems/Physics/Physics3DDebugDraw.h"
+#include "Systems/Physics/CollisionListener3D.h"
 JPH_SUPPRESS_WARNINGS
 
 JPH::PhysicsSystem physicsSystem;
 CollisionListener3D collisionListener3D;
 JPH::TempAllocatorMalloc* tempAllocator;
-Physics3DDebugDraw* debugRenderer;
+//Physics3DDebugDraw* debugRenderer;
 JPH::JobSystemThreadPool jobSystem;
 JPH::BodyManager::DrawSettings bodyDrawSettings;
 #endif
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
 
 	Rigidbody3D::bodyLockInterface = &physicsSystem.GetBodyLockInterface();
 
-	debugRenderer = new Physics3DDebugDraw();
+	//debugRenderer = new Physics3DDebugDraw();
 	//JPH::DebugRenderer::sInstance = debugRenderer;
 	bodyDrawSettings.mDrawGetSupportFunction = true;
 	bodyDrawSettings.mDrawShape = true;
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
 	ShadowManager::UnloadShaders();
     RaylibWrapper::CloseWindow();
 #ifdef IS3D
-	delete debugRenderer;
+	//delete debugRenderer;
 	delete tempAllocator;
 	JPH::UnregisterTypes();
 	delete JPH::Factory::sInstance;
@@ -514,12 +514,12 @@ void MainLoop()
 #ifdef IS2D
 	//world->DebugDraw();
 #else
-	if (CameraComponent::main != nullptr)
-		debugRenderer->SetCameraPos(JPH::RVec3(
-			CameraComponent::main->gameObject->transform.GetPosition().x,
-			CameraComponent::main->gameObject->transform.GetPosition().y,
-			CameraComponent::main->gameObject->transform.GetPosition().z
-		));
+	//if (CameraComponent::main != nullptr)
+	//	debugRenderer->SetCameraPos(JPH::RVec3(
+	//		CameraComponent::main->gameObject->transform.GetPosition().x,
+	//		CameraComponent::main->gameObject->transform.GetPosition().y,
+	//		CameraComponent::main->gameObject->transform.GetPosition().z
+	//	));
 
 	//physicsSystem.DrawBodies(bodyDrawSettings, debugRenderer);
 #endif

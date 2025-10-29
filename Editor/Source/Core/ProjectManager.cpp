@@ -919,13 +919,13 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
 
     HANDLE hStdoutRead, hStdoutWrite;
     bool pipeCreated = true;
-
+    
     if (!CreatePipe(&hStdoutRead, &hStdoutWrite, &saAttr, 0))
     {
         ConsoleLogger::ErrorLog("Failed to create pipe for MinGW Make");
         pipeCreated = false;
     }
-
+    
     // Crating a process and running MinGW Make
     
     //system(("mingw32-make -j" + std::to_string(static_cast<int>(std::round(Utilities::GetNumberOfCores() * 1))) + " PLATFORM=PLATFORM_DESKTOP").c_str());
@@ -1030,7 +1030,8 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
             }
 
             if (ConsoleLogger::showDebugMessages)
-                ConsoleLogger::InfoLog("Build - Output: " + line, true);
+				std::cout << buffer;
+                //ConsoleLogger::InfoLog("Build - Output: " + line, true);
         }
     }
 

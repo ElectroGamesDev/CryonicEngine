@@ -26,24 +26,21 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 endif()
 
+
 add_library(raylib STATIC IMPORTED)
-set_target_properties(raylib PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/libraylib-d.a")
+set_target_properties(raylib PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/ThirdParty/raylib/lib/libraylib-d.a")
 
 add_library(box2d STATIC IMPORTED)
-set_target_properties(box2d PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/box2d/libbox2d-d.a")
+set_target_properties(box2d PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/ThirdParty/box2d/lib/libbox2d-d.a")
 
 #add_library(jolt STATIC IMPORTED)
-#set_target_properties(jolt PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/Jolt/libJolt-d.a")
+#set_target_properties(jolt PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Source/ThirdParty/Jolt/libJolt-d.a")
 
-file(GLOB SOURCE_FILES
-    Source/*.cpp
-    Source/*.h
-    Source/Scenes/*.cpp
-    Source/Scenes/*.h
-    Source/Components/*.cpp
-    Source/Components/*.h
-    Source/box2d/*.h
-    Source/Jolt/*.h
+file(GLOB_RECURSE SOURCE_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_SOURCE_DIR}/Source/*.cpp
+	${CMAKE_SOURCE_DIR}/Source/*.c
+    ${CMAKE_SOURCE_DIR}/Source/*.h
 )
 
 if ("${PLATFORM}" STREQUAL "WINDOWS")
@@ -69,7 +66,23 @@ else()
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE WINDOWS) # This will break web builds. It doesn't work if I put it within an if () like the one above. It also does't work if I put it in the command. For some reason 2D builds compile fine without this
+#target_compile_definitions(${PROJECT_NAME} PRIVATE WINDOWS) # This will break web builds. It doesn't work if I put it within an if () like the one above. It also does't work if I put it in the command. For some reason 2D builds compile fine without this
+
+# Add all subdirectories Source as include directories
+file(GLOB_RECURSE COMPONENT_DIRS LIST_DIRECTORIES true ${CMAKE_SOURCE_DIR}/*)
+
+foreach(dir ${COMPONENT_DIRS})
+    if (IS_DIRECTORY ${dir})
+        target_include_directories(${PROJECT_NAME} PRIVATE ${dir})
+    endif()
+endforeach()
+
+# Base include directories
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/Source
+    ${CMAKE_SOURCE_DIR}/Source/Components
+    ${CMAKE_SOURCE_DIR}/ThirdParty
+)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
     -w
@@ -77,7 +90,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wno-unused-variable
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/Source) # This is for Jolt since it uses #include <> to include local headers. The code below does not fix this issue.
+#include_directories(${CMAKE_SOURCE_DIR}/Source) # This is for Jolt since it uses #include <> to include local headers. The code below does not fix this issue.
 #include_directories(${CMAKE_SOURCE_DIR}/Source/Jolt)
 #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Jolt)
 
@@ -86,6 +99,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     NAME="${PROJECT_NAME}" 
     ${PLATFORM}
 )
+
+# Compile and include Jolt. The pre-compiled version does not work as it has a "version mismatch" error
 
 # Add Jolt-specific compile definitions
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -113,7 +128,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USE_FMADD=ON
 )
 
-# Include Jolt. The pre-compiled version does not work as it has a "version mismatch" error
+# Only build the jolt library. This isn't actually working since they get re-enabled in Jolt's CMakeLists.txt
+set(JPH_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(JPH_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(JPH_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(JPH_DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
+#set(JPH_DEBUG_RENDERER OFF CACHE BOOL "" FORCE)
+
 FetchContent_Declare(
         JoltPhysics
         GIT_REPOSITORY "https://github.com/jrouwe/JoltPhysics"
@@ -123,12 +144,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JoltPhysics)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${JoltPhysics_SOURCE_DIR}/..)
-target_link_libraries(${PROJECT_NAME} PRIVATE Jolt)
 
 if("${PLATFORM}" STREQUAL "WINDOWS")
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib box2d winmm) # Jolt needs to be re-added once I fix compiling with the prebuild
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib box2d Jolt winmm)
 else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib box2d)
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib box2d Jolt)
 endif()
 
 if ("${PLATFORM}" STREQUAL "WEB")

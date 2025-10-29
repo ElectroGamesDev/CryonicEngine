@@ -3,14 +3,14 @@
 #if !defined(EDITOR)
 // Todo: Remove unnecessary includes.
 #include "Game.h"
-#include "ThirdParty/Jolt/RegisterTypes.h"
-#include "ThirdParty/Jolt/Physics/PhysicsSystem.h"
-#include "ThirdParty/Jolt/Physics/Collision/Shape/BoxShape.h"
-#include "ThirdParty/Jolt/Physics/Collision/Shape/SphereShape.h"
-#include "ThirdParty/Jolt/Physics/Collision/Shape/CapsuleShape.h"
-#include "ThirdParty/Jolt/Physics/Collision/Shape/EmptyShape.h"
-#include "ThirdParty/Jolt/Physics/Body/BodyCreationSettings.h"
-#include "ThirdParty/Jolt/Physics/Body/BodyActivationListener.h"
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/EmptyShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Body/BodyActivationListener.h>
 
 JPH::BodyInterface* Rigidbody3D::bodyInterface = nullptr;
 const JPH::BodyLockInterface* Rigidbody3D::bodyLockInterface = nullptr;

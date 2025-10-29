@@ -1,10 +1,5 @@
-#if defined (EDITOR)
-#include "../../RaylibWrapper.h"
-#else
-#include "RaylibWrapper.h"
-#endif
-
-#include "external/glad.h"
+#include "Raylib/RaylibWrapper.h"
+#include "ThirdParty/raylib/include/external/glad.h"
 #include <thread>
 #include <atomic>
 #include <vector>

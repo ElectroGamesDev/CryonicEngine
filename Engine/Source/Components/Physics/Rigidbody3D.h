@@ -4,9 +4,15 @@
 #include "Collider3D.h"
 #include <deque>
 #include <unordered_map>
+#if defined (EDITOR)
 #include "ThirdParty/Jolt/Jolt.h"
 #include "ThirdParty/Jolt/Physics/Collision/Shape/MutableCompoundShape.h"
 #include "ThirdParty/Jolt/Physics/PhysicsSystem.h"
+#else
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#endif
 
 // Put in here so they can be accessed by Rigidbody3D.cpp and Game.cpp
 namespace Layers

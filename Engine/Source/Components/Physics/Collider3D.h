@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Components/Component.h"
+#if defined (EDITOR)
 #include "ThirdParty/Jolt/Jolt.h"
-#include "ThirdParty/Jolt/RegisterTypes.h"
 #include "ThirdParty/Jolt/RegisterTypes.h"
 #include "ThirdParty/Jolt/Physics/PhysicsSettings.h"
 #include "ThirdParty/Jolt/Physics/PhysicsSystem.h"
@@ -15,6 +15,21 @@
 #include "ThirdParty/Jolt/Physics/Collision/Shape/PlaneShape.h"
 #include "ThirdParty/Jolt/Physics/Body/BodyCreationSettings.h"
 #include "ThirdParty/Jolt/Physics/Body/BodyActivationListener.h"
+#else
+#include <Jolt/Jolt.h>
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/CompoundShape.h>
+#include <Jolt/Geometry/Plane.h>
+#include <Jolt/Physics/Collision/Shape/PlaneShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Body/BodyActivationListener.h>
+#endif
 
 class Rigidbody3D;
 
