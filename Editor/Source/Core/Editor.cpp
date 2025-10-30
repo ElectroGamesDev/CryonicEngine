@@ -1535,8 +1535,8 @@ void Editor::RenderContentBrowser() // Todo: Handle if path is in a now deleted 
                 };
 
                 std::map<std::string, FileTypeData> fileTypes = {
-                    {".cpp", {"CppIcon", Other, [&]() { std::system(("\"" + entry.path().string() + "\"").c_str()); }}},
-                    {".h", {"HeaderIcon", Other, [&]() { std::system(("\"" + entry.path().string() + "\"").c_str()); }}},
+					{".cpp", {"CppIcon", Other, [&]() { std::system(("code \"" + (ProjectManager::projectData.path / ".vscode" / "Project.code-workspace").string() + "\" -g \"" + entry.path().string() + "\"").c_str()); }}},
+					{".h",   {"HeaderIcon", Other, [&]() { std::system(("code \"" + (ProjectManager::projectData.path / ".vscode" / "Project.code-workspace").string() + "\" -g \"" + entry.path().string() + "\"").c_str()); }}},
                     {".mp3", {"SoundIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},
                     {".wav", {"SoundIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},
                     {".ogg", {"SoundIcon", Other, [&]() { handleDataFileDoubleClick(DataFileTypes::Sound); }}},

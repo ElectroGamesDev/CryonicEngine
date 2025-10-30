@@ -116,7 +116,10 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
     }
 
     CopyApiFiles(projectData.path / "api"); // This is used for scripting autocompletion and stuff. I should find a way to just use the /api in the Engine directory
-    // Todo: copy internal shaders
+    
+    // Copy Visual Studio Code config files
+	std::filesystem::create_directories(projectData.path / ".vscode");
+    std::filesystem::copy(std::filesystem::path("resources") / "Scripting" / "VSC Configs", projectData.path / ".vscode");
 
     switch (projectData.templateData._template)
     {

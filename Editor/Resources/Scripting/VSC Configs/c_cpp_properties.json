@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Project",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "EDITOR",
+				"IS3D"
+            ],
+            "compilerPath": "C:/Program Files/LLVM/bin/clang++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
