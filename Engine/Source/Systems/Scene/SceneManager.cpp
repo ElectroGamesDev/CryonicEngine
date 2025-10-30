@@ -512,20 +512,25 @@ bool SceneManager::LoadScene(std::filesystem::path filePath)
                     gameObject->SetParent(go);
                     break;
                 }
-
-#if !defined(EDITOR)
-        if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
-            continue;
-        for (Component* component : gameObject->GetComponents())
-        {
-            if (!component->IsActive())
-                continue;
-
-            component->Start();
-            component->startCalled = true;
-        }
-#endif
     }
+
+    // This must be in a different loop than the one above in case the Start() function accesses the GameObject's children
+#if !defined(EDITOR)
+	for (GameObject* gameObject : scene.GetGameObjects())
+	{
+		if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
+			continue;
+
+		for (Component* component : gameObject->GetComponents())
+		{
+			if (!component->IsActive())
+				continue;
+
+			component->Start();
+			component->startCalled = true;
+		}
+	}
+#endif
 
     ConsoleLogger::InfoLog("The scene \"" + filePath.stem().string() + "\" has been loaded");
 
