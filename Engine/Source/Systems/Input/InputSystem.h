@@ -194,7 +194,6 @@ public:
 	static Vector2 mousePos;
 	static Vector2 deltaPos;
     static float mouseWheelMove;
-    // MUST ADD SCROLL, EVEN THOUGH THERE'S NO SET SCROLL, FAKE IT
 
     // This is used because mouse inputs don't work on web if the input happens between BeginDrawing() and EndDrawing(). Edit: This has been commented out because it appears to work without it, and the Raylib wiki may be out of date
 //#ifdef WEB
