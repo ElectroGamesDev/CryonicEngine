@@ -115,7 +115,7 @@ int ProjectManager::CreateProject(ProjectData projectData) // Todo: Add try-catc
         file.close();
     }
 
-    CopyApiFiles(projectData.path / "api");
+    CopyApiFiles(projectData.path / "api"); // This is used for scripting autocompletion and stuff. I should find a way to just use the /api in the Engine directory
     // Todo: copy internal shaders
 
     switch (projectData.templateData._template)
@@ -610,7 +610,7 @@ bool ProjectManager::PrepareBuild(std::string platform, std::string& projectName
     }
     std::filesystem::remove_all(projectData.path / "api");
 
-    CopyApiFiles(projectData.path / "api"); // Todo: I don't think this is needed anymore since we're storing the api files in the game engine path. Will likely need to change this when creating a project too
+    CopyApiFiles(projectData.path / "api"); // This is used for scripting autocompletion and stuff
     CopyApiFiles(buildPath);
 
     // Delete "Resources" directory since it's only used for the Editor
