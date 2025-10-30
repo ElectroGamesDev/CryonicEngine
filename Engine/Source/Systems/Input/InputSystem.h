@@ -1,8 +1,7 @@
 #pragma once
 
-#ifdef WEB
 #include <unordered_set>
-#endif
+#include "Core/CryonicCore.h"
 
 enum KeyboardKey
 {
@@ -147,12 +146,32 @@ enum GamepadButton {
     GAMEPAD_BUTTON_RIGHT_THUMB          // Gamepad joystick pressed button right
 };
 
+// Mouse cursor
+enum MouseCursor {
+    MOUSE_CURSOR_DEFAULT = 0,     // Default pointer shape
+    MOUSE_CURSOR_ARROW = 1,     // Arrow shape
+    MOUSE_CURSOR_IBEAM = 2,     // Text writing cursor shape
+    MOUSE_CURSOR_CROSSHAIR = 3,     // Cross shape
+    MOUSE_CURSOR_POINTING_HAND = 4,     // Pointing hand cursor
+    MOUSE_CURSOR_RESIZE_EW = 5,     // Horizontal resize/move arrow shape
+    MOUSE_CURSOR_RESIZE_NS = 6,     // Vertical resize/move arrow shape
+    MOUSE_CURSOR_RESIZE_NWSE = 7,     // Top-left to bottom-right diagonal resize/move arrow shape
+    MOUSE_CURSOR_RESIZE_NESW = 8,     // The top-right to bottom-left diagonal resize/move arrow shape
+    MOUSE_CURSOR_RESIZE_ALL = 9,     // The omnidirectional resize/move cursor shape
+    MOUSE_CURSOR_NOT_ALLOWED = 10     // The operation-not-allowed shape
+};
+
 class Keyboard
 {
 public:
     static bool IsKeyPressed(KeyboardKey key);
     static bool IsKeyReleased(KeyboardKey key);
     static bool IsKeyDown(KeyboardKey key);
+
+    // Hide in api
+    static std::unordered_set<KeyboardKey> keyPressed;
+	static std::unordered_set<KeyboardKey> keyReleased;
+	static std::unordered_set<KeyboardKey> keyDown;
 };
 
 class Mouse
@@ -161,6 +180,21 @@ public:
     static bool IsButtonPressed(MouseButton key);
     static bool IsButtonReleased(MouseButton key);
     static bool IsButtonDown(MouseButton key);
+    static void SetPosition(Vector2 pos);
+    static Vector2 GetPosition();
+    static Vector2 GetDelta();
+    static void SetMouseScale(Vector2 scale);
+    static void SetMouseCursor(MouseCursor cursor);
+    static float GetMouseWheelMove();
+
+	// Hide in api
+	static std::unordered_set<MouseButton> buttonPressed;
+	static std::unordered_set<MouseButton> buttonReleased;
+	static std::unordered_set<MouseButton> buttonDown;
+	static Vector2 mousePos;
+	static Vector2 deltaPos;
+    static float mouseWheelMove;
+    // MUST ADD SCROLL, EVEN THOUGH THERE'S NO SET SCROLL, FAKE IT
 
     // This is used because mouse inputs don't work on web if the input happens between BeginDrawing() and EndDrawing(). Edit: This has been commented out because it appears to work without it, and the Raylib wiki may be out of date
 //#ifdef WEB
@@ -177,5 +211,10 @@ public:
     static bool IsButtonPressed(GamepadButton key);
     static bool IsButtonReleased(GamepadButton key);
     static bool IsButtonDown(GamepadButton key);
+
+	// Hide in api
+	static std::unordered_set<GamepadButton> buttonPressed;
+	static std::unordered_set<GamepadButton> buttonReleased;
+	static std::unordered_set<GamepadButton> buttonDown;
 };
 
