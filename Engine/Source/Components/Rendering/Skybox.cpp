@@ -13,9 +13,10 @@
 std::vector<CameraComponent*> Skybox::cameras;
 std::vector<Skybox*> Skybox::skyboxes;
 
-void Skybox::Awake()
+void Skybox::Start()
 {
 	// Todo: Use Events instead. Make sure to have an event for when they are destroyed too
+	// This must go in Start() since the scene may not be created yet in Awake()
 	for (GameObject* go : SceneManager::GetActiveScene()->GetGameObjects())
 	{
 		CameraComponent* camera = go->GetComponent<CameraComponent>();

@@ -69,7 +69,7 @@ public:
 	}
 
 	// Hide everything from API
-	void Awake() override;
+	void Start() override;
 	void Update() override;
 #if defined(EDITOR)
 	void EditorUpdate() override;
