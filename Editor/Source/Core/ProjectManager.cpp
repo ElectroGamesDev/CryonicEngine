@@ -1770,7 +1770,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 
     // Todo: Put components in relative paths to the Assets/, this will fix the issues with determining whether a component is internal or external
     // Todo: If a component in one scene as the same ID as a component in another scene, it will cause issues.
-    for (Scene& scene : *SceneManager::GetScenes()) // Todo: Only iterate the scenes that are set to be built
+    for (Scene& scene : *SceneManager::GetScenes()) // Todo: Only iterate the scenes that are set to be built. Also, this is only iterating loaded scenes
     {
         for (GameObject* gameObject : scene.GetGameObjects())
         {
@@ -1782,7 +1782,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
                     if (scriptComponent->exposedVariables.is_null())
                         continue;
 
-                    components[scriptComponent->GetHeaderPath()][scriptComponent->id] = scriptComponent->exposedVariables;
+                    components[path / "Components" / "Custom" / scriptComponent->GetHeaderPath()][scriptComponent->id] = scriptComponent->exposedVariables;
                 }
                 else
                 {
@@ -1795,7 +1795,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
 					{
 						if (entry.is_regular_file() && entry.path().stem() == _component->name)
 						{
-                            if (entry.path().extension() != ".h" && entry.path().extension() != ".cpp" && entry.path().extension() != ".c")
+                            if (entry.path().extension() != ".h")
                                 continue;
 
 							std::string relativePath = std::filesystem::relative(entry.path(), path).string();
@@ -1831,7 +1831,7 @@ void ProjectManager::GenerateExposedVariablesFunctions(std::filesystem::path pat
         // Todo: This will not work if a function has "{" before class declaration, such as in variables or in a comment
 
         // Create function in header
-        std::ifstream headerFile(fullPath / component.first.filename());
+        std::ifstream headerFile(fullPath);
         if (!headerFile.is_open())
         {
             continue;
