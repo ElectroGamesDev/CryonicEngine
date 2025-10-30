@@ -75,7 +75,7 @@ bool Mouse::IsButtonPressed(MouseButton button)
 #if !defined(EDITOR)
 	if (isPlayMode)
 	{
-		if (buttonPressed.find(key) != buttonPressed.end())
+		if (buttonPressed.find(button) != buttonPressed.end())
 			return true;
 
 		return false;
@@ -94,7 +94,7 @@ bool Mouse::IsButtonReleased(MouseButton button)
 #if !defined(EDITOR)
 	if (isPlayMode)
 	{
-		if (buttonReleased.find(key) != buttonReleased.end())
+		if (buttonReleased.find(button) != buttonReleased.end())
 			return true;
 
 		return false;
@@ -106,6 +106,25 @@ bool Mouse::IsButtonReleased(MouseButton button)
 //#else
 	return IsMouseButtonReleasedWrapper(static_cast<int>(button));
 //#endif
+}
+
+bool Mouse::IsButtonDown(MouseButton button)
+{
+#if !defined(EDITOR)
+	if (isPlayMode)
+	{
+		if (buttonDown.find(button) != buttonDown.end())
+			return true;
+
+		return false;
+	}
+#endif
+
+	//#ifdef WEB
+	//	return buttonsDown.find(button) != buttonsDown.end();
+	//#else
+	return IsMouseButtonDownWrapper(static_cast<int>(button));
+	//#endif
 }
 
 void Mouse::SetPosition(Vector2 pos)
@@ -120,7 +139,7 @@ Vector2 Mouse::GetPosition()
 		return mousePos;
 #endif
 
-	std::array<int, 2> pos = GetMousePositionWrapper();
+	std::array<float, 2> pos = GetMousePositionWrapper();
 	return { pos[0], pos[1] };
 
 }
@@ -132,7 +151,7 @@ Vector2 Mouse::GetDelta()
 		return deltaPos;
 #endif
 
-	std::array<int, 2> pos = GetMouseDeltaWrapper();
+	std::array<float, 2> pos = GetMouseDeltaWrapper();
 	return { pos[0], pos[1] };
 }
 
@@ -154,25 +173,6 @@ float Mouse::GetMouseWheelMove()
 #endif
 
 	return GetMouseWheelMoveWrapper();
-}
-
-bool Mouse::IsButtonDown(MouseButton button)
-{
-#if !defined(EDITOR)
-	if (isPlayMode)
-	{
-		if (buttonDown.find(key) != buttonDown.end())
-			return true;
-
-		return false;
-	}
-#endif
-
-//#ifdef WEB
-//	return buttonsDown.find(button) != buttonsDown.end();
-//#else
-	return IsMouseButtonDownWrapper(static_cast<int>(button));
-//#endif
 }
 
 // Gamepad
