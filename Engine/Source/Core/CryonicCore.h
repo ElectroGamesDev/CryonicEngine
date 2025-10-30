@@ -161,126 +161,6 @@ struct Vector2
     static Vector2 Right() { return { 1.0f, 0.0f }; }
 };
 
-
-struct Vector3
-{
-	float x;
-	float y;
-    float z;
-
-    Vector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
-
-    Vector3 Normalize()
-    {
-        float magnitudeSquared = x * x + y * y + z * z;
-
-        if (magnitudeSquared < 1e-6f)
-            return { 0, 0, 0 };
-
-        float invMagnitude = 1.0f / sqrt(magnitudeSquared); // Todo: Consider using rsqrt as it's faster
-
-        x *= invMagnitude;
-        y *= invMagnitude;
-        z *= invMagnitude;
-
-        return { x, y, z };
-    }
-
-    Vector3 operator+(const Vector3& other) const {
-        return { x + other.x, y + other.y, z + other.z };
-    }
-
-    Vector3 operator-(const Vector3& other) const {
-        return { x - other.x, y - other.y, z - other.z };
-    }
-
-    Vector3 operator*(float scalar) const {
-        return { x * scalar, y * scalar, z * scalar };
-    }
-    Vector3 operator*(const Vector3& other) const {
-        return { x * other.x, y * other.y, z * other.z };
-    }
-
-    Vector3 operator/(float scalar) const {
-        if (scalar != 0.0f)
-            return { x / scalar, y / scalar, z / scalar };
-        else
-            return { 0.0f, 0.0f, 0.0f }; // Todo: Send error
-    }
-
-    Vector3 operator/(const Vector3& other) const {
-        if (other.x == 0 || other.y == 0 || other.z == 0) {
-            // Todo: Send error
-            return { 0.0f, 0.0f, 0.0f };
-        }
-
-        return { x / other.x, y / other.y, z / other.z };
-    }
-
-    Vector3& operator+=(const Vector3& other) {
-        x += other.x;
-        y += other.y;
-        z += other.z;
-        return *this;
-    }
-
-    Vector3& operator-=(const Vector3& other) {
-        x -= other.x;
-        y -= other.y;
-        z -= other.z;
-        return *this;
-    }
-
-    Vector3& operator*=(float scalar) {
-        x *= scalar;
-        y *= scalar;
-        z *= scalar;
-        return *this;
-    }
-
-    Vector3& operator*=(const Vector3& other) {
-        x *= other.x;
-        y *= other.y;
-        z *= other.z;
-        return *this;
-    }
-
-    Vector3& operator/=(float scalar) {
-        if (scalar != 0.0f) {
-            x /= scalar;
-            y /= scalar;
-            z /= scalar;
-        }
-        return *this;
-    }
-
-    Vector3& operator/=(const Vector3& other) {
-        if (other.x != 0.0f && other.y != 0.0f && other.z != 0.0f) {
-            x /= other.x;
-            y /= other.y;
-            z /= other.z;
-        }
-        return *this;
-    }
-
-    bool operator==(const Vector3& other) const {
-        return x == other.x && y == other.y && z == other.z;
-    }
-
-    bool operator!=(const Vector3& other) const {
-        return !(*this == other);
-    }
-
-    static Vector3 Forward() { return { 0.0f, 0.0f, 1.0f }; }
-    static Vector3 Backward() { return { 0.0f, 0.0f, -1.0f }; }
-    static Vector3 Up() { return { 0.0f, 1.0f, 0.0f }; }
-    static Vector3 Down() { return { 0.0f, -1.0f, 0.0f }; }
-    static Vector3 Right() { return { 1.0f, 0.0f, 0.0f }; }
-    static Vector3 Left() { return { -1.0f, 0.0f, 0.0f }; }
-
-    bool Zero() { return x == 0.0f && y == 0.0f && z == 0.0f; }
-};
-
 struct Vector4 {
     float x;
     float y;
@@ -288,6 +168,17 @@ struct Vector4 {
     float w;
 
     Vector4(float x = 0.0f, float y = 0.0f, float z = 0.0f, float w = 0.0f) : x(x), y(y), z(z), w(w) {}
+
+	Vector4 Normalize() const
+	{
+		const float mag_squared = x * x + y * y + z * z + w * w;
+
+		if (mag_squared < 1e-12f)
+			return { 0, 0, 0, 1 };
+
+		const float inv_mag = 1.0f / sqrtf(mag_squared);
+		return { x * inv_mag, y * inv_mag, z * inv_mag, w * inv_mag };
+	}
 
     Vector4 operator+(const Vector4& other) const {
         return { x + other.x, y + other.y, z + other.z, w + other.w };
@@ -406,6 +297,141 @@ struct Vector4 {
 };
 
 typedef Vector4 Quaternion;
+
+struct Vector3
+{
+	float x;
+	float y;
+	float z;
+
+	Vector3(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
+
+	Vector3 Normalize()
+	{
+		float magnitudeSquared = x * x + y * y + z * z;
+
+		if (magnitudeSquared < 1e-6f)
+			return { 0, 0, 0 };
+
+		float invMagnitude = 1.0f / sqrt(magnitudeSquared); // Todo: Consider using rsqrt as it's faster
+
+		x *= invMagnitude;
+		y *= invMagnitude;
+		z *= invMagnitude;
+
+		return { x, y, z };
+	}
+
+	Vector3 Cross(const Vector3& other) const
+	{
+		return {
+			y * other.z - z * other.y,
+			z * other.x - x * other.z,
+			x * other.y - y * other.x
+		};
+	}
+
+	Vector3 operator+(const Vector3& other) const {
+		return { x + other.x, y + other.y, z + other.z };
+	}
+
+	Vector3 operator-(const Vector3& other) const {
+		return { x - other.x, y - other.y, z - other.z };
+	}
+
+	Vector3 operator*(float scalar) const {
+		return { x * scalar, y * scalar, z * scalar };
+	}
+	Vector3 operator*(const Vector3& other) const {
+		return { x * other.x, y * other.y, z * other.z };
+	}
+
+	Vector3 operator*(const Quaternion& q) const
+	{
+		Vector3 qv(q.x, q.y, q.z);
+		Vector3 t = qv.Cross(*this) * 2.0f;
+		return *this + t * q.w + qv.Cross(t);
+	}
+
+	Vector3 operator/(float scalar) const {
+		if (scalar != 0.0f)
+			return { x / scalar, y / scalar, z / scalar };
+		else
+			return { 0.0f, 0.0f, 0.0f }; // Todo: Send error
+	}
+
+	Vector3 operator/(const Vector3& other) const {
+		if (other.x == 0 || other.y == 0 || other.z == 0) {
+			// Todo: Send error
+			return { 0.0f, 0.0f, 0.0f };
+		}
+
+		return { x / other.x, y / other.y, z / other.z };
+	}
+
+	Vector3& operator+=(const Vector3& other) {
+		x += other.x;
+		y += other.y;
+		z += other.z;
+		return *this;
+	}
+
+	Vector3& operator-=(const Vector3& other) {
+		x -= other.x;
+		y -= other.y;
+		z -= other.z;
+		return *this;
+	}
+
+	Vector3& operator*=(float scalar) {
+		x *= scalar;
+		y *= scalar;
+		z *= scalar;
+		return *this;
+	}
+
+	Vector3& operator*=(const Vector3& other) {
+		x *= other.x;
+		y *= other.y;
+		z *= other.z;
+		return *this;
+	}
+
+	Vector3& operator/=(float scalar) {
+		if (scalar != 0.0f) {
+			x /= scalar;
+			y /= scalar;
+			z /= scalar;
+		}
+		return *this;
+	}
+
+	Vector3& operator/=(const Vector3& other) {
+		if (other.x != 0.0f && other.y != 0.0f && other.z != 0.0f) {
+			x /= other.x;
+			y /= other.y;
+			z /= other.z;
+		}
+		return *this;
+	}
+
+	bool operator==(const Vector3& other) const {
+		return x == other.x && y == other.y && z == other.z;
+	}
+
+	bool operator!=(const Vector3& other) const {
+		return !(*this == other);
+	}
+
+	static Vector3 Forward() { return { 0.0f, 0.0f, 1.0f }; }
+	static Vector3 Backward() { return { 0.0f, 0.0f, -1.0f }; }
+	static Vector3 Up() { return { 0.0f, 1.0f, 0.0f }; }
+	static Vector3 Down() { return { 0.0f, -1.0f, 0.0f }; }
+	static Vector3 Right() { return { 1.0f, 0.0f, 0.0f }; }
+	static Vector3 Left() { return { -1.0f, 0.0f, 0.0f }; }
+
+	bool Zero() { return x == 0.0f && y == 0.0f && z == 0.0f; }
+};
 
 Vector3 RotateVector3ByQuaternion(Vector3 vector, Quaternion quaternion);
 Quaternion EulerToQuaternion(float roll, float pitch, float yaw);
