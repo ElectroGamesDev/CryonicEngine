@@ -827,7 +827,11 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
             "-DGAME_DESCRIPTION=\"" + projectData.description + "\" "
             "-DCOPYRIGHT=\"" + copyright + "\" "
             "-DCMAKE_C_COMPILER=\"C:/Program Files/LLVM/bin/clang.exe\" "
-            "-DCMAKE_CXX_COMPILER=\"C:/Program Files/LLVM/bin/clang++.exe\" ";
+            "-DCMAKE_CXX_COMPILER=\"C:/Program Files/LLVM/bin/clang++.exe\" "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=1 "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=1 "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES=1 "
+			"-DCMAKE_NINJA_FORCE_RESPONSE_FILE=1 "; // This is not working
     }
     else
     {
@@ -839,7 +843,10 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
             "-DGAME_VERSION_2=\"" + version2 + "\" "
             "-DCOMPANY_NAME=\"" + projectData.company + "\" "
             "-DGAME_DESCRIPTION=\"" + projectData.description + "\" "
-            "-DCOPYRIGHT=\"" + copyright + "\" ";
+            "-DCOPYRIGHT=\"" + copyright + "\" "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=1 "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=1 "
+			"-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES=1 ";
     }
 
     if (useCcache)
