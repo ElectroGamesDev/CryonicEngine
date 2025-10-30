@@ -180,6 +180,16 @@ struct Vector4 {
 		return { x * inv_mag, y * inv_mag, z * inv_mag, w * inv_mag };
 	}
 
+	Vector4 Inverse() const
+	{
+		float magSq = x * x + y * y + z * z + w * w;
+		if (magSq < 1e-8f)
+			return { 0, 0, 0, 1 };
+
+		float invMagSq = 1.0f / magSq;
+		return { -x * invMagSq, -y * invMagSq, -z * invMagSq,  w * invMagSq };
+	}
+
     Vector4 operator+(const Vector4& other) const {
         return { x + other.x, y + other.y, z + other.z, w + other.w };
     }
