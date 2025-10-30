@@ -981,7 +981,7 @@ bool ProjectManager::BuildToWindows(ProjectData projectData, bool debug, std::fu
             break;
         else if (waitResult != WAIT_TIMEOUT)
         {
-            ConsoleLogger::ErrorLog("Build - Failed to compile game");
+            ConsoleLogger::ErrorLog("\nBuild - Failed to compile game");
             ImGuiPopup::SetActive(false);
             callback(0, debug);
             if (pipeCreated)
