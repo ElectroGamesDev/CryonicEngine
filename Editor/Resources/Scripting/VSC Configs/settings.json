@@ -1,4 +1,5 @@
 {
+	"C_Cpp.errorSquiggles": "Enabled",
     "files.associations": {
         "*.embeddedhtml": "html",
         "unordered_map": "cpp"
