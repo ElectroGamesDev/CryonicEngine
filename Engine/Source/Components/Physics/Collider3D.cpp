@@ -65,19 +65,37 @@ void Collider3D::CreateShape()
 		case Box:
 		{
 			JPH::BoxShapeSettings shape({ (gameObject->transform.GetScale().x * 3 * size.x / 2) / 3, (gameObject->transform.GetScale().y * 3 * size.y / 2) / 3, (gameObject->transform.GetScale().z * 3 * size.z / 2) / 3 });
-			joltShape = shape.Create().Get();
+			auto result = shape.Create();
+			if (!result.IsValid())
+			{
+				ConsoleLogger::ErrorLog(std::string("Failed to create Jolt Box shape on the game object\"" + gameObject->GetName() + "\". Error: ") + result.GetError().c_str());
+				return;
+			}
+			joltShape = result.Get();
 			break;
 		}
 		case Sphere:
 		{
 			JPH::SphereShapeSettings shape((gameObject->transform.GetScale().x * size.x) / 2.0f);
-			joltShape = shape.Create().Get();
+			auto result = shape.Create();
+			if (!result.IsValid())
+			{
+				ConsoleLogger::ErrorLog(std::string("Failed to create Sphere shape on the game object\"" + gameObject->GetName() + "\". Error: ") + result.GetError().c_str());
+				return;
+			}
+			joltShape = result.Get();
 			break;
 		}
 		case Plane:
 		{
 			JPH::BoxShapeSettings shape({ (gameObject->transform.GetScale().x * 3 * size.x / 2) / 3, 0.06f, (gameObject->transform.GetScale().z * 3 * size.z / 2) / 3 });
-			joltShape = shape.Create().Get();
+			auto result = shape.Create();
+			if (!result.IsValid())
+			{
+				ConsoleLogger::ErrorLog(std::string("Failed to create Plane shape on the game object\"" + gameObject->GetName() + "\". Error: ") + result.GetError().c_str());
+				return;
+			}
+			joltShape = result.Get();
 			// Todo: Implementan actual plane
 			//JPH::Plane plane({ 0.0f, 1.0f, 0.0f }, distanceFromOrigin); // First parameter is the plane normal, the second parameter is confusing
 			//plane = plane.Scaled({ (gameObject->transform.GetScale().x * 3 * size.x / 2) / 3, 1, (gameObject->transform.GetScale().z * 3 * size.z / 2) / 3 });
@@ -91,7 +109,13 @@ void Collider3D::CreateShape()
 			float height = gameObject->transform.GetScale().y * size.y;
 
 			JPH::CylinderShapeSettings shape(height, radius);
-			joltShape = shape.Create().Get();
+			auto result = shape.Create();
+			if (!result.IsValid())
+			{
+				ConsoleLogger::ErrorLog(std::string("Failed to create Jolt Cylinder shape on the game object\"" + gameObject->GetName() + "\". Error: ") + result.GetError().c_str());
+				return;
+			}
+			joltShape = result.Get();
 			break;
 		}
 		case Cone: // Todo: This needs to be changed to use a mesh shape
@@ -100,7 +124,13 @@ void Collider3D::CreateShape()
 			float height = gameObject->transform.GetScale().y * size.y / 2; 
 
 			JPH::CylinderShapeSettings shape(height, radius);
-			joltShape = shape.Create().Get();
+			auto result = shape.Create();
+			if (!result.IsValid())
+			{
+				ConsoleLogger::ErrorLog(std::string("Failed to create Jolt Cylinder shape on the game object\"" + gameObject->GetName() + "\". Error: ") + result.GetError().c_str());
+				return;
+			}
+			joltShape = result.Get();
 			break;
 		}
 	}
