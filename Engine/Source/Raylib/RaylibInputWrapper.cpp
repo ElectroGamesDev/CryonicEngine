@@ -34,6 +34,38 @@ bool IsMouseButtonDownWrapper(int button)
 	return IsMouseButtonDown(button);
 }
 
+void SetMousePositionWrapper(int x, int y)
+{
+	SetMousePosition(x, y);
+}
+
+std::array<int, 2> GetMousePositionWrapper()
+{
+	Vector2 pos = GetMousePosition();
+	return { (int)pos.x, (int)pos.y };
+}
+
+std::array<int, 2> GetMouseDeltaWrapper()
+{
+	Vector2 pos = GetMouseDelta();
+	return { (int)pos.x, (int)pos.y };
+}
+
+void SetMouseScaleWrapper(float x, float y)
+{
+	SetMouseScale(x, y);
+}
+
+void SetMouseCursorWrapper(int cursor)
+{
+	SetMouseCursor(cursor);
+}
+
+float GetMouseWheelMoveWrapper()
+{
+	return GetMouseWheelMove();
+}
+
 
 // Gamepad
 bool IsGamepadButtonPressedWrapper(int button)
