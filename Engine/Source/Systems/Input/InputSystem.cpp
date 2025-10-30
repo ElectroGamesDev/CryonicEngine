@@ -185,7 +185,7 @@ bool Gamepad::IsButtonPressed(GamepadButton button)
 #if !defined(EDITOR)
 	if (isPlayMode)
 	{
-		if (buttonPressed.find(key) != buttonPressed.end())
+		if (buttonPressed.find(button) != buttonPressed.end())
 			return true;
 
 		return false;
