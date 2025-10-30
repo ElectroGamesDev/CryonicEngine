@@ -200,7 +200,7 @@ bool Gamepad::IsButtonReleased(GamepadButton button)
 #if !defined(EDITOR)
 	if (isPlayMode)
 	{
-		if (buttonReleased.find(key) != buttonReleased.end())
+		if (buttonReleased.find(button) != buttonReleased.end())
 			return true;
 
 		return false;
@@ -215,7 +215,7 @@ bool Gamepad::IsButtonDown(GamepadButton button)
 #if !defined(EDITOR)
 	if (isPlayMode)
 	{
-		if (buttonDown.find(key) != buttonDown.end())
+		if (buttonDown.find(button) != buttonDown.end())
 			return true;
 
 		return false;
