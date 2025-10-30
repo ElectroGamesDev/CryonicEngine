@@ -372,6 +372,12 @@ GameObject* GameObject::GetChild(int index)
 
 GameObject* GameObject::FindChild(std::string name)
 {
+    for (GameObject* child : childGameObjects)
+    {
+        if (child->GetName() == name)
+            return child;
+    }
+
     return nullptr;
 }
 
