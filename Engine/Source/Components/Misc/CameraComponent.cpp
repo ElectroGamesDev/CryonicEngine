@@ -6,7 +6,6 @@
 #include "Core/Editor.h"
 #endif
 #include "Systems/Rendering/ShadowManager.h"
-#include <iostream> // Todo: Remove
 
 CameraComponent* CameraComponent::main = nullptr;
 
@@ -34,7 +33,7 @@ CameraComponent::CameraComponent(GameObject* obj, int id) : Component(obj, id)
 	Vector3 pos = gameObject->transform.GetPosition();
 	raylibCamera.SetPosition(pos.x, pos.y, pos.z);
 
-	Vector3 target = gameObject->transform.GetPosition() + RotateVector3ByQuaternion({ 0,0,1 }, gameObject->transform.GetRotation());
+	Vector3 target = pos + gameObject->transform.GetRotation().Forward();
 	raylibCamera.SetTarget(target.x, target.y, target.z);
 
 	// Todo: Near Plane
@@ -52,10 +51,10 @@ void CameraComponent::LateUpdate()
 		main = this;
 
 	Vector3 pos = gameObject->transform.GetPosition();
-	raylibCamera.SetPosition(pos.x, pos.y, pos.z);
+	Vector3 forward = gameObject->transform.GetRotation().Forward();
 
-	Vector3 target = pos + gameObject->transform.GetRotation().Forward();
-	raylibCamera.SetTarget(target.x, target.y, target.z);
+	raylibCamera.SetPosition(pos.x, pos.y, pos.z);
+	raylibCamera.SetTarget((pos + forward).x, (pos + forward).y, (pos + forward).z);
 }
 
 void CameraComponent::Destroy()
