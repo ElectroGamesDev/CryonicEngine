@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <iostream>
 
 extern float deltaTime;
 extern float fixedDeltaTime;
@@ -54,6 +55,8 @@ enum BodyType
     Kinematic,
     Static
 };
+
+struct Vector3;
 
 struct Vector2
 {
@@ -189,6 +192,14 @@ struct Vector4 {
 		float invMagSq = 1.0f / magSq;
 		return { -x * invMagSq, -y * invMagSq, -z * invMagSq,  w * invMagSq };
 	}
+
+
+    Vector3 Forward() const;
+	Vector3 Backward() const;
+	Vector3 Up() const;
+	Vector3 Down() const;
+	Vector3 Right() const;
+	Vector3 Left() const;
 
     Vector4 operator+(const Vector4& other) const {
         return { x + other.x, y + other.y, z + other.z, w + other.w };
@@ -358,9 +369,9 @@ struct Vector3
 
 	Vector3 operator*(const Quaternion& q) const
 	{
-		Vector3 qv(q.x, q.y, q.z);
-		Vector3 t = qv.Cross(*this) * 2.0f;
-		return *this + t * q.w + qv.Cross(t);
+		Vector3 qvec(q.x, q.y, q.z);
+		Vector3 t = this->Cross(qvec) * 2.0f;
+		return *this + (t * q.w) + qvec.Cross(t);
 	}
 
 	Vector3 operator/(float scalar) const {
@@ -442,6 +453,52 @@ struct Vector3
 
 	bool Zero() { return x == 0.0f && y == 0.0f && z == 0.0f; }
 };
+
+
+inline Vector3 Vector4::Forward() const
+{
+	return Vector3{
+		2.0f * (x * z + w * y),
+		2.0f * (y * z - w * x),
+		1.0f - 2.0f * (x * x + y * y)
+	}.Normalize();
+}
+
+inline Vector3 Vector4::Backward() const
+{
+	return Forward() * -1.0f;
+}
+
+inline Vector3 Vector4::Up() const
+{
+	return Vector3{
+		2.0f * (x * y - w * z),
+		1.0f - 2.0f * (x * x + z * z),
+		2.0f * (y * z + w * x)
+	}.Normalize();
+}
+
+inline Vector3 Vector4::Down() const
+{
+	return Up() * -1.0f;
+}
+
+inline Vector3 Vector4::Right() const
+{
+	return Vector3{
+		1.0f - 2.0f * (y * y + z * z),
+		2.0f * (x * y + w * z),
+		2.0f * (x * z - w * y)
+	}.Normalize();
+}
+
+inline Vector3 Vector4::Left() const
+{
+	return Right() * -1.0f;
+}
+
+std::ostream& operator<<(std::ostream& os, const Vector3& v);
+std::ostream& operator<<(std::ostream& os, const Quaternion& q);
 
 Vector3 RotateVector3ByQuaternion(Vector3 vector, Quaternion quaternion);
 Quaternion EulerToQuaternion(float roll, float pitch, float yaw);
