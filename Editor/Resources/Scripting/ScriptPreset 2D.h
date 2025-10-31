@@ -33,6 +33,9 @@ public:
 	// Called at fixed time intervals for physics-related logic
 	// void FixedUpdate() override;
 	
+	// Called once per frame after all Update() calls
+	// void LateUpdate() override;
+	
 	// Called when the component or gameobject is enabled/activated
     // void Enable() override;
 
