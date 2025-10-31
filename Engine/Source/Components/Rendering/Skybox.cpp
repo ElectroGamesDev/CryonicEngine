@@ -115,7 +115,7 @@ void Skybox::EditorUpdate()
 {
 	if (!setupInEditor)
 	{
-		Awake();
+		Start();
 		setupInEditor = true;
 	}
 
