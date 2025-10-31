@@ -6,6 +6,7 @@
 #include "Core/Editor.h"
 #endif
 #include "Systems/Rendering/ShadowManager.h"
+#include <iostream> // Todo: Remove
 
 CameraComponent* CameraComponent::main = nullptr;
 
@@ -45,20 +46,16 @@ void CameraComponent::Start()
     main = this;
 }
 
-void CameraComponent::Update()
+void CameraComponent::LateUpdate()
 {
 	if (main == nullptr)
-	{
 		main = this;
-		//ShadowManager::SetCamera(raylibCamera);
-	}
 
 	Vector3 pos = gameObject->transform.GetPosition();
 	raylibCamera.SetPosition(pos.x, pos.y, pos.z);
 
-	Vector3 target = gameObject->transform.GetPosition() + RotateVector3ByQuaternion({ 0,0,1 }, gameObject->transform.GetRotation());
+	Vector3 target = pos + gameObject->transform.GetRotation().Forward();
 	raylibCamera.SetTarget(target.x, target.y, target.z);
-    //camera.target = Vector3Add(gameObject->transform.GetPosition(), Vector3RotateByQuaternion({0,0,1}, gameObject->transform.GetRotation()));
 }
 
 void CameraComponent::Destroy()
@@ -74,7 +71,6 @@ void CameraComponent::EditorUpdate()
     {
         setMain = true;
         main = this;
-		//ShadowManager::SetCamera(raylibCamera);
     }
 
 	RaylibWrapper::Vector2 pos = RaylibWrapper::GetWorldToScreen({ gameObject->transform.GetPosition().x, gameObject->transform.GetPosition().y, gameObject->transform.GetPosition().z }, Editor::camera);
@@ -84,6 +80,8 @@ void CameraComponent::EditorUpdate()
 
 	RaylibWrapper::Draw3DBillboard(Editor::camera, *IconManager::imageTextures["CameraGizmoIcon"],
 		{ gameObject->transform.GetPosition().x, gameObject->transform.GetPosition().y, gameObject->transform.GetPosition().z }, 0.5f, { 255, 255, 255, 150 });
+
+	LateUpdate();
 }
 #endif
 
