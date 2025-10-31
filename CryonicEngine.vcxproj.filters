@@ -226,6 +226,9 @@
     <Filter Include="Source Files\Editor\ThirdParty\imnodes">
       <UniqueIdentifier>{46e28320-62c6-47e4-b017-e6629d0daee8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Engine\Source\Systems\RuntimeComm">
+      <UniqueIdentifier>{6284d585-7f6f-4cc3-aaca-7d1a6458ac97}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Components\Component.h">
@@ -519,6 +522,12 @@
     <ClInclude Include="Editor\Source\Windows\ParticleEditor.h">
       <Filter>Header Files\Editor\Source\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Systems\RuntimeComm\SharedInput.h">
+      <Filter>Header Files\Engine\Source\Systems\RuntimeComm</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Source\Systems\RuntimeComm\SharedInputWriter.h">
+      <Filter>Header Files\Editor\Source\Systems\RuntimeComm</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Components\Component.cpp">
@@ -772,6 +781,9 @@
     </ClCompile>
     <ClCompile Include="Editor\Source\Windows\ParticleEditor.cpp">
       <Filter>Source Files\Editor\Source\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Source\Systems\RuntimeComm\SharedInputWriter.cpp">
+      <Filter>Source Files\Editor\Source\Systems\RuntimeComm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

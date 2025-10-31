@@ -24,6 +24,7 @@
     <ClInclude Include="Editor\Source\Core\ProjectManager.h" />
     <ClInclude Include="Editor\Source\Systems\FileWatcher\FileWatcher.h" />
     <ClInclude Include="Editor\Source\Systems\RuntimeComm\AsyncPBODisplay.h" />
+    <ClInclude Include="Editor\Source\Systems\RuntimeComm\SharedInputWriter.h" />
     <ClInclude Include="Editor\Source\Systems\VisualScripting\EventSheetSystem.h" />
     <ClInclude Include="Editor\Source\Tools\Scripting\ScriptHeaderGenerator.h" />
     <ClInclude Include="Editor\Source\Utilities\Utilities.h" />
@@ -108,6 +109,7 @@
     <ClInclude Include="Engine\Source\Systems\Rendering\RenderableTexture.h" />
     <ClInclude Include="Engine\Source\Systems\Rendering\ShaderManager.h" />
     <ClInclude Include="Engine\Source\Systems\Rendering\ShadowManager.h" />
+    <ClInclude Include="Engine\Source\Systems\RuntimeComm\SharedInput.h" />
     <ClInclude Include="Engine\Source\Systems\Scene\Scene.h" />
     <ClInclude Include="Engine\Source\Systems\Scene\SceneManager.h" />
     <ClInclude Include="Engine\Source\Systems\UI\MenuManager.h" />
@@ -123,6 +125,7 @@
     <ClCompile Include="Editor\Source\Core\ProjectManager.cpp" />
     <ClCompile Include="Editor\Source\Systems\FileWatcher\FileWatcher.cpp" />
     <ClCompile Include="Editor\Source\Systems\RuntimeComm\AsyncPBODisplay.cpp" />
+    <ClCompile Include="Editor\Source\Systems\RuntimeComm\SharedInputWriter.cpp" />
     <ClCompile Include="Editor\Source\Tools\Scripting\ScriptHeaderGenerator.cpp" />
     <ClCompile Include="Editor\Source\Utilities\Utilities.cpp" />
     <ClCompile Include="Editor\Source\Windows\AssetManager.cpp" />

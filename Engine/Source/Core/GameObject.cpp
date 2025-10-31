@@ -1,9 +1,10 @@
-#include "Core/GameObject.h"
+﻿#include "Core/GameObject.h"
 #include "Systems/Scene/SceneManager.h"
 #include "Utilities/ConsoleLogger.h"
 #include <cstdlib>
 #include <ctime>
 #include "Components/Component.h"
+#include <iostream>
 
 std::vector<GameObject*> GameObject::markedForDeletion;
 bool GameObject::markForDeletion = false;
@@ -330,28 +331,93 @@ bool GameObject::IsChild(GameObject& gameObject, GameObject* parent)
 
 }
 
-void GameObject::SetParent(GameObject* gameObject)
+void GameObject::SetParent(GameObject* newParent)
 {
-    // Todo: Set Local and Global position/rotation/scale
+	std::cout << "\n=== CALLING SetParent ===" << std::endl;
+	std::cout << "Child ID: " << id << std::endl;
+	std::cout << "New Parent ID: " << (newParent ? newParent->id : -1) << std::endl;
 
-    if (parentGameObject != nullptr && gameObject != nullptr && gameObject->GetId() == parentGameObject->GetId())
-        return;
+	if (newParent == parentGameObject)
+		return;
 
-    if (parentGameObject != nullptr)
-        parentGameObject->childGameObjects.erase(std::remove(parentGameObject->childGameObjects.begin(), parentGameObject->childGameObjects.end(), this), parentGameObject->childGameObjects.end());
+	Vector3 worldPos = transform.GetPosition();
+	Quaternion worldRotQ = transform.GetRotation();
+	Vector3 worldScale = transform.GetScale();
 
-    if (gameObject != nullptr && childGameObjects.size() > 0 && IsChild(*gameObject))
-        gameObject->SetParent(parentGameObject);
+	std::cout << "Child world pos (before reparent): " << worldPos << std::endl;
+	std::cout << "Child world rot (before reparent): " << worldRotQ << std::endl;
+	std::cout << "Child world scale (before reparent): " << worldScale << std::endl;
 
-    parentGameObject = gameObject;
-    if (parentGameObject != nullptr) // If its nullptr, then the game object will become a root game object.
-    {
-        parentGameObject->childGameObjects.push_back(this);
-        if (!parentGameObject->active || !parentGameObject->globalActive)
-            SetGlobalActive(false);
-    }
-    else if (!IsGlobalActive())
-        SetGlobalActive(true);
+
+	if (parentGameObject != nullptr)
+	{
+		auto& siblings = parentGameObject->childGameObjects;
+		siblings.erase(std::remove(siblings.begin(), siblings.end(), this), siblings.end());
+	}
+
+	parentGameObject = newParent;
+
+	if (parentGameObject != nullptr)
+		parentGameObject->childGameObjects.push_back(this);
+
+	if (parentGameObject)
+	{
+		Transform& parentTransform = parentGameObject->transform;
+		Vector3 parentPos = parentTransform.GetPosition();
+		Quaternion parentRotQ = parentTransform.GetRotation();
+		Vector3 parentScale = parentTransform.GetScale();
+
+		Quaternion invParentRot = parentRotQ.Inverse();
+
+		// Compute local position
+		Vector3 offset = worldPos - parentPos;
+		Vector3 localPos = offset * invParentRot;
+		if (parentScale.x != 0) localPos.x /= parentScale.x;
+		if (parentScale.y != 0) localPos.y /= parentScale.y;
+		if (parentScale.z != 0) localPos.z /= parentScale.z;
+
+		// Compute local rotation (quaternion)
+		Quaternion localRotQ = invParentRot * worldRotQ;
+
+		// Compute local euler from local quaternion
+		Vector3 localEulerRot = QuaternionToEuler(localRotQ) * RAD2DEG;
+		NormalizeEuler(localEulerRot);
+
+		// Compute local scale
+		Vector3 localScale;
+		if (parentScale.x != 0) localScale.x = worldScale.x / parentScale.x;
+		else localScale.x = 0;
+		if (parentScale.y != 0) localScale.y = worldScale.y / parentScale.y;
+		else localScale.y = 0;
+		if (parentScale.z != 0) localScale.z = worldScale.z / parentScale.z;
+		else localScale.z = 0;
+
+		transform._localPosition = localPos;
+		transform._position = worldPos;
+		transform._localRotation = localRotQ;
+		transform._rotation = worldRotQ;
+		transform._localEulerRotation = localEulerRot;
+#ifdef EDITOR
+		transform._eulerRotation = QuaternionToEuler(worldRotQ) * RAD2DEG;
+		NormalizeEuler(transform._eulerRotation);
+#endif
+		transform._localScale = localScale;
+		transform._scale = worldScale;
+	}
+	else
+	{
+		transform._localPosition = worldPos;
+		transform._position = worldPos;
+		transform._localRotation = worldRotQ;
+		transform._rotation = worldRotQ;
+		transform._localEulerRotation = QuaternionToEuler(worldRotQ) * RAD2DEG;
+		NormalizeEuler(transform._localEulerRotation);
+#ifdef EDITOR
+		transform._eulerRotation = transform._localEulerRotation;
+#endif
+		transform._localScale = worldScale;
+		transform._scale = worldScale;
+	}
 }
 
 GameObject* GameObject::GetParent()

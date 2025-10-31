@@ -3,12 +3,18 @@
 #include <array>
 #include "Raylib/RaylibWrapper.h"
 
+struct Camera3D;
+
 class RaylibCamera
 {
 public:
+	RaylibCamera();
+	~RaylibCamera();
+
 	void SetFOVY(int y);
 	float GetFOVY();
 	void SetUpY(int amount);
+	void SetUp(float x, float y, float z);
 	void SetPosition(int x, int y, int z);
 	void SetPositionX(int x);
 	void SetPositionY(int y);
@@ -21,4 +27,7 @@ public:
 	void BeginMode3D();
 	RaylibWrapper::Matrix GetCameraMatrix();
 	std::array<float, 2> GetWorldToScreen(float x, float y, float z);
+
+private:
+	Camera3D* camera;
 };

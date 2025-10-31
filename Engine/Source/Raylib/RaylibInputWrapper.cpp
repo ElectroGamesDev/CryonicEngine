@@ -39,16 +39,16 @@ void SetMousePositionWrapper(int x, int y)
 	SetMousePosition(x, y);
 }
 
-std::array<int, 2> GetMousePositionWrapper()
+std::array<float, 2> GetMousePositionWrapper()
 {
 	Vector2 pos = GetMousePosition();
-	return { (int)pos.x, (int)pos.y };
+	return { pos.x, pos.y };
 }
 
-std::array<int, 2> GetMouseDeltaWrapper()
+std::array<float, 2> GetMouseDeltaWrapper()
 {
 	Vector2 pos = GetMouseDelta();
-	return { (int)pos.x, (int)pos.y };
+	return { pos.x, pos.y };
 }
 
 void SetMouseScaleWrapper(float x, float y)

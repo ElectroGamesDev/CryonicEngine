@@ -56,6 +56,7 @@
 #include "Windows/PrefabEditor.h"
 #include "Core/MainThreadQueue.h"
 #include "Tools/Scripting/ScriptHeaderGenerator.h"
+#include "Systems/RuntimeComm/SharedInputWriter.h"
 
 //#define STB_IMAGE_IMPLEMENTATION
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -167,6 +168,7 @@ bool gridVisible = true;
 
 RaylibModel materialPreviewMesh;
 bool playModeActive = false;
+bool gameWindowFocused = false;
 Utilities::JobHandle playModeJobHandle;
 
 std::unordered_map<std::filesystem::path, std::pair<RaylibWrapper::Texture, float>> cachedTextures; // The float is the GetTime() since the texture was last used
@@ -177,6 +179,8 @@ enum Tool
     Rotate,
     Scale
 }; Tool toolSelected = Move;
+
+SharedInputWriter sharedInputWriter;
 
 // Todo: Move this to another class
 RaylibWrapper::RenderTexture2D* Editor::CreateModelPreview(std::filesystem::path modelPath, int textureSize)
@@ -801,6 +805,48 @@ void Editor::RenderGameView()
             // Flip the Y-axis
             RaylibWrapper::Rectangle src = { 0, texture.height, (float)texture.width, -float(texture.height) };
             rlImGuiImageRect(&texture, width, height, src);
+
+			ImGuiWindow* window = ImGui::FindWindowByName((ICON_FA_GAMEPAD + std::string(" Game")).c_str());
+			if (gameWindowFocused || (ImGui::IsWindowHovered() && window != NULL && window->DockNode != NULL && window->DockNode->TabBar != NULL &&
+                window->DockNode->TabBar->SelectedTabId == window->TabId && RaylibWrapper::IsMouseButtonPressed(RaylibWrapper::MOUSE_BUTTON_LEFT)))
+			{
+                if (!gameWindowFocused)
+                    gameWindowFocused = true;
+				else if (
+					(RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_LEFT_SHIFT) &&
+						RaylibWrapper::IsKeyDown(RaylibWrapper::KEY_ESCAPE)) ||
+					(RaylibWrapper::IsMouseButtonPressed(RaylibWrapper::MOUSE_BUTTON_LEFT) &&
+						(!ImGui::IsWindowHovered() || // Todo: Implement a function that checks if a window is hovered instead of doing this is so many places
+							(window != NULL &&
+								window->DockNode != NULL &&
+								window->DockNode->TabBar != NULL &&
+								window->DockNode->TabBar->SelectedTabId != window->TabId)))
+					)
+				    {
+					    gameWindowFocused = false;
+				    }
+
+
+                if (gameWindowFocused)
+                {
+                    // Todo: Make to to set the mouse position relative to the game. Like if the mouse is edge of the game view window, then make it edge of real game window
+					sharedInputWriter.SendInputFrame();
+                }
+
+                // Todo: We would need to get from the Game to see if the cursor is disabled or hidden
+				//if (!gameWindowFocused)
+				//{
+				//	gameWindowFocused = true;
+				//	RaylibWrapper::ShowCursor();
+				//	RaylibWrapper::EnableCursor();
+				//}
+    //            else
+    //            {
+				//	gameWindowFocused = false;
+				//	RaylibWrapper::ShowCursor();
+				//	RaylibWrapper::EnableCursor();
+    //            }
+			}
         }
         else
         {
@@ -6065,6 +6111,7 @@ void Editor::EnterPlayMode()
                 if (result.first.empty())
                 {
                     asyncPBODisplay.ConnectToSharedMemory();
+                    sharedInputWriter.Connect();
                     playModeActive = true;
                     playModeJobHandle = result.second;
 
@@ -6108,6 +6155,11 @@ void Editor::ExitPlayMode()
     Utilities::TerminateJob(playModeJobHandle);
     playModeJobHandle = nullptr;
     asyncPBODisplay.Disconnect();
+    sharedInputWriter.Disconnect();
+
+    gameWindowFocused = false;
+    RaylibWrapper::ShowCursor();
+    RaylibWrapper::EnableCursor();
 }
 
 void Editor::Render()
@@ -6618,6 +6670,7 @@ void Editor::CleanupCache()
 
 void Editor::Cleanup()
 {
+    ExitPlayMode();
     IconManager::Cleanup();
     ShaderManager::Cleanup();
     AssetManager::Cleanup();

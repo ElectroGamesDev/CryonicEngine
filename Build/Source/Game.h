@@ -6,3 +6,4 @@
 extern std::filesystem::path exeParent;
 
 extern b2World* world;
+extern bool isPlayMode;

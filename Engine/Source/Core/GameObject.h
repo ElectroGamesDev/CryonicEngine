@@ -164,34 +164,55 @@ public:
 
     struct Transform
     {
+        friend class GameObject;
+
 		void SetPosition(Vector3 position)
         {
-			Vector3 delta = position - _position;
-			_position = position;
+			if (!gameObject->parentGameObject)
+			{
+				_position = position;
+				_localPosition = _position;
+				return;
+			}
 
-			for (GameObject* child : gameObject->childGameObjects)
-				child->transform.SetPosition(child->transform.GetPosition() + delta);
+			Transform& parent = gameObject->parentGameObject->transform;
+
+			Vector3 offset = position - parent.GetPosition();
+			Vector3 local = offset * parent.GetRotation().Inverse();
+			Vector3 parentScale = parent.GetScale();
+
+			if (parentScale.x != 0)
+                local.x /= parentScale.x;
+
+			if (parentScale.y != 0)
+                local.y /= parentScale.y;
+
+			if (parentScale.z != 0)
+                local.z /= parentScale.z;
+
+			_localPosition = local;
+            _position = position;
 		}
         void SetPosition(Vector2 position) { SetPosition({position.x, position.y, _position.z}); }
         void SetPosition(float x, float y, float z) { SetPosition({ x, y, z }); }
         void SetPosition(float x, float y) { SetPosition({ x, y,  _position.z }); }
-        Vector3 GetPosition() { return _position; }
+
+        Vector3 GetPosition()
+        {
+			if (!gameObject->parentGameObject)
+				return _localPosition;
+
+			Transform& parent = gameObject->parentGameObject->transform;
+			Vector3 scaled = _localPosition * parent.GetScale();
+			Vector3 rotated = scaled * parent.GetRotation();
+
+			return parent.GetPosition() + rotated;
+        }
 
 		void SetLocalPosition(Vector3 position)
-        {
-			if (gameObject->parentGameObject == nullptr)
-            {
-				SetPosition(position);
-				return;
-			}
-
-			Vector3 parentScale = gameObject->parentGameObject->transform.GetScale();
-			Vector3 scaled;
-			scaled.x = position.x * parentScale.x;
-			scaled.y = position.y * parentScale.y;
-			scaled.z = position.z * parentScale.z;
-			Vector3 worldOffset = scaled * gameObject->parentGameObject->transform.GetRotation();
-			SetPosition(gameObject->parentGameObject->transform.GetPosition() + worldOffset);
+		{
+			_localPosition = position;
+			_position = GetPosition();
 		}
 
 		void SetLocalPosition(Vector2 position)
@@ -202,22 +223,7 @@ public:
         void SetLocalPosition(float x, float y, float z) { SetLocalPosition({ x, y, z }); }
         void SetLocalPosition(float x, float y) { SetLocalPosition({ x, y,  GetLocalPosition().z }); }
 
-		Vector3 GetLocalPosition()
-        {
-			if (gameObject->parentGameObject == nullptr)
-				return _position;
-
-			Vector3 offset = _position - gameObject->parentGameObject->transform.GetPosition();
-			Vector3 localOffset = offset * gameObject->parentGameObject->transform.GetRotation().Inverse();
-			Vector3 parentScale = gameObject->parentGameObject->transform.GetScale();
-			if (parentScale.x == 0 || parentScale.y == 0 || parentScale.z == 0)
-				return { 0, 0, 0 };
-
-			localOffset.x /= parentScale.x;
-			localOffset.y /= parentScale.y;
-			localOffset.z /= parentScale.z;
-			return localOffset;
-		}
+		Vector3 GetLocalPosition() { return _localPosition; }
 
         void MovePosition(Vector3 displacement) { SetPosition(GetPosition() + displacement); };
         void MovePosition(Vector2 displacement) { SetPosition(Vector2(GetPosition().x + displacement.x, GetPosition().y + displacement.y)); };
@@ -235,13 +241,26 @@ public:
         Set the game object's rotation with a quaternion
         */
 		void SetRotation(Quaternion rotation)
-        {
+		{
 			Quaternion deltaRotation = rotation * _rotation.Inverse();
 			_rotation = rotation;
+
 #ifdef EDITOR
-			eulerRotation = QuaternionToEuler(rotation) * RAD2DEG;
-			NormalizeEuler(eulerRotation);
+			_eulerRotation = QuaternionToEuler(rotation) * RAD2DEG;
+			NormalizeEuler(_eulerRotation);
 #endif
+
+			if (gameObject->parentGameObject)
+			{
+				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
+				_localRotation = parentRot.Inverse() * _rotation;
+                _localEulerRotation = QuaternionToEuler(_localRotation) * RAD2DEG;
+			}
+			else
+			{
+                _localRotation = _rotation;
+                _localEulerRotation = _eulerRotation;
+			}
 
 			for (GameObject* child : gameObject->childGameObjects)
 				child->transform.ApplyWorldDeltaRotationAroundCenter(deltaRotation, _position);
@@ -251,31 +270,60 @@ public:
 
 		void SetLocalRotation(Quaternion quaternion)
         {
-			if (gameObject->parentGameObject == nullptr)
-				SetRotation(quaternion);
-			else
-            {
+			_localRotation = quaternion;
+            _localEulerRotation = QuaternionToEuler(quaternion) * RAD2DEG;
+			NormalizeEuler(_localEulerRotation);
+
+			if (gameObject->parentGameObject)
+			{
 				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
-				SetRotation(parentRot * quaternion);
+				_rotation = parentRot * quaternion;
 			}
+			else
+				_rotation = quaternion;
+
+#ifdef EDITOR
+            _eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
+			NormalizeEuler(_eulerRotation);
+#endif
 		}
 
         /**
         Set the game object's rotation in degrees
         */
 		void SetRotationEuler(Vector3 rotation)
-        {
-			eulerRotation = rotation;
-			NormalizeEuler(eulerRotation);
+		{
+			Quaternion oldRotation = _rotation;
+
+			_eulerRotation = rotation;
+            NormalizeEuler(_eulerRotation);
 
 			Quaternion newRotation = EulerToQuaternion(
-				eulerRotation.x * DEG2RAD,
-				eulerRotation.y * DEG2RAD,
-				eulerRotation.z * DEG2RAD
+				_eulerRotation.x * DEG2RAD,
+				_eulerRotation.y * DEG2RAD,
+				_eulerRotation.z * DEG2RAD
 			);
 
-			SetRotation(newRotation);
+			Quaternion deltaRotation = newRotation * oldRotation.Inverse();
+			_rotation = newRotation;
+
+			if (gameObject->parentGameObject)
+			{
+				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
+				_localRotation = parentRot.Inverse() * _rotation;
+				_localEulerRotation = QuaternionToEuler(_localRotation) * RAD2DEG;
+				NormalizeEuler(_localEulerRotation);
+			}
+			else
+			{
+				_localRotation = _rotation;
+				_localEulerRotation = _eulerRotation;
+			}
+
+			for (GameObject* child : gameObject->childGameObjects)
+				child->transform.ApplyWorldDeltaRotationAroundCenter(deltaRotation, _position);
 		}
+
 
         /**
         Set the game object's rotation in degrees
@@ -284,7 +332,7 @@ public:
         {
             float preservedZ;
 #ifdef EDITOR
-            preservedZ = eulerRotation.z;
+            preservedZ = _eulerRotation.z;
 #else
             preservedZ = QuaternionToEuler(_rotation).z * RAD2DEG;
 #endif
@@ -305,7 +353,7 @@ public:
         Vector3 GetRotationEuler()
         {
 #ifdef EDITOR
-            return eulerRotation;
+            return _eulerRotation;
 #else
             return QuaternionToEuler(_rotation) * RAD2DEG;
 #endif
@@ -315,25 +363,37 @@ public:
         Set the game object's local rotation in degrees
         */
 		void SetLocalRotationEuler(Vector3 rotation)
-        {
+		{
+			Quaternion oldWorldRotation = _rotation;
             NormalizeEuler(rotation);
 
-			// Convert local Euler to quaternion
 			Quaternion localQuat = EulerToQuaternion(
 				rotation.x * DEG2RAD,
 				rotation.y * DEG2RAD,
 				rotation.z * DEG2RAD
 			);
 
+			_localEulerRotation = rotation;
+			_localRotation = localQuat;
+
 			if (gameObject->parentGameObject == nullptr)
-				SetRotation(localQuat);
-			else
-            {
-				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
-				Quaternion newWorldRot = parentRot * localQuat;
-				SetRotation(newWorldRot);
+			{
+				_rotation = localQuat;
+				_eulerRotation = rotation;
 			}
+			else
+			{
+				const Quaternion& parentRot = gameObject->parentGameObject->transform.GetRotation();
+				_rotation = parentRot * localQuat;
+				_eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
+				NormalizeEuler(_eulerRotation);
+			}
+
+			Quaternion deltaRotation = _rotation * oldWorldRotation.Inverse();
+			for (GameObject* child : gameObject->childGameObjects)
+				child->transform.ApplyWorldDeltaRotationAroundCenter(deltaRotation, _position);
 		}
+
         /**
         Set the game object's local rotation in degrees
         */
@@ -355,34 +415,69 @@ public:
 		Get the game object's local rotation in degrees
 		@return Vector3 euler of the rotation
 		*/
-		Vector3 GetLocalRotationEuler() {
-			Quaternion localQuat = GetLocalRotation();
-			Vector3 localEuler = QuaternionToEuler(localQuat) * RAD2DEG;
-			NormalizeEuler(localEuler);
-			return localEuler;
+		Vector3 GetLocalRotationEuler()
+        {
+			if (gameObject->parentGameObject == nullptr)
+				return _eulerRotation;
+
+			return _localEulerRotation;
 		}
 
 		Quaternion GetLocalRotation()
-        {
+		{
 			if (gameObject->parentGameObject == nullptr)
 				return _rotation;
-			else
-            {
-				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
-				return parentRot.Inverse() * _rotation;
-			}
+
+			return _localRotation;
 		}
 
+
 		void ApplyWorldDeltaRotationAroundCenter(Quaternion worldDelta, Vector3 center)
-        {
-			_rotation = worldDelta * _rotation; 
+		{
+			_rotation = worldDelta * _rotation;
+
 #ifdef EDITOR
-			eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
-			NormalizeEuler(eulerRotation);
+			_eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
+			NormalizeEuler(_eulerRotation);
 #endif
+
 			Vector3 offset = _position - center;
 			Vector3 rotatedOffset = offset * worldDelta;
 			_position = center + rotatedOffset;
+
+			if (gameObject->parentGameObject)
+			{
+				Transform& parent = gameObject->parentGameObject->transform;
+				Vector3 localOffset = (_position - parent.GetPosition()) * parent.GetRotation().Inverse();
+				Vector3 parentScale = parent.GetScale();
+
+				if (parentScale.x != 0) localOffset.x /= parentScale.x;
+				if (parentScale.y != 0) localOffset.y /= parentScale.y;
+				if (parentScale.z != 0) localOffset.z /= parentScale.z;
+
+				_localPosition = localOffset;
+			}
+			else
+			{
+				_localPosition = _position;
+			}
+
+			if (gameObject->parentGameObject)
+			{
+				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
+				_localRotation = parentRot.Inverse() * _rotation;
+#ifdef EDITOR
+				_localEulerRotation = QuaternionToEuler(_localRotation) * RAD2DEG;
+				NormalizeEuler(_localEulerRotation);
+#endif
+			}
+			else
+			{
+				_localRotation = _rotation;
+#ifdef EDITOR
+				_localEulerRotation = _eulerRotation;
+#endif
+			}
 
 			for (GameObject* child : gameObject->childGameObjects)
 				child->transform.ApplyWorldDeltaRotationAroundCenter(worldDelta, center);
@@ -392,27 +487,43 @@ public:
         Rotates the game object by the specified Euler angles in degrees.
         */
 		void Rotate(Vector3 euler)
-        {
-            NormalizeEuler(euler);
+		{
+			NormalizeEuler(euler);
 
-			// Convert relative rotation to quaternion
 			Quaternion deltaRot = EulerToQuaternion(
 				euler.x * DEG2RAD,
 				euler.y * DEG2RAD,
 				euler.z * DEG2RAD
 			);
 
-			// Compute equivalent world delta for propagation (conjugate local delta)
-			Quaternion worldDelta = _rotation * deltaRot * _rotation.Inverse();
-
-			// Apply local delta to this rotation (post-multiply)
+			Quaternion oldRotation = _rotation;
 			_rotation = _rotation * deltaRot;
 
-			// Update Euler cache accurately from new quat (avoids drift)
-			eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
-			NormalizeEuler(eulerRotation);
+#ifdef EDITOR
+			_eulerRotation = QuaternionToEuler(_rotation) * RAD2DEG;
+			NormalizeEuler(_eulerRotation);
+#endif
 
-			// Propagate to children recursively around this position (center)
+			if (gameObject->parentGameObject)
+			{
+				Quaternion parentRot = gameObject->parentGameObject->transform.GetRotation();
+				_localRotation = parentRot.Inverse() * _rotation;
+#ifdef EDITOR
+				_localEulerRotation = QuaternionToEuler(_localRotation) * RAD2DEG;
+				NormalizeEuler(_localEulerRotation);
+#endif
+			}
+			else
+			{
+				_localRotation = _rotation;
+#ifdef EDITOR
+				_localEulerRotation = _eulerRotation;
+#endif
+			}
+
+			Quaternion worldDelta = _rotation * oldRotation.Inverse();
+			// Quaternion worldDelta = deltaRot;
+
 			for (GameObject* child : gameObject->childGameObjects)
 				child->transform.ApplyWorldDeltaRotationAroundCenter(worldDelta, _position);
 		}
@@ -435,23 +546,28 @@ public:
         void Rotate(float x, float y) { Rotate(Vector2(x, y)); }
 
 		void ApplyWorldDeltaScaleAroundCenter(Vector3 factor, Vector3 center, Quaternion parentRot)
-        {
+		{
 			_scale.x *= factor.x;
 			_scale.y *= factor.y;
 			_scale.z *= factor.z;
 
-			Vector3 offset = _position - center;
+			Vector3 offset = GetPosition() - center;
 			Vector3 localOffset = offset * parentRot.Inverse();
+
 			Vector3 scaledLocal;
 			scaledLocal.x = localOffset.x * factor.x;
 			scaledLocal.y = localOffset.y * factor.y;
 			scaledLocal.z = localOffset.z * factor.z;
+
 			Vector3 newOffset = scaledLocal * parentRot;
-			_position = center + newOffset;
+			Vector3 newWorldPos = center + newOffset;
+
+			SetPosition(newWorldPos);
 
 			for (GameObject* child : gameObject->childGameObjects)
 				child->transform.ApplyWorldDeltaScaleAroundCenter(factor, center, parentRot);
 		}
+
 
 		void SetScale(Vector3 scale)
 		{
@@ -460,6 +576,7 @@ public:
 				_scale = scale;
 				return;
 			}
+
 			Vector3 factor;
 			factor.x = scale.x / _scale.x;
 			factor.y = scale.y / _scale.y;
@@ -542,9 +659,13 @@ public:
 
     private:
         Vector3 _position = { 0,0,0 };
+		Vector3 _localPosition = { 0,0,0 };
         Quaternion _rotation = Quaternion::Identity();
-        Vector3 eulerRotation = { 0,0,0 }; // Used only in the editor
+        Quaternion _localRotation = Quaternion::Identity();
+        Vector3 _eulerRotation = { 0,0,0 }; // Used only in the editor
+        Vector3 _localEulerRotation = { 0,0,0 };
         Vector3 _scale = { 1,1,1 };
+        Vector3 _localScale = { 1,1,1 };
     };
     Transform transform;
 

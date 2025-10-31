@@ -24,6 +24,7 @@
 #include <windows.h>
 #include "WindowsHelper.h"
 #include "AsyncPBOCapture.h"
+#include "SharedInputReader.h"
 #elif WEB
 #include <emscripten/emscripten.h>
 #include <unordered_set>
@@ -62,11 +63,12 @@ b2World* world = nullptr;
 CollisionListener2D collisionListener;
 
 std::filesystem::path exeParent;
-
 bool isPlayMode = false;
+
 RaylibWrapper::RenderTexture playModeRenderTexture;
 #ifdef WINDOWS
 AsyncPBOCapture pboCapture;
+SharedInputReader sharedInputReader;
 #endif
 
 // Todo: Get this from project settings
@@ -229,6 +231,8 @@ int main(int argc, char* argv[])
 				pboCapture.Init(RaylibWrapper::GetScreenWidth(), RaylibWrapper::GetScreenHeight());
 				pboCapture.Start();
 				WindowsHelper::HideWindow();
+
+				sharedInputReader.Connect();
 #endif
 			}
 		}
@@ -306,6 +310,7 @@ int main(int argc, char* argv[])
 #ifdef WINDOWS
 	pboCapture.Stop();
 	RaylibWrapper::UnloadRenderTexture(playModeRenderTexture);
+	sharedInputReader.Disconnect();
 #endif
 
 	// Todo: There may be other scenes loaded. Make sure to also unload them.
@@ -340,34 +345,6 @@ int main(int argc, char* argv[])
 
 void MainLoop()
 {
-	timeSinceLastUpdate += RaylibWrapper::GetFrameTime();
-	while (timeSinceLastUpdate >= timeStep)
-	{
-#ifdef IS3D
-		physicsSystem.Update(timeStep, physicsIterations, tempAllocator, &jobSystem);
-#else
-		world->Step(timeStep, velocityIterations, positionIterations);
-		collisionListener.ContinueContact(); // Todo: Should this go after the loop?
-#endif
-		timeSinceLastUpdate -= timeStep;
-
-		fixedDeltaTime = timeStep;
-
-		for (GameObject* gameObject : SceneManager::GetActiveScene()->GetGameObjects())
-		{
-			if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
-				continue;
-			for (Component* component : gameObject->GetComponents())
-			{
-				if (!component->IsActive())
-					continue;
-
-				component->FixedUpdate();
-				fixedDeltaTime = timeStep; // Setting this here and before the loop incase if a component changes the fixed delta time
-			}
-		}
-	}
-
 	// GUI
 	FontManager::UpdateFonts();
 
@@ -446,6 +423,13 @@ void MainLoop()
 	// RaylibWrapper::rlActiveTextureSlot(1);
 	// RaylibWrapper::rlEnableTexture(shadowManager.shadowMapTexture.id);
 
+	if (isPlayMode)
+	{
+#ifdef WINDOWS
+		sharedInputReader.SyncToInputSystem();
+#endif
+	}
+
 	// Update CollisionSystem
 
 	deltaTime = RaylibWrapper::GetFrameTime();
@@ -476,15 +460,67 @@ void MainLoop()
 
 			component->Update();
 			deltaTime = tempDelaTime; // Setting this here and before the loop incase if a component changes the delta time
+			fixedDeltaTime = timeStep;
 
 			if (gameObject && component) // Component/Gameobject may get deleted in the Update(). I could also check if the gameobject and component is still active here although most likely useless overhead
 				component->RenderGui();
 
-#ifdef IS3D
 			component->Render();
-#endif
 		}
 	}
+
+	// Physics Update
+	timeSinceLastUpdate += RaylibWrapper::GetFrameTime();
+	while (timeSinceLastUpdate >= timeStep)
+	{
+		fixedDeltaTime = timeStep;
+
+		for (size_t i = 0; i < gameObjects.size(); ++i)
+		{
+			GameObject* gameObject = gameObjects[i];
+
+			if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
+				continue;
+
+			for (Component* component : gameObject->GetComponents())
+			{
+				if (!component->IsActive())
+					continue;
+
+				component->FixedUpdate();
+				fixedDeltaTime = timeStep; // Setting this here and before the loop incase if a component changes the fixed delta time
+				deltaTime = tempDelaTime;
+			}
+		}
+
+#ifdef IS3D
+		physicsSystem.Update(timeStep, physicsIterations, tempAllocator, &jobSystem);
+#else
+		world->Step(timeStep, velocityIterations, positionIterations);
+		collisionListener.ContinueContact();
+#endif
+		timeSinceLastUpdate -= timeStep;
+	}
+
+	// LateUpdate() call
+	for (size_t i = 0; i < gameObjects.size(); ++i)
+	{
+		GameObject* gameObject = gameObjects[i];
+
+		if (!gameObject->IsActive() || !gameObject->IsGlobalActive())
+			continue;
+
+		for (Component* component : gameObject->GetComponents())
+		{
+			if (!component->IsActive())
+				continue;
+
+			component->LateUpdate();
+			deltaTime = tempDelaTime;
+			fixedDeltaTime = timeStep;
+		}
+	}
+
 	GameObject::markForDeletion = false;
 
 	for (GameObject* gameObject : GameObject::markedForDeletion)
