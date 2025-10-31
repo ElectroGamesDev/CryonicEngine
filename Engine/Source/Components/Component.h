@@ -90,6 +90,9 @@ public:
     // Called once per frame to update game logic
     virtual void Update() {};
 
+	// Called once per frame after all Update() calls
+	virtual void LateUpdate() {};
+
     // Called at fixed time intervals for physics-related game logic
     virtual void FixedUpdate() {};
 
