@@ -58,3 +58,6 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 BuildTools/llvm/lib/site-packages/lldb/_lldb.cp310-win_amd64.pyd filter=lfs diff=lfs merge=lfs -text
+
+# Ignore libraries from language stats
+BuildTools/* linguist-vendored
