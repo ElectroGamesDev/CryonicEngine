@@ -164,9 +164,12 @@ enum MouseCursor {
 class Keyboard
 {
 public:
+    static bool AnyKeyPressed();
+    static bool AnyKeyReleased();
     static bool IsKeyPressed(KeyboardKey key);
     static bool IsKeyReleased(KeyboardKey key);
     static bool IsKeyDown(KeyboardKey key);
+    static KeyboardKey StringToKey(std::string key);
 
     // Hide in api
     static std::unordered_set<KeyboardKey> keyPressed;

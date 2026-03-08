@@ -3,11 +3,25 @@
 #if !defined(EDITOR)
 #include "Game.h";
 #endif
+#include <unordered_map>
+#include <algorithm>
 
 // Keyboard
 std::unordered_set<KeyboardKey> Keyboard::keyPressed;
 std::unordered_set<KeyboardKey> Keyboard::keyReleased;
 std::unordered_set<KeyboardKey> Keyboard::keyDown;
+
+bool Keyboard::AnyKeyPressed()
+{
+	// Todo: Implement this
+	return false;
+}
+
+bool Keyboard::AnyKeyReleased()
+{
+	// Todo: Implement this
+	return false;
+}
 
 bool Keyboard::IsKeyPressed(KeyboardKey key)
 {
@@ -52,6 +66,102 @@ bool Keyboard::IsKeyDown(KeyboardKey key)
 #endif
 
 	return IsKeyDownWrapper(static_cast<int>(key));
+}
+
+KeyboardKey Keyboard::StringToKey(std::string key)
+{
+	static const std::unordered_map<std::string, KeyboardKey> map = {
+		// Letters
+		{"A", KEY_A}, {"B", KEY_B}, {"C", KEY_C}, {"D", KEY_D}, {"E", KEY_E},
+		{"F", KEY_F}, {"G", KEY_G}, {"H", KEY_H}, {"I", KEY_I}, {"J", KEY_J},
+		{"K", KEY_K}, {"L", KEY_L}, {"M", KEY_M}, {"N", KEY_N}, {"O", KEY_O},
+		{"P", KEY_P}, {"Q", KEY_Q}, {"R", KEY_R}, {"S", KEY_S}, {"T", KEY_T},
+		{"U", KEY_U}, {"V", KEY_V}, {"W", KEY_W}, {"X", KEY_X}, {"Y", KEY_Y},
+		{"Z", KEY_Z},
+
+		// Numbers
+		{"0", KEY_ZERO}, {"1", KEY_ONE}, {"2", KEY_TWO}, {"3", KEY_THREE},
+		{"4", KEY_FOUR}, {"5", KEY_FIVE}, {"6", KEY_SIX}, {"7", KEY_SEVEN},
+		{"8", KEY_EIGHT}, {"9", KEY_NINE},
+
+		// Function keys
+		{"F1", KEY_F1}, {"F2", KEY_F2}, {"F3", KEY_F3}, {"F4", KEY_F4},
+		{"F5", KEY_F5}, {"F6", KEY_F6}, {"F7", KEY_F7}, {"F8", KEY_F8},
+		{"F9", KEY_F9}, {"F10", KEY_F10}, {"F11", KEY_F11}, {"F12", KEY_F12},
+
+		// Modifier keys
+		{"SHIFT", KEY_LEFT_SHIFT},
+		{"LEFT_SHIFT", KEY_LEFT_SHIFT},
+		{"RIGHT_SHIFT", KEY_RIGHT_SHIFT},
+
+		{"CTRL", KEY_LEFT_CONTROL},
+		{"LEFT_CTRL", KEY_LEFT_CONTROL},
+		{"RIGHT_CTRL", KEY_RIGHT_CONTROL},
+		{"CONTROL", KEY_LEFT_CONTROL},
+
+		{"ALT", KEY_LEFT_ALT},
+		{"LEFT_ALT", KEY_LEFT_ALT},
+		{"RIGHT_ALT", KEY_RIGHT_ALT},
+
+		{"CAPSLOCK", KEY_CAPS_LOCK},
+		{"TAB", KEY_TAB},
+
+		// Arrow keys
+		{"UP", KEY_UP},
+		{"DOWN", KEY_DOWN},
+		{"LEFT", KEY_LEFT},
+		{"RIGHT", KEY_RIGHT},
+
+		// Control keys
+		{"ENTER", KEY_ENTER},
+		{"ESCAPE", KEY_ESCAPE},
+		{"SPACE", KEY_SPACE},
+		{"BACKSPACE", KEY_BACKSPACE},
+		{"DELETE", KEY_DELETE},
+		{"INSERT", KEY_INSERT},
+		{"HOME", KEY_HOME},
+		{"END", KEY_END},
+		{"PAGEUP", KEY_PAGE_UP},
+		{"PAGEDOWN", KEY_PAGE_DOWN},
+		{"PRINTSCREEN", KEY_PRINT_SCREEN},
+		{"PAUSE", KEY_PAUSE},
+		{"NUMLOCK", KEY_NUM_LOCK},
+		{"SCROLLLOCK", KEY_SCROLL_LOCK},
+
+		// Numpad
+		{"NUMPAD_0", KEY_KP_0}, {"NUMPAD_1", KEY_KP_1},
+		{"NUMPAD_2", KEY_KP_2}, {"NUMPAD_3", KEY_KP_3},
+		{"NUMPAD_4", KEY_KP_4}, {"NUMPAD_5", KEY_KP_5},
+		{"NUMPAD_6", KEY_KP_6}, {"NUMPAD_7", KEY_KP_7},
+		{"NUMPAD_8", KEY_KP_8}, {"NUMPAD_9", KEY_KP_9},
+		{"NUMPAD_ADD", KEY_KP_ADD},
+		{"NUMPAD_SUBTRACT", KEY_KP_SUBTRACT},
+		{"NUMPAD_MULTIPLY", KEY_KP_MULTIPLY},
+		{"NUMPAD_DIVIDE", KEY_KP_DIVIDE},
+		{"NUMPAD_DECIMAL", KEY_KP_DECIMAL},
+		{"NUMPAD_ENTER", KEY_KP_ENTER},
+
+		// Symbols
+		{"`", KEY_GRAVE},
+		{"-", KEY_MINUS},
+		{"=", KEY_EQUAL},
+		{"[", KEY_LEFT_BRACKET},
+		{"]", KEY_RIGHT_BRACKET},
+		{"\\", KEY_BACKSLASH},
+		{";", KEY_SEMICOLON},
+		{"'", KEY_APOSTROPHE},
+		{",", KEY_COMMA},
+		{".", KEY_PERIOD},
+		{"/", KEY_SLASH},
+	};
+
+	std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return (char)std::toupper(c); });
+
+	auto it = map.find(key);
+	if (it != map.end())
+		return it->second;
+
+	return (KeyboardKey)0;
 }
 
 

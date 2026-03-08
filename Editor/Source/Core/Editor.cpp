@@ -4851,7 +4851,7 @@ void Editor::RenderProperties()
     if (ImGui::Begin((ICON_FA_GEARS + std::string(" Properties")).c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar))
     {
         ImGui::BeginGroup();
-        //if (std::holds_alternative<GameObject*>(objectInProperties) && std::find_if(SceneManager::GetActiveScene()->GetGameObjects().begin(), SceneManager::GetActiveScene()->GetGameObjects().end(), [&](const auto& obj) { return obj == (*propertiesGameObject); }) != SceneManager::GetActiveScene()->GetGameObjects().end())
+        //if (std::holds_alternative<GameObject*>(objectInProperties) && std::find_if(SceneManager::GetActiveScene()->GetGameObjects().begin(), SceneManager::GetActiveScene()->GetGameObjects().end(), [&](const auto& obj) { return go == (*propertiesGameObject); }) != SceneManager::GetActiveScene()->GetGameObjects().end())
         if (auto* propertiesGameObject = std::get_if<GameObject*>(&objectInProperties))
         {
             // Active checkbox

@@ -257,6 +257,47 @@ float Rigidbody2D::GetMass()
 #endif
 }
 
+void Rigidbody2D::SetLinearVelocity(Vector2 velocity)
+{
+#if !defined(EDITOR)
+    if (body)
+    {
+        body->SetLinearVelocity(b2Vec2(velocity.x, velocity.y));
+    }
+#endif
+}
+
+Vector2 Rigidbody2D::GetLinearVelocity()
+{
+#if !defined(EDITOR)
+    if (body)
+    {
+        b2Vec2 vel = body->GetLinearVelocity();
+        return Vector2{ vel.x, vel.y };
+    }
+#endif
+
+    return Vector2{ 0, 0 };
+}
+
+void Rigidbody2D::SetAngularVelocity(float velocity)
+{
+#if !defined(EDITOR)
+    if (body)
+        return body->SetAngularVelocity(velocity);
+#endif
+}
+
+float Rigidbody2D::GetAngularVelocity()
+{
+#if !defined(EDITOR)
+    if (body)
+        return body->GetAngularVelocity();
+#endif
+
+    return 0.0f;
+}
+
 void Rigidbody2D::SetLinearDamping(float damping)
 {
 #if !defined(EDITOR)

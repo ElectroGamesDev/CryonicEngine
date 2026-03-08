@@ -30,6 +30,10 @@ public:
     bool IsContinuous();
     void SetMass(float mass);
     float GetMass();
+    void SetLinearVelocity(Vector2 velocity);
+    Vector2 GetLinearVelocity();
+    void SetAngularVelocity(float velocity);
+    float GetAngularVelocity();
     void SetLinearDamping(float damping);
     float GetLinearDamping();
     void SetAngularDamping(float damping);
